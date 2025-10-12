@@ -47,28 +47,42 @@ npx tsx scripts/test-db-connection.ts
 ✅ **API Routes** - REST endpoints for all operations
 ✅ **Database Schema** - All tables created and seeded
 ✅ **19 Passing Tests** - Unit + integration coverage
+✅ **Authentication** - NextAuth.js with credentials provider
+✅ **Basic Frontend** - Login page, feed page, navigation, content cards
 
 ## 🔧 What's Missing
 
-❌ **Auth** - NextAuth.js not configured
-❌ **Frontend** - No UI components yet
+❌ **Content Interactions** - Watch/save/dismiss endpoints need implementing
+❌ **Frontend Pages** - Sources, filters, saved, and history pages
 ❌ **Background Jobs** - Content fetching cron not set up
+❌ **Theatre Mode** - Video player modal
 
 ## 🎯 Next Steps
 
-1. **Add Authentication**
+1. **Implement Content Interactions**
    ```bash
-   # Configure NextAuth in app/api/auth/[...nextauth]/route.ts
-   # Update getUserSession() in lib/get-user-session.ts
+   # Create POST /api/content/:id/watch endpoint
+   # Create POST /api/content/:id/save endpoint
+   # Create POST /api/content/:id/dismiss endpoint
+   # Create POST /api/content/:id/not-now endpoint
    ```
 
-2. **Build Frontend**
+2. **Build Additional Frontend Pages**
    ```bash
-   # Create components in /components
-   # Build feed page in app/feed/page.tsx
+   # Create /sources page for managing content sources
+   # Create /filters page for keyword/duration filters
+   # Create /saved page for saved content
+   # Create /history page for watch history
    ```
 
-3. **Background Jobs**
+3. **Add Theatre Mode**
+   ```bash
+   # Create video player modal component
+   # Integrate with YouTube embed
+   # Add keyboard shortcuts
+   ```
+
+4. **Background Jobs**
    ```bash
    # Set up Vercel Cron for content fetching
    # Implement content fetch service
@@ -126,4 +140,6 @@ Copy `.env.example` to `.env` and fill in:
 
 ---
 
-**Current Status:** Backend + Database complete, ready for auth + frontend 🎉
+**Current Status:** Backend + Database + Auth + Basic Frontend complete! 🎉
+
+**Next:** Implement content interaction endpoints and build remaining frontend pages.
