@@ -15,9 +15,13 @@
 - [x] Set up Prisma with PostgreSQL schema
 - [x] Core configuration files (config, logger, db, cache, validation, errors)
 - [x] Project structure following hexagonal architecture
+- [x] Domain logic: ContentItem types and interfaces
+- [x] Filter Engine with keyword and duration rules
+- [x] Feed Generator with diversity enforcement and backlog mixing
+- [x] Unit tests for domain logic (12 passing tests)
 
 ### 🔄 In Progress
-- [ ] Domain logic: ContentItem types and interfaces
+- [ ] YouTube adapter implementation
 
 ### 📋 Up Next
 - [ ] Configure environment variables and external services
