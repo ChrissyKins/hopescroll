@@ -1,0 +1,155 @@
+// Forest Cabin - Database Schema
+// Based on architecture_design.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("POSTGRES_PRISMA_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String   // Hashed with bcrypt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sources        ContentSource[]
+  filters        FilterKeyword[]
+  preferences    UserPreferences?
+  interactions   ContentInteraction[]
+  savedContent   SavedContent[]
+}
+
+model ContentSource {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  type        SourceType
+  sourceId    String      // Platform-specific ID (channel ID, username, feed URL)
+  displayName String
+  avatarUrl   String?
+
+  isMuted     Boolean     @default(false)
+  alwaysSafe  Boolean     @default(false)
+
+  addedAt         DateTime  @default(now())
+  lastFetchAt     DateTime?
+  lastFetchStatus String    @default("pending") // success, error, pending
+  errorMessage    String?
+
+  @@unique([userId, type, sourceId])
+  @@index([userId])
+}
+
+model ContentItem {
+  id              String   @id @default(cuid())
+
+  sourceType      SourceType
+  sourceId        String
+  originalId      String   // YouTube video ID, Twitch VOD ID, etc.
+
+  title           String
+  description     String?  @db.Text
+  thumbnailUrl    String?
+  url             String
+  duration        Int?     // Seconds
+  publishedAt     DateTime
+
+  fetchedAt       DateTime @default(now())
+  lastSeenInFeed  DateTime @default(now())
+
+  interactions    ContentInteraction[]
+  savedContent    SavedContent[]
+
+  @@unique([sourceType, originalId])
+  @@index([sourceType, sourceId])
+  @@index([publishedAt])
+}
+
+model ContentInteraction {
+  id          String          @id @default(cuid())
+  userId      String
+  contentId   String
+  content     ContentItem     @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  type        InteractionType
+  timestamp   DateTime        @default(now())
+
+  // Type-specific context
+  watchDuration   Int?    // Seconds watched
+  completionRate  Float?  // 0.0-1.0
+  dismissReason   String?
+  collection      String? // For SAVED type
+
+  @@index([userId, contentId])
+  @@index([userId, type])
+  @@index([timestamp])
+}
+
+model FilterKeyword {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  keyword   String
+  isWildcard Boolean @default(false)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+model UserPreferences {
+  userId    String   @id
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Duration filters
+  minDuration Int?
+  maxDuration Int?
+
+  // Feed generation
+  backlogRatio   Float @default(0.3)
+  diversityLimit Int   @default(3)
+
+  // UI preferences
+  theme       String @default("dark")
+  density     String @default("cozy")
+  autoPlay    Boolean @default(false)
+
+  updatedAt   DateTime @updatedAt
+}
+
+model SavedContent {
+  id          String      @id @default(cuid())
+  userId      String
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contentId   String
+  content     ContentItem @relation(fields: [contentId], references: [id], onDelete: Cascade)
+
+  collection  String?     // Optional grouping
+  savedAt     DateTime    @default(now())
+  notes       String?     // User notes about saved item
+
+  @@unique([userId, contentId])
+  @@index([userId, collection])
+}
+
+enum SourceType {
+  YOUTUBE
+  TWITCH
+  RSS
+  PODCAST
+}
+
+enum InteractionType {
+  WATCHED
+  SAVED
+  DISMISSED
+  NOT_NOW
+  BLOCKED
+}

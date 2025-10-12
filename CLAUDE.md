@@ -1,0 +1,10 @@
+Follow the following guidelines:
+- Commit to git often
+- Make good use of checklists! Especially when linting etc
+- Refer to docs in /docs when you have questions, especially /docs/planning
+- Try not to overcomplicate!
+- Before you finish, please verify your solution
+- When you update or modify core context files, also update markdown documentation and memory bank
+- When asked to commit changes, exclude CLAUDE.md and CLAUDE-*.md referenced memory bank system files from any commits. Never delete these files.
+- Keep a work plan checklist in a .md file for a session and clean it up when you're done
+- If you try to use a command and it's not working/not set up in the environment, stop and ask me to install it, giving me the commands to do so.
