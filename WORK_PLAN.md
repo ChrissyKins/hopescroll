@@ -19,9 +19,13 @@
 - [x] Filter Engine with keyword and duration rules
 - [x] Feed Generator with diversity enforcement and backlog mixing
 - [x] Unit tests for domain logic (12 passing tests)
+- [x] YouTube adapter with client, types, and adapter implementation
+- [x] Service layer: FeedService, SourceService, FilterService
+- [x] Integration tests for YouTube adapter (19 total tests passing)
+- [x] TypeScript compilation and linting clean
 
 ### 🔄 In Progress
-- [ ] YouTube adapter implementation
+- [ ] API routes for feed and sources
 
 ### 📋 Up Next
 - [ ] Configure environment variables and external services

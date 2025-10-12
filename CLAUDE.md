@@ -8,3 +8,5 @@ Follow the following guidelines:
 - When asked to commit changes, exclude CLAUDE.md and CLAUDE-*.md referenced memory bank system files from any commits. Never delete these files.
 - Keep a work plan checklist in a .md file for a session and clean it up when you're done
 - If you try to use a command and it's not working/not set up in the environment, stop and ask me to install it, giving me the commands to do so.
+- Test new functionality as you go, integration tests are best.
+- Lint as you go.
