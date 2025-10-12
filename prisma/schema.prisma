@@ -74,6 +74,7 @@ model ContentItem {
 model ContentInteraction {
   id          String          @id @default(cuid())
   userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   contentId   String
   content     ContentItem     @relation(fields: [contentId], references: [id], onDelete: Cascade)
 

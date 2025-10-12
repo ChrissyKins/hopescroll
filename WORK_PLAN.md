@@ -25,7 +25,10 @@
 - [x] TypeScript compilation and linting clean
 
 ### 🔄 In Progress
-- [ ] API routes for feed and sources
+- [x] API routes for feed and sources
+- [x] API routes for filters
+- [x] Prisma client generated and schema fixed
+- [ ] Test API routes with database
 
 ### 📋 Up Next
 - [ ] Configure environment variables and external services

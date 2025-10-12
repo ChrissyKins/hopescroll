@@ -1,0 +1,68 @@
+// GET /api/sources/:id - Get source details
+// PATCH /api/sources/:id - Update source
+// DELETE /api/sources/:id - Remove source
+
+import { NextRequest } from 'next/server';
+import { SourceService } from '@/services/source-service';
+import { db } from '@/lib/db';
+import { successResponse, errorResponse } from '@/lib/api-response';
+import { requireAuth } from '@/lib/get-user-session';
+import { updateSourceSchema } from '@/lib/validation';
+import { YouTubeClient } from '@/adapters/content/youtube/youtube-client';
+import { YouTubeAdapter } from '@/adapters/content/youtube/youtube-adapter';
+import { ContentAdapter } from '@/adapters/content/base-adapter';
+import { SourceType } from '@/domain/content/content-item';
+
+const adapters = new Map<SourceType, ContentAdapter>();
+adapters.set('YOUTUBE', new YouTubeAdapter(new YouTubeClient()));
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { userId } = await requireAuth();
+
+    const sourceService = new SourceService(db, adapters);
+    const source = await sourceService.getSource(userId, params.id);
+
+    return successResponse(source);
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+export async function PATCH(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { userId } = await requireAuth();
+
+    const body = await request.json();
+    const validated = updateSourceSchema.parse(body);
+
+    const sourceService = new SourceService(db, adapters);
+    await sourceService.updateSource(userId, params.id, validated);
+
+    return successResponse({ message: 'Source updated' });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
+
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const { userId } = await requireAuth();
+
+    const sourceService = new SourceService(db, adapters);
+    await sourceService.removeSource(userId, params.id);
+
+    return successResponse({ message: 'Source removed' });
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
