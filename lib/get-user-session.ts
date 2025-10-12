@@ -1,13 +1,11 @@
-// Placeholder for user session management
-// Will be replaced with NextAuth implementation
+import { auth } from './auth';
 
 export async function getUserSession(): Promise<{ userId: string } | null> {
-  // TODO: Implement NextAuth session management
-  // For now, return a test user
-  if (process.env.NODE_ENV === 'development') {
-    return { userId: 'test-user-1' };
+  const session = await auth();
+  if (!session?.user) {
+    return null;
   }
-  return null;
+  return { userId: session.user.id };
 }
 
 export async function requireAuth(): Promise<{ userId: string }> {

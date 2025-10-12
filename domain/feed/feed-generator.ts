@@ -11,6 +11,9 @@ import { FeedItem } from './feed-item';
 import { DiversityEnforcer } from './diversity-enforcer';
 import { BacklogMixer } from './backlog-mixer';
 
+// Re-export FeedItem for convenience
+export type { FeedItem } from './feed-item';
+
 export class FeedGenerator {
   constructor(
     private diversityEnforcer: DiversityEnforcer,

@@ -4,6 +4,7 @@ import { PrismaClient } from '@prisma/client';
 import { CacheClient } from '@/lib/cache';
 import { FilterEngine } from '@/domain/filtering/filter-engine';
 import {
+  FilterRule,
   KeywordFilterRule,
   DurationFilterRule,
 } from '@/domain/filtering/filter-rule';
@@ -74,7 +75,7 @@ export class FeedService {
     }
 
     // 3. Build filter engine
-    const filterRules = [
+    const filterRules: FilterRule[] = [
       ...filterConfig.keywords.map(
         (k: any) => new KeywordFilterRule(k.keyword, k.isWildcard)
       ),
