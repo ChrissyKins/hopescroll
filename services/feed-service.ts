@@ -211,7 +211,7 @@ export class FeedService {
   }): ContentItem {
     return {
       id: dbItem.id,
-      sourceType: dbItem.sourceType,
+      sourceType: dbItem.sourceType as ContentItem['sourceType'],
       sourceId: dbItem.sourceId,
       originalId: dbItem.originalId,
       title: dbItem.title,
