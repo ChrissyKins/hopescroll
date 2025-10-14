@@ -62,8 +62,8 @@ export class FeedService {
     // 2. Load content from all sources
     const allContent = await this.db.contentItem.findMany({
       where: {
-        sourceId: { in: sources.map((s: any) => s.sourceId) },
-        sourceType: { in: sources.map((s: any) => s.type) },
+        sourceId: { in: sources.map((s) => s.sourceId) },
+        sourceType: { in: sources.map((s) => s.type) },
       },
       orderBy: { publishedAt: 'desc' },
       take: CONFIG.feed.maxItemsInFeed * 2, // Get extra for filtering
@@ -77,7 +77,7 @@ export class FeedService {
     // 3. Build filter engine
     const filterRules: FilterRule[] = [
       ...filterConfig.keywords.map(
-        (k: any) => new KeywordFilterRule(k.keyword, k.isWildcard)
+        (k) => new KeywordFilterRule(k.keyword, k.isWildcard)
       ),
     ];
 
@@ -94,7 +94,7 @@ export class FeedService {
 
     // 4. Apply filters
     const filtered = filterEngine.evaluateBatch(
-      allContent.map((c: any) => this.mapToContentItem(c))
+      allContent.map((c) => this.mapToContentItem(c))
     );
 
     log.info(
@@ -104,7 +104,7 @@ export class FeedService {
 
     // 5. Generate feed
     const feed = this.feedGenerator.generate(
-      sources.map((s: any) => ({
+      sources.map((s) => ({
         id: s.id,
         userId: s.userId,
         type: s.type,
@@ -120,7 +120,7 @@ export class FeedService {
       })),
       filtered,
       preferences,
-      interactions.map((i: any) => ({
+      interactions.map((i) => ({
         id: i.id,
         userId: i.userId,
         contentId: i.contentId,
@@ -162,7 +162,7 @@ export class FeedService {
 
     return {
       userId,
-      keywords: keywords.map((k: any) => ({
+      keywords: keywords.map((k) => ({
         id: k.id,
         keyword: k.keyword,
         isWildcard: k.isWildcard,
@@ -195,7 +195,20 @@ export class FeedService {
     };
   }
 
-  private mapToContentItem(dbItem: any): ContentItem {
+  private mapToContentItem(dbItem: {
+    id: string;
+    sourceType: string;
+    sourceId: string;
+    originalId: string;
+    title: string;
+    description: string | null;
+    thumbnailUrl: string | null;
+    url: string;
+    duration: number | null;
+    publishedAt: Date;
+    fetchedAt: Date;
+    lastSeenInFeed: Date;
+  }): ContentItem {
     return {
       id: dbItem.id,
       sourceType: dbItem.sourceType,

@@ -183,7 +183,8 @@ export class YouTubeAdapter implements ContentAdapter {
   }
 
   private generateId(): string {
-    // Generate a UUID-like ID
-    return `${Date.now()}-${Math.random().toString(36).substring(2, 9)}`;
+    // Generate a proper UUID using Node.js crypto
+    // Note: In production, this will be replaced by database-generated IDs (cuid)
+    return crypto.randomUUID();
   }
 }
