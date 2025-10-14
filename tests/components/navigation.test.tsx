@@ -1,0 +1,166 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { Navigation } from '@/components/navigation';
+import { usePathname } from 'next/navigation';
+import { signOut } from 'next-auth/react';
+
+// Mock next/navigation
+vi.mock('next/navigation', () => ({
+  usePathname: vi.fn(),
+}));
+
+// Mock next-auth
+vi.mock('next-auth/react', () => ({
+  signOut: vi.fn(),
+}));
+
+describe('Navigation', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(usePathname).mockReturnValue('/feed');
+  });
+
+  it('renders the app title', () => {
+    render(<Navigation />);
+    expect(screen.getByText('Forest Cabin')).toBeInTheDocument();
+  });
+
+  it('renders all navigation links', () => {
+    render(<Navigation />);
+    expect(screen.getByText('Feed')).toBeInTheDocument();
+    expect(screen.getByText('Sources')).toBeInTheDocument();
+    expect(screen.getByText('Filters')).toBeInTheDocument();
+    expect(screen.getByText('Saved')).toBeInTheDocument();
+    expect(screen.getByText('History')).toBeInTheDocument();
+  });
+
+  it('renders sign out button', () => {
+    render(<Navigation />);
+    expect(screen.getByText('Sign out')).toBeInTheDocument();
+  });
+
+  it('highlights active navigation item', () => {
+    vi.mocked(usePathname).mockReturnValue('/feed');
+    render(<Navigation />);
+
+    const feedLink = screen.getByText('Feed').closest('a');
+    expect(feedLink).toHaveClass('border-blue-500');
+  });
+
+  it('does not highlight inactive navigation items', () => {
+    vi.mocked(usePathname).mockReturnValue('/feed');
+    render(<Navigation />);
+
+    const sourcesLink = screen.getByText('Sources').closest('a');
+    expect(sourcesLink).toHaveClass('border-transparent');
+  });
+
+  it('updates active state when pathname changes', () => {
+    const { rerender } = render(<Navigation />);
+
+    // Initially on /feed
+    vi.mocked(usePathname).mockReturnValue('/feed');
+    rerender(<Navigation />);
+    expect(screen.getByText('Feed').closest('a')).toHaveClass('border-blue-500');
+
+    // Navigate to /sources
+    vi.mocked(usePathname).mockReturnValue('/sources');
+    rerender(<Navigation />);
+    expect(screen.getByText('Sources').closest('a')).toHaveClass('border-blue-500');
+    expect(screen.getByText('Feed').closest('a')).toHaveClass('border-transparent');
+  });
+
+  it('calls signOut with correct callback when sign out button is clicked', async () => {
+    render(<Navigation />);
+
+    const signOutButton = screen.getByText('Sign out');
+    fireEvent.click(signOutButton);
+
+    expect(signOut).toHaveBeenCalledWith({ callbackUrl: '/login' });
+    expect(signOut).toHaveBeenCalledTimes(1);
+  });
+
+  it('has correct href for each navigation link', () => {
+    render(<Navigation />);
+
+    expect(screen.getByText('Feed').closest('a')).toHaveAttribute('href', '/feed');
+    expect(screen.getByText('Sources').closest('a')).toHaveAttribute('href', '/sources');
+    expect(screen.getByText('Filters').closest('a')).toHaveAttribute('href', '/filters');
+    expect(screen.getByText('Saved').closest('a')).toHaveAttribute('href', '/saved');
+    expect(screen.getByText('History').closest('a')).toHaveAttribute('href', '/history');
+  });
+
+  it('applies dark mode classes', () => {
+    const { container } = render(<Navigation />);
+    const nav = container.querySelector('nav');
+    expect(nav).toHaveClass('dark:bg-gray-800', 'dark:border-gray-700');
+  });
+
+  it('applies hover styles to inactive links', () => {
+    vi.mocked(usePathname).mockReturnValue('/feed');
+    render(<Navigation />);
+
+    const sourcesLink = screen.getByText('Sources').closest('a');
+    expect(sourcesLink).toHaveClass('hover:border-gray-300', 'dark:hover:border-gray-600');
+  });
+
+  it('applies hover styles to sign out button', () => {
+    render(<Navigation />);
+
+    const signOutButton = screen.getByText('Sign out');
+    expect(signOutButton).toHaveClass('hover:text-gray-900', 'dark:hover:text-white');
+  });
+
+  it('renders with correct responsive container', () => {
+    const { container } = render(<Navigation />);
+    const innerContainer = container.querySelector('.max-w-7xl');
+    expect(innerContainer).toHaveClass('mx-auto', 'px-4', 'sm:px-6', 'lg:px-8');
+  });
+
+  it('hides navigation items on small screens', () => {
+    const { container } = render(<Navigation />);
+    const navItems = container.querySelector('.sm\\:flex');
+    expect(navItems).toHaveClass('hidden', 'sm:ml-6', 'sm:flex');
+  });
+
+  it('positions sign out button correctly', () => {
+    const { container } = render(<Navigation />);
+    const signOutContainer = screen.getByText('Sign out').parentElement;
+    expect(signOutContainer).toHaveClass('flex', 'items-center');
+  });
+
+  it('highlights different navigation items correctly', () => {
+    const navItems = [
+      { path: '/feed', label: 'Feed' },
+      { path: '/sources', label: 'Sources' },
+      { path: '/filters', label: 'Filters' },
+      { path: '/saved', label: 'Saved' },
+      { path: '/history', label: 'History' },
+    ];
+
+    navItems.forEach(({ path, label }) => {
+      vi.mocked(usePathname).mockReturnValue(path);
+      const { unmount } = render(<Navigation />);
+
+      const activeLink = screen.getByRole('link', { name: label });
+      expect(activeLink).toHaveClass('border-blue-500');
+
+      unmount();
+    });
+  });
+
+  it('maintains border bottom style for active item', () => {
+    vi.mocked(usePathname).mockReturnValue('/feed');
+    render(<Navigation />);
+
+    const feedLink = screen.getByText('Feed').closest('a');
+    expect(feedLink).toHaveClass('border-b-2');
+  });
+
+  it('renders title with correct styling', () => {
+    render(<Navigation />);
+
+    const title = screen.getByText('Forest Cabin');
+    expect(title).toHaveClass('text-xl', 'font-bold');
+  });
+});
