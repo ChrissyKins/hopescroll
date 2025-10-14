@@ -3,12 +3,14 @@
 import { useState, useEffect } from 'react';
 import { ContentCard } from '@/components/feed/content-card';
 import { Navigation } from '@/components/navigation';
+import { TheatreMode } from '@/components/theatre/theatre-mode';
 import type { FeedItem } from '@/domain/feed/feed-generator';
 
 export default function FeedPage() {
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [currentItem, setCurrentItem] = useState<FeedItem | null>(null);
 
   useEffect(() => {
     fetchFeed();
@@ -48,9 +50,49 @@ export default function FeedPage() {
   };
 
   const handleWatch = (contentId: string) => {
-    // For now, just record the interaction
-    // Later we'll open theatre mode
-    handleAction('watch', contentId);
+    // Open theatre mode with the selected content
+    const item = feed.find((item) => item.content.id === contentId);
+    if (item) {
+      setCurrentItem(item);
+    }
+  };
+
+  const handleCloseTheatre = () => {
+    setCurrentItem(null);
+  };
+
+  const handleMarkWatched = async (contentId: string, duration?: number) => {
+    try {
+      const response = await fetch(`/api/content/${contentId}/watch`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ watchDuration: duration }),
+      });
+      if (!response.ok) {
+        throw new Error('Failed to mark as watched');
+      }
+      // Remove from feed after marking as watched
+      setFeed((prev) => prev.filter((item) => item.content.id !== contentId));
+    } catch (err) {
+      console.error('Error marking content as watched:', err);
+    }
+  };
+
+  const handleNextInFeed = () => {
+    if (!currentItem) return;
+
+    // Find the index of the current item
+    const currentIndex = feed.findIndex((item) => item.content.id === currentItem.content.id);
+
+    // Get the next item (or wrap to first)
+    const nextIndex = (currentIndex + 1) % feed.length;
+    const nextItem = feed[nextIndex];
+
+    if (nextItem) {
+      setCurrentItem(nextItem);
+    }
   };
 
   const handleSave = (contentId: string) => {
@@ -161,6 +203,14 @@ export default function FeedPage() {
           </div>
         </div>
       </div>
+
+      {/* Theatre Mode */}
+      <TheatreMode
+        item={currentItem}
+        onClose={handleCloseTheatre}
+        onNext={handleNextInFeed}
+        onMarkWatched={handleMarkWatched}
+      />
     </>
   );
 }
