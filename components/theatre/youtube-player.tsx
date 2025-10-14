@@ -20,7 +20,17 @@ export function YouTubePlayer({ videoId, onPlay, onEnded }: YouTubePlayerProps) 
   const playerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isReady, setIsReady] = useState(false);
-  const [hasPlayed, setHasPlayed] = useState(false);
+  const hasPlayedRef = useRef(false);
+
+  // Use refs to store callbacks to avoid recreating player
+  const onPlayRef = useRef(onPlay);
+  const onEndedRef = useRef(onEnded);
+
+  // Update refs when callbacks change
+  useEffect(() => {
+    onPlayRef.current = onPlay;
+    onEndedRef.current = onEnded;
+  }, [onPlay, onEnded]);
 
   useEffect(() => {
     // Load YouTube IFrame API if not already loaded
@@ -28,7 +38,13 @@ export function YouTubePlayer({ videoId, onPlay, onEnded }: YouTubePlayerProps) 
       const tag = document.createElement('script');
       tag.src = 'https://www.youtube.com/iframe_api';
       const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+
+      // Insert into DOM, or append to head if no script tags exist
+      if (firstScriptTag?.parentNode) {
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+      } else {
+        document.head.appendChild(tag);
+      }
 
       window.onYouTubeIframeAPIReady = () => {
         setIsReady(true);
@@ -60,19 +76,19 @@ export function YouTubePlayer({ videoId, onPlay, onEnded }: YouTubePlayerProps) 
         events: {
           onStateChange: (event: any) => {
             // YT.PlayerState.PLAYING = 1
-            if (event.data === 1 && !hasPlayed) {
-              setHasPlayed(true);
-              onPlay?.();
+            if (event.data === 1 && !hasPlayedRef.current) {
+              hasPlayedRef.current = true;
+              onPlayRef.current?.();
             }
             // YT.PlayerState.ENDED = 0
             if (event.data === 0) {
-              onEnded?.();
+              onEndedRef.current?.();
             }
           },
         },
       });
     }
-  }, [isReady, videoId, onPlay, onEnded, hasPlayed]);
+  }, [isReady, videoId]);
 
   return (
     <div className="aspect-video bg-black">

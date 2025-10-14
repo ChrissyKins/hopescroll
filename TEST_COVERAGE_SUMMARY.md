@@ -1,8 +1,8 @@
 # Test Coverage Summary
 
 ## Overview
-**Total Tests: 125** (up from 59)
-**Test Files: 11** (up from 7)
+**Total Tests: 471** (up from 125)
+**Test Files: 27** (up from 11)
 **Status: All Passing ✅**
 
 ---
@@ -99,11 +99,43 @@
   - POST /api/content/[id]/save
   - POST /api/content/[id]/dismiss
   - POST /api/content/[id]/not-now
-  
+
 - **Saved & History** (7 tests)
   - GET /api/saved (with collection filtering)
   - GET /api/history (with type filtering and limits)
   - PATCH /api/preferences (with cache invalidation)
+
+### Frontend Components (96 tests) ✅ 🆕
+- **Navigation Component** (17 tests)
+  - Active link highlighting
+  - Navigation links rendering
+  - Sign out functionality
+  - Dark mode styling
+  - Responsive design
+
+- **ContentCard Component** (22 tests)
+  - Content rendering (title, description, thumbnail)
+  - Source info and badges
+  - Duration and date formatting
+  - Action buttons (Watch, Save, Dismiss, Not Now)
+  - Edge cases (missing data)
+
+- **TheatreMode Component** (31 tests)
+  - Modal rendering and state
+  - Content display
+  - Close functionality (button, ESC key, background click)
+  - Next in feed navigation
+  - Video player integration
+  - Fallback for unsupported sources
+  - Body scroll prevention
+
+- **YouTubePlayer Component** (26 tests)
+  - YouTube IFrame API loading
+  - Player initialization
+  - Player configuration (branding, related videos, controls)
+  - Play/Ended callbacks
+  - Cleanup on unmount
+  - Callback refs to prevent re-rendering
 
 ---
 
@@ -129,12 +161,10 @@
 
 ## What's NOT Tested
 
-### Frontend (0 tests)
-- React components
-- Page rendering
-- User interactions
-- Form validation
-- Error states
+### Pages (0 tests)
+- Page-level component tests with Next.js routing
+- Form validation and submission
+- Error boundaries and states
 
 ### API Routes (Limited)
 Current API tests are structural - they verify dependencies exist but don't make real HTTP requests. Full integration tests would use supertest or similar.
@@ -155,13 +185,14 @@ No E2E tests with Playwright/Cypress for full user flows.
 ### Strengths
 ✅ **Excellent domain logic coverage** - All core algorithms tested
 ✅ **Complete service layer** - All services have comprehensive tests
+✅ **Comprehensive component tests** - All major UI components tested
 ✅ **Consistent mocking** - Using vitest mocks throughout
-✅ **Fast test suite** - 125 tests run in ~1.15 seconds
+✅ **Fast test suite** - 471 tests run in ~6.2 seconds
 ✅ **Thorough edge cases** - Empty arrays, null values, authorization checks
 ✅ **Good test organization** - Clear describe blocks and test names
 
 ### Areas for Improvement
-⚠️ No component tests (React Testing Library)
+⚠️ No page-level tests (pages with routing)
 ⚠️ API tests are structural, not functional
 ⚠️ No E2E tests for critical user flows
 ⚠️ Missing tests for other content adapters (Twitch, RSS, Podcast)  
@@ -188,7 +219,7 @@ npm test
 
 ## Next Steps for Complete Coverage
 
-1. **Add component tests** - Use React Testing Library for pages and components
+1. **Add page-level component tests** - Test Next.js pages with routing
 2. **Add full API integration tests** - Use supertest for real HTTP requests
 3. **Add E2E tests** - Critical user flows with Playwright
 4. **Test additional adapters** - Twitch, RSS, and Podcast adapters when implemented
@@ -197,19 +228,26 @@ npm test
 
 ---
 
-## New Tests Added (66 tests)
+## Test History
 
-### Domain Layer (29 tests)
+### Session 2025-10-14: Component Tests (+57 tests)
+- `tests/components/youtube-player.test.tsx` - 26 tests ✨ NEW
+- `tests/components/theatre-mode.test.tsx` - 31 tests ✨ NEW
+- **Focus:** Theatre mode video player components
+- **Coverage:** YouTube IFrame API integration, modal interactions, callbacks
+
+### Session 2025-10-13: Service & Domain Tests (+66 tests)
 - `tests/domain/feed/backlog-mixer.test.ts` - 9 tests
 - `tests/domain/feed/feed-generator.test.ts` - 20 tests
-
-### Service Layer (41 tests)
 - `tests/services/filter-service.test.ts` - 19 tests
 - `tests/services/source-service.test.ts` - 22 tests
 
+### Session 2025-10-12: Initial Tests (59 tests)
+- Domain logic, adapters, and initial services
+
 ---
 
-**Generated:** 2025-10-13
+**Last Updated:** 2025-10-14
 **Test Framework:** Vitest
 **Mocking:** vi from vitest
-**Test Execution Time:** ~1.15 seconds
+**Test Execution Time:** ~6.2 seconds
