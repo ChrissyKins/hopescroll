@@ -58,14 +58,13 @@ export class YouTubeAdapter implements ContentAdapter {
   ): Promise<ContentItem[]> {
     log.info({ channelId, limit, offset }, 'Fetching YouTube backlog');
 
-    // Calculate page token based on offset
-    // YouTube pages are typically 50 results per page
-    const pageToken = this.calculatePageToken(offset, limit);
-
+    // Note: offset is not directly supported by YouTube API
+    // We fetch without date filters to get historic content
+    // The limit parameter controls how many results we get
     const searchResponse = await this.client.searchChannelVideos({
       channelId,
-      maxResults: limit,
-      pageToken,
+      maxResults: Math.min(limit, 50), // YouTube API max is 50
+      // No publishedAfter filter - get all historic content
     });
 
     if (!searchResponse || !searchResponse.items || searchResponse.items.length === 0) {
@@ -190,17 +189,6 @@ export class YouTubeAdapter implements ContentAdapter {
       log.warn({ isoDuration, error }, 'Failed to parse duration');
       return null;
     }
-  }
-
-  private calculatePageToken(offset: number, limit: number): string | undefined {
-    // YouTube pagination uses opaque page tokens
-    // For now, we'll use a simplified approach
-    // In production, you'd need to track actual page tokens
-    if (offset === 0) return undefined;
-
-    // This is a simplified approximation
-    // Real implementation would need to store page tokens
-    return undefined;
   }
 
   private generateId(): string {

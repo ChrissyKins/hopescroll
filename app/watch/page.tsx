@@ -13,6 +13,7 @@ export default function WatchPage() {
   const [customMin, setCustomMin] = useState<string>('');
   const [customMax, setCustomMax] = useState<string>('');
   const [showCustom, setShowCustom] = useState(false);
+  const [recencyFilter, setRecencyFilter] = useState<number | null>(null); // Days to look back
   const [isPlaying, setIsPlaying] = useState(false);
   const [isInSources, setIsInSources] = useState(false);
   const [isCheckingSources, setIsCheckingSources] = useState(false);
@@ -31,6 +32,7 @@ export default function WatchPage() {
       const params = new URLSearchParams();
       if (minDuration !== null) params.append('minDuration', minDuration.toString());
       if (maxDuration !== null) params.append('maxDuration', maxDuration.toString());
+      if (recencyFilter !== null) params.append('recencyDays', recencyFilter.toString());
 
       const response = await fetch(`/api/watch/random?${params.toString()}`);
       if (!response.ok) {
@@ -61,6 +63,7 @@ export default function WatchPage() {
       const params = new URLSearchParams();
       if (minDuration !== null) params.append('minDuration', minDuration.toString());
       if (maxDuration !== null) params.append('maxDuration', maxDuration.toString());
+      if (recencyFilter !== null) params.append('recencyDays', recencyFilter.toString());
 
       // Optionally pass current video for related recommendations
       if (currentVideo) {
@@ -257,6 +260,23 @@ export default function WatchPage() {
 
   const isFilterActive = (min: number | null, max: number | null) => {
     return minDuration === min && maxDuration === max;
+  };
+
+  const handleRecencyFilterChange = (days: number | null) => {
+    setRecencyFilter(days);
+    // Destroy current player and fetch new video
+    if (playerRef.current) {
+      playerRef.current.destroy();
+      playerRef.current = null;
+    }
+    setIsPlaying(false);
+    setTimeout(() => {
+      fetchRandomVideo();
+    }, 100);
+  };
+
+  const isRecencyFilterActive = (days: number | null) => {
+    return recencyFilter === days;
   };
 
   const getYouTubeVideoId = (url: string): string | null => {
@@ -621,6 +641,85 @@ export default function WatchPage() {
                   </div>
                 </div>
               )}
+            </div>
+
+            {/* Recency Filter Section */}
+            <div className="px-5 py-4 border-b border-gray-800">
+              <div className="flex items-center gap-2 mb-3">
+                <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className="text-sm font-medium text-gray-400">Published</span>
+              </div>
+
+              {/* Recency Filter Chips */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <button
+                  onClick={() => handleRecencyFilterChange(null)}
+                  className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isRecencyFilterActive(null)
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'bg-gray-800/80 text-gray-300 hover:bg-gray-750 border border-gray-700/50'
+                  }`}
+                >
+                  Any Time
+                </button>
+
+                <button
+                  onClick={() => handleRecencyFilterChange(1)}
+                  className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isRecencyFilterActive(1)
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'bg-gray-800/80 text-gray-300 hover:bg-gray-750 border border-gray-700/50'
+                  }`}
+                >
+                  Last 24 Hours
+                </button>
+
+                <button
+                  onClick={() => handleRecencyFilterChange(7)}
+                  className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isRecencyFilterActive(7)
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'bg-gray-800/80 text-gray-300 hover:bg-gray-750 border border-gray-700/50'
+                  }`}
+                >
+                  Last Week
+                </button>
+
+                <button
+                  onClick={() => handleRecencyFilterChange(30)}
+                  className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isRecencyFilterActive(30)
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'bg-gray-800/80 text-gray-300 hover:bg-gray-750 border border-gray-700/50'
+                  }`}
+                >
+                  Last Month
+                </button>
+
+                <button
+                  onClick={() => handleRecencyFilterChange(90)}
+                  className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isRecencyFilterActive(90)
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'bg-gray-800/80 text-gray-300 hover:bg-gray-750 border border-gray-700/50'
+                  }`}
+                >
+                  Last 3 Months
+                </button>
+
+                <button
+                  onClick={() => handleRecencyFilterChange(365)}
+                  className={`px-3.5 py-2 rounded-lg text-sm font-medium transition-all ${
+                    isRecencyFilterActive(365)
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'bg-gray-800/80 text-gray-300 hover:bg-gray-750 border border-gray-700/50'
+                  }`}
+                >
+                  Last Year
+                </button>
+              </div>
             </div>
           </div>
         </div>

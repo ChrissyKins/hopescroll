@@ -101,18 +101,37 @@ export class ContentService {
 
     try {
       // Fetch recent content (last N days)
-      const items = await adapter.fetchRecent(
+      const recentItems = await adapter.fetchRecent(
         source.sourceId,
         CONFIG.content.fetchRecentDays
       );
 
       log.info(
-        { sourceId, fetchedCount: items.length },
-        'Fetched items from adapter'
+        { sourceId, fetchedCount: recentItems.length },
+        'Fetched recent items from adapter'
       );
 
+      // Also fetch some backlog content if this is a new source or hasn't been fetched in a while
+      let backlogItems: ContentItem[] = [];
+      const shouldFetchBacklog = this.shouldFetchBacklog(source);
+
+      if (shouldFetchBacklog) {
+        log.info({ sourceId }, 'Fetching backlog content');
+        backlogItems = await adapter.fetchBacklog(
+          source.sourceId,
+          CONFIG.content.backlogBatchSize,
+          0
+        );
+        log.info(
+          { sourceId, backlogCount: backlogItems.length },
+          'Fetched backlog items from adapter'
+        );
+      }
+
+      const allItems = [...recentItems, ...backlogItems];
+
       // Save new content to database (deduplicate)
-      const newItemsCount = await this.saveContent(items);
+      const newItemsCount = await this.saveContent(allItems);
 
       // Update source status
       await this.db.contentSource.update({
@@ -150,6 +169,23 @@ export class ContentService {
 
       throw error;
     }
+  }
+
+  /**
+   * Determine if we should fetch backlog for a source
+   * Fetch backlog for new sources or sources that haven't been fetched recently
+   */
+  private shouldFetchBacklog(source: any): boolean {
+    // Always fetch backlog for new sources (never fetched before)
+    if (!source.lastFetchAt) {
+      return true;
+    }
+
+    // Fetch backlog if it's been more than 7 days since last fetch
+    const daysSinceLastFetch =
+      (Date.now() - source.lastFetchAt.getTime()) / (1000 * 60 * 60 * 24);
+
+    return daysSinceLastFetch > 7;
   }
 
   /**

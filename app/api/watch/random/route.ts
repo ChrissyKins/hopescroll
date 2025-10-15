@@ -10,10 +10,11 @@ export async function GET(request: NextRequest) {
   try {
     const { userId } = await requireAuth();
 
-    // Get query params for duration filter
+    // Get query params for duration filter and recency filter
     const searchParams = request.nextUrl.searchParams;
     const minDuration = searchParams.get('minDuration') ? parseInt(searchParams.get('minDuration')!) : null;
     const maxDuration = searchParams.get('maxDuration') ? parseInt(searchParams.get('maxDuration')!) : null;
+    const recencyDays = searchParams.get('recencyDays') ? parseInt(searchParams.get('recencyDays')!) : null;
 
     // Get user's active sources
     const sources = await db.contentSource.findMany({
@@ -51,6 +52,13 @@ export async function GET(request: NextRequest) {
       if (maxDuration !== null) {
         whereClause.duration.lte = maxDuration;
       }
+    }
+
+    // Apply recency filter if provided
+    if (recencyDays !== null) {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - recencyDays);
+      whereClause.publishedAt = { gte: cutoffDate };
     }
 
     // Get total count of matching videos

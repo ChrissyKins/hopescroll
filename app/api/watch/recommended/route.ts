@@ -28,6 +28,7 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const minDuration = searchParams.get('minDuration') ? parseInt(searchParams.get('minDuration')!) : null;
     const maxDuration = searchParams.get('maxDuration') ? parseInt(searchParams.get('maxDuration')!) : null;
+    const recencyDays = searchParams.get('recencyDays') ? parseInt(searchParams.get('recencyDays')!) : null;
     const relatedToVideoId = searchParams.get('relatedTo'); // Optional: get recommendations related to a specific video
 
     const youtubeClient = new YouTubeClient();
@@ -171,6 +172,16 @@ export async function GET(request: NextRequest) {
     }
     if (maxDuration !== null && duration > maxDuration) {
       return successResponse(null);
+    }
+
+    // Apply recency filter if provided
+    if (recencyDays !== null) {
+      const cutoffDate = new Date();
+      cutoffDate.setDate(cutoffDate.getDate() - recencyDays);
+      const publishedDate = new Date(video.snippet.publishedAt);
+      if (publishedDate < cutoffDate) {
+        return successResponse(null);
+      }
     }
 
     // Check if we already have this content in our database
