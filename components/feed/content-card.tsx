@@ -11,9 +11,10 @@ interface ContentCardProps {
   onDismiss: (contentId: string) => void;
   onNotNow: (contentId: string) => void;
   onExpandToTheatre?: (contentId: string) => void;
+  onMarkWatched?: (contentId: string) => void;
 }
 
-export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onExpandToTheatre }: ContentCardProps) {
+export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onExpandToTheatre, onMarkWatched }: ContentCardProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
   const playerRef = useRef<YT.Player | null>(null);
@@ -82,8 +83,10 @@ export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onExpa
           onStateChange: (event: YT.OnStateChangeEvent) => {
             if (event.data === window.YT.PlayerState.PLAYING && !hasStartedPlaying) {
               setHasStartedPlaying(true);
-              // Mark as watched after a few seconds of playback
-              setTimeout(() => onWatch(content.id), 3000);
+              // Mark as watched after a few seconds of playback (silently, without opening theatre)
+              if (onMarkWatched) {
+                setTimeout(() => onMarkWatched(content.id), 3000);
+              }
             }
           },
         },
@@ -98,7 +101,7 @@ export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onExpa
         playerRef.current = null;
       }
     };
-  }, [isPlaying, videoId, content.id, hasStartedPlaying, onWatch]);
+  }, [isPlaying, videoId, content.id, hasStartedPlaying, onMarkWatched]);
 
   const handlePlayClick = () => {
     setIsPlaying(true);

@@ -289,6 +289,7 @@ export default function FeedPage() {
                   onDismiss={handleDismiss}
                   onNotNow={handleNotNow}
                   onExpandToTheatre={handleWatch}
+                  onMarkWatched={(contentId) => handleMarkWatched(contentId)}
                 />
               ))}
             </div>
