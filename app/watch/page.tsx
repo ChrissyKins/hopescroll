@@ -42,7 +42,7 @@ export default function WatchPage() {
       if (data.data) {
         setCurrentVideo(data.data);
         setIsPlaying(true);
-        await checkIfInSources(data.data);
+        checkIfInSources(data.data); // Don't await - run in background
       } else {
         setError('No videos available. Try adjusting your length filter or adding more sources.');
       }
@@ -80,7 +80,7 @@ export default function WatchPage() {
       if (data.data) {
         setCurrentVideo(data.data);
         setIsPlaying(true);
-        await checkIfInSources(data.data);
+        checkIfInSources(data.data); // Don't await - run in background
       } else {
         setError('No recommendations available at the moment. Try again later.');
       }
@@ -264,14 +264,12 @@ export default function WatchPage() {
     return match ? match[1] : null;
   };
 
+  const videoId = currentVideo?.content.sourceType === 'YOUTUBE'
+    ? getYouTubeVideoId(currentVideo.content.url)
+    : null;
+
   useEffect(() => {
-    if (!isPlaying || !currentVideo) return;
-
-    const videoId = currentVideo?.content.sourceType === 'YOUTUBE'
-      ? getYouTubeVideoId(currentVideo.content.url)
-      : null;
-
-    if (!videoId) return;
+    if (!isPlaying || !videoId || !currentVideo) return;
 
     // Load YouTube IFrame API
     const loadYouTubeAPI = () => {
@@ -321,7 +319,7 @@ export default function WatchPage() {
         playerRef.current = null;
       }
     };
-  }, [isPlaying, currentVideo]);
+  }, [isPlaying, videoId, currentVideo]);
 
   const formatDuration = (seconds: number | null) => {
     if (!seconds) return null;
