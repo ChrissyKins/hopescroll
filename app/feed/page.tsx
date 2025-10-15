@@ -81,6 +81,23 @@ export default function FeedPage() {
     }
   };
 
+  const handleMarkWatchedSilent = async (contentId: string) => {
+    try {
+      // Mark as watched in the database but don't remove from feed
+      // This is for inline playback tracking
+      await fetch(`/api/content/${contentId}/watch`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ watchDuration: 0 }),
+      });
+      // Don't remove from feed - let the user finish watching
+    } catch (err) {
+      console.error('Error marking content as watched:', err);
+    }
+  };
+
   const handleNextInFeed = () => {
     if (!currentItem) return;
 
@@ -289,7 +306,7 @@ export default function FeedPage() {
                   onDismiss={handleDismiss}
                   onNotNow={handleNotNow}
                   onExpandToTheatre={handleWatch}
-                  onMarkWatched={(contentId) => handleMarkWatched(contentId)}
+                  onMarkWatched={handleMarkWatchedSilent}
                 />
               ))}
             </div>
