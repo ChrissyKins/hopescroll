@@ -1,3 +1,6 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import type { FeedItem } from '@/domain/feed/feed-generator';
 
@@ -7,9 +10,14 @@ interface ContentCardProps {
   onSave: (contentId: string) => void;
   onDismiss: (contentId: string) => void;
   onNotNow: (contentId: string) => void;
+  onExpandToTheatre?: (contentId: string) => void;
 }
 
-export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow }: ContentCardProps) {
+export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onExpandToTheatre }: ContentCardProps) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
+  const playerRef = useRef<YT.Player | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const { content, sourceDisplayName, isNew } = item;
 
   const formatDuration = (seconds: number | null) => {
@@ -33,56 +41,144 @@ export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow }: Cont
     return `${Math.floor(days / 365)}y ago`;
   };
 
+  const getYouTubeVideoId = (url: string): string | null => {
+    const match = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&\s]+)/);
+    return match ? match[1] : null;
+  };
+
+  const videoId = content.sourceType === 'YOUTUBE' ? getYouTubeVideoId(content.url) : null;
+
+  useEffect(() => {
+    if (!isPlaying || !videoId) return;
+
+    // Load YouTube IFrame API
+    const loadYouTubeAPI = () => {
+      if (window.YT && window.YT.Player) {
+        initPlayer();
+        return;
+      }
+
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
+
+      (window as any).onYouTubeIframeAPIReady = () => {
+        initPlayer();
+      };
+    };
+
+    const initPlayer = () => {
+      if (!containerRef.current || playerRef.current) return;
+
+      playerRef.current = new window.YT.Player(`player-${content.id}`, {
+        videoId: videoId!,
+        playerVars: {
+          autoplay: 1,
+          modestbranding: 1,
+          rel: 0,
+        },
+        events: {
+          onStateChange: (event: YT.OnStateChangeEvent) => {
+            if (event.data === window.YT.PlayerState.PLAYING && !hasStartedPlaying) {
+              setHasStartedPlaying(true);
+              // Mark as watched after a few seconds of playback
+              setTimeout(() => onWatch(content.id), 3000);
+            }
+          },
+        },
+      });
+    };
+
+    loadYouTubeAPI();
+
+    return () => {
+      if (playerRef.current) {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
+    };
+  }, [isPlaying, videoId, content.id, hasStartedPlaying, onWatch]);
+
+  const handlePlayClick = () => {
+    setIsPlaying(true);
+  };
+
+  const handleExpandToTheatre = () => {
+    if (onExpandToTheatre) {
+      onExpandToTheatre(content.id);
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all group">
-      {/* Thumbnail */}
-      {content.thumbnailUrl && (
-        <div
-          className="relative aspect-video cursor-pointer"
-          onClick={() => onWatch(content.id)}
-        >
-          <Image
-            src={content.thumbnailUrl}
-            alt={content.title}
-            fill
-            sizes="(max-width: 768px) 100vw, 672px"
-            className="object-cover"
-          />
-          {/* Overlay gradient for better text readability */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-
-          {/* Play button overlay on hover */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-            <div className="w-16 h-16 bg-white/90 dark:bg-gray-900/90 rounded-full flex items-center justify-center backdrop-blur-sm">
-              <svg className="w-6 h-6 text-gray-900 dark:text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-            </div>
-          </div>
-
-          {/* Badges */}
-          <div className="absolute top-3 left-3 flex gap-2">
-            {isNew && (
-              <span className="bg-blue-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm">
-                NEW
-              </span>
+      {/* Video Player or Thumbnail */}
+      <div className="relative aspect-video bg-black" ref={containerRef}>
+        {isPlaying && videoId ? (
+          // YouTube player
+          <>
+            <div id={`player-${content.id}`} className="w-full h-full" />
+            {/* Expand to theatre button when playing */}
+            {hasStartedPlaying && (
+              <button
+                onClick={handleExpandToTheatre}
+                className="absolute top-3 right-3 p-2 bg-black/75 hover:bg-black/90 text-white rounded-full backdrop-blur-sm transition-all z-10"
+                title="Expand to Theatre Mode"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+              </button>
             )}
-          </div>
-          {content.duration && (
-            <span className="absolute bottom-3 right-3 bg-black/75 text-white text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm">
-              {formatDuration(content.duration)}
-            </span>
-          )}
-        </div>
-      )}
+          </>
+        ) : (
+          // Thumbnail with play button
+          content.thumbnailUrl && (
+            <div
+              className="relative w-full h-full cursor-pointer"
+              onClick={handlePlayClick}
+            >
+              <Image
+                src={content.thumbnailUrl}
+                alt={content.title}
+                fill
+                sizes="(max-width: 768px) 100vw, 672px"
+                className="object-cover"
+              />
+              {/* Overlay gradient for better text readability */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+              {/* Play button overlay on hover */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <div className="w-16 h-16 bg-white/90 dark:bg-gray-900/90 rounded-full flex items-center justify-center backdrop-blur-sm">
+                  <svg className="w-6 h-6 text-gray-900 dark:text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </div>
+              </div>
+
+              {/* Badges */}
+              <div className="absolute top-3 left-3 flex gap-2">
+                {isNew && (
+                  <span className="bg-blue-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm">
+                    NEW
+                  </span>
+                )}
+              </div>
+              {content.duration && (
+                <span className="absolute bottom-3 right-3 bg-black/75 text-white text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm">
+                  {formatDuration(content.duration)}
+                </span>
+              )}
+            </div>
+          )
+        )}
+      </div>
 
       {/* Content */}
       <div className="p-5">
-        {/* Title - clickable */}
-        <h3
-          className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-2 mb-3 cursor-pointer hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-          onClick={() => onWatch(content.id)}
-        >
+        {/* Title */}
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-2 mb-3">
           {content.title}
         </h3>
 

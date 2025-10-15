@@ -288,6 +288,7 @@ export default function FeedPage() {
                   onSave={handleSave}
                   onDismiss={handleDismiss}
                   onNotNow={handleNotNow}
+                  onExpandToTheatre={handleWatch}
                 />
               ))}
             </div>
