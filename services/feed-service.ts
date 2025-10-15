@@ -90,6 +90,16 @@ export class FeedService {
       );
     }
 
+    log.info(
+      {
+        userId,
+        keywordFilters: filterConfig.keywords.length,
+        durationFilter: filterConfig.durationRange ? 'active' : 'none',
+        totalRules: filterRules.length
+      },
+      'Filter configuration loaded'
+    );
+
     const filterEngine = new FilterEngine(filterRules);
 
     // 4. Apply filters

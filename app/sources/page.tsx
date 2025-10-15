@@ -65,6 +65,22 @@ export default function SourcesPage() {
         throw new Error(errorData.error?.message || 'Failed to add source');
       }
 
+      const result = await response.json();
+      const newItemsCount = result.data?.newItemsCount || 0;
+
+      // Show success message with fetch results
+      if (newItemsCount > 0) {
+        setFetchMessage({
+          type: 'success',
+          text: `Source added successfully! Fetched ${newItemsCount} new items.`,
+        });
+      } else {
+        setFetchMessage({
+          type: 'success',
+          text: 'Source added successfully! No new content found (may be outside the 7-day window).',
+        });
+      }
+
       // Refresh sources list
       await fetchSources();
       setNewSourceId('');

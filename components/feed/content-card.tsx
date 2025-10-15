@@ -125,12 +125,12 @@ export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onMark
   return (
     <>
       {isFullscreen && <div className="fixed inset-0 bg-black z-40" />}
-      <div className={`bg-white dark:bg-gray-800 overflow-hidden shadow-sm transition-all duration-300 ${
+      <div className={`bg-white dark:bg-gray-800 overflow-hidden shadow-sm transition-all duration-300 relative ${
         isFullscreen
           ? 'fixed inset-0 z-50 m-0 rounded-none flex items-center justify-center bg-black'
           : isWide
-            ? 'fixed left-0 right-0 z-40 rounded-none my-0'
-            : 'rounded-2xl hover:shadow-md relative'
+            ? 'fixed left-0 right-0 top-20 z-40 rounded-none'
+            : 'rounded-2xl hover:shadow-md'
       }`}>
         {/* Video Player or Thumbnail */}
         <div className={`relative bg-black ${isFullscreen ? 'w-full h-full' : 'aspect-video'}`} ref={containerRef}>
@@ -183,14 +183,14 @@ export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onMark
           )}
         </div>
 
-        {/* Expand button - outside video, in whitespace */}
-        {hasStartedPlaying && !isFullscreen && (
+        {/* Expand button - outside card, in whitespace */}
+        {isPlaying && !isFullscreen && (
           <button
             onClick={handleExpand}
-            className="absolute top-1/2 -right-8 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-600 dark:hover:text-gray-400 transition-colors z-10"
+            className="absolute top-1/2 -right-12 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-600 dark:hover:text-gray-400 transition-colors z-10"
             title={isWide ? "Fullscreen" : "Expand"}
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>

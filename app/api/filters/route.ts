@@ -13,9 +13,18 @@ export async function GET(request: NextRequest) {
     const { userId } = await requireAuth();
 
     const filterService = new FilterService(db);
-    const filters = await filterService.listKeywords(userId);
+    const filterConfig = await filterService.getFilterConfiguration(userId);
 
-    return successResponse(filters);
+    return successResponse({
+      keywords: filterConfig.keywords,
+      preferences: filterConfig.durationRange ? {
+        minDuration: filterConfig.durationRange.min,
+        maxDuration: filterConfig.durationRange.max,
+      } : {
+        minDuration: null,
+        maxDuration: null,
+      },
+    });
   } catch (error) {
     return errorResponse(error);
   }
