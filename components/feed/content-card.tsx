@@ -78,6 +78,8 @@ export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onMark
           autoplay: 1,
           modestbranding: 1,
           rel: 0,
+          vq: 'hd1080', // Request highest quality
+          hd: 1,
         },
         events: {
           onStateChange: (event: YT.OnStateChangeEvent) => {
@@ -112,9 +114,9 @@ export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onMark
   };
 
   return (
-    <div className={`bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group ${isExpanded ? 'mx-[-1rem] md:mx-[-2rem]' : ''}`}>
+    <div className={`bg-white dark:bg-gray-800 overflow-hidden shadow-sm transition-all duration-300 group ${isExpanded ? 'fixed inset-0 z-50 m-0 rounded-none flex items-center justify-center bg-black' : 'rounded-2xl hover:shadow-md'}`}>
       {/* Video Player or Thumbnail */}
-      <div className="relative aspect-video bg-black" ref={containerRef}>
+      <div className={`relative bg-black ${isExpanded ? 'w-full h-full' : 'aspect-video'}`} ref={containerRef}>
         {isPlaying && videoId ? (
           // YouTube player
           <>
@@ -123,16 +125,16 @@ export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onMark
             {hasStartedPlaying && (
               <button
                 onClick={handleExpand}
-                className="absolute top-1/2 -right-3 -translate-y-1/2 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all z-10"
-                title={isExpanded ? "Collapse" : "Expand"}
+                className={`absolute p-3 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all z-10 ${isExpanded ? 'top-4 right-4' : 'top-1/2 -right-3 -translate-y-1/2'}`}
+                title={isExpanded ? "Exit Fullscreen" : "Fullscreen"}
               >
                 {isExpanded ? (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 ) : (
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                   </svg>
                 )}
               </button>
@@ -146,11 +148,12 @@ export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onMark
               onClick={handlePlayClick}
             >
               <Image
-                src={content.thumbnailUrl}
+                src={content.thumbnailUrl.replace('default.jpg', 'maxresdefault.jpg')}
                 alt={content.title}
                 fill
                 sizes="(max-width: 768px) 100vw, 672px"
                 className="object-cover"
+                unoptimized
               />
               {/* Overlay gradient for better text readability */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -182,8 +185,9 @@ export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onMark
         )}
       </div>
 
-      {/* Content */}
-      <div className="p-5">
+      {/* Content - hide when expanded */}
+      {!isExpanded && (
+        <div className="p-5">
         {/* Title */}
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-2 mb-3">
           {content.title}
@@ -234,6 +238,7 @@ export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onMark
           </span>
         </div>
       </div>
+      )}
     </div>
   );
 }
