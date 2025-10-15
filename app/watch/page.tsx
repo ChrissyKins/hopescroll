@@ -397,8 +397,44 @@ export default function WatchPage() {
                   <h1 className="text-base md:text-lg font-semibold text-white mb-1.5 line-clamp-2">
                     {currentVideo.content.title}
                   </h1>
-                  <div className="flex items-center gap-2 text-xs text-gray-400">
+                  <div className="flex items-center gap-2 text-xs text-gray-400 flex-wrap">
                     <span className="font-medium text-gray-300">{currentVideo.sourceDisplayName}</span>
+
+                    {/* Source button next to channel name */}
+                    {currentVideo.content.sourceType === 'YOUTUBE' && (
+                      <>
+                        {isInSources ? (
+                          <button
+                            onClick={handleRemoveFromSources}
+                            className="group flex items-center gap-1 px-2 py-0.5 bg-green-600/20 hover:bg-red-600/30 text-green-400 hover:text-red-400 rounded transition-all text-xs border border-green-600/30 hover:border-red-600/30"
+                            title="Remove channel from your sources"
+                            disabled={isCheckingSources}
+                          >
+                            <svg className="w-3 h-3 group-hover:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                            </svg>
+                            <svg className="w-3 h-3 hidden group-hover:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                            <span className="group-hover:hidden">In Sources</span>
+                            <span className="hidden group-hover:inline">Remove</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={handleAddToSources}
+                            className="group flex items-center gap-1 px-2 py-0.5 bg-gray-700/20 hover:bg-green-600/30 text-gray-400 hover:text-green-400 rounded transition-all text-xs border border-gray-700/30 hover:border-green-600/30"
+                            title="Add channel to your sources"
+                            disabled={isCheckingSources}
+                          >
+                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                            <span>Add Source</span>
+                          </button>
+                        )}
+                      </>
+                    )}
+
                     {currentVideo.content.duration && (
                       <>
                         <span>•</span>
@@ -426,40 +462,6 @@ export default function WatchPage() {
 
                 {/* Right: Compact Action Buttons */}
                 <div className="flex items-center gap-1.5 md:gap-2 flex-shrink-0 flex-wrap">
-                  {currentVideo.content.sourceType === 'YOUTUBE' && (
-                    <>
-                      {isInSources ? (
-                        <button
-                          onClick={handleRemoveFromSources}
-                          className="group flex items-center gap-1.5 px-3 py-2 bg-green-600/20 hover:bg-red-600/30 text-green-400 hover:text-red-400 rounded-lg transition-all text-xs border border-green-600/30 hover:border-red-600/30"
-                          title="Remove channel from your sources"
-                          disabled={isCheckingSources}
-                        >
-                          <svg className="w-4 h-4 group-hover:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                          </svg>
-                          <svg className="w-4 h-4 hidden group-hover:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="hidden sm:inline group-hover:hidden">In Sources</span>
-                          <span className="hidden sm:group-hover:inline">Remove</span>
-                        </button>
-                      ) : (
-                        <button
-                          onClick={handleAddToSources}
-                          className="group flex items-center gap-1.5 px-3 py-2 bg-gray-700/20 hover:bg-green-600/30 text-gray-400 hover:text-green-400 rounded-lg transition-all text-xs border border-gray-700/30 hover:border-green-600/30"
-                          title="Add channel to your sources"
-                          disabled={isCheckingSources}
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          <span className="hidden sm:inline">Add Source</span>
-                        </button>
-                      )}
-                    </>
-                  )}
-
                   <button
                     onClick={handleSave}
                     className="flex items-center gap-1.5 px-3 py-2 bg-gray-800/50 hover:bg-gray-700 text-gray-300 rounded-lg transition-all text-xs"
