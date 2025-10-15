@@ -9,6 +9,7 @@ export interface FeedItem {
   isNew: boolean; // Published in last 7 days
   sourceDisplayName: string;
   interactionState: InteractionState | null;
+  isRecommended?: boolean; // From outside user's sources
 }
 
 export type InteractionState =

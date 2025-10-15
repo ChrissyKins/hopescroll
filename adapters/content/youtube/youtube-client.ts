@@ -123,6 +123,33 @@ export class YouTubeClient {
     return null;
   }
 
+  async searchVideos(params: {
+    query?: string;
+    relatedToVideoId?: string;
+    maxResults?: number;
+    order?: 'date' | 'relevance' | 'viewCount' | 'rating';
+  }): Promise<YouTubeSearchResponse> {
+    const searchParams = new URLSearchParams({
+      part: 'snippet',
+      type: 'video',
+      maxResults: (params.maxResults || 25).toString(),
+      order: params.order || 'relevance',
+      key: this.apiKey,
+    });
+
+    if (params.query) {
+      searchParams.append('q', params.query);
+    }
+
+    if (params.relatedToVideoId) {
+      searchParams.append('relatedToVideoId', params.relatedToVideoId);
+    }
+
+    return this.request<YouTubeSearchResponse>(
+      `/search?${searchParams.toString()}`
+    );
+  }
+
   private async request<T>(path: string): Promise<T> {
     const url = `${this.baseUrl}${path}`;
 
