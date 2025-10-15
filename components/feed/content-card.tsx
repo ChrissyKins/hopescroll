@@ -10,13 +10,13 @@ interface ContentCardProps {
   onSave: (contentId: string) => void;
   onDismiss: (contentId: string) => void;
   onNotNow: (contentId: string) => void;
-  onExpandToTheatre?: (contentId: string) => void;
   onMarkWatched?: (contentId: string) => void;
 }
 
-export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onExpandToTheatre, onMarkWatched }: ContentCardProps) {
+export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onMarkWatched }: ContentCardProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const playerRef = useRef<YT.Player | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { content, sourceDisplayName, isNew } = item;
@@ -107,30 +107,34 @@ export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onExpa
     setIsPlaying(true);
   };
 
-  const handleExpandToTheatre = () => {
-    if (onExpandToTheatre) {
-      onExpandToTheatre(content.id);
-    }
+  const handleExpand = () => {
+    setIsExpanded(!isExpanded);
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all group">
+    <div className={`bg-white dark:bg-gray-800 rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group ${isExpanded ? 'mx-[-1rem] md:mx-[-2rem]' : ''}`}>
       {/* Video Player or Thumbnail */}
       <div className="relative aspect-video bg-black" ref={containerRef}>
         {isPlaying && videoId ? (
           // YouTube player
           <>
             <div id={`player-${content.id}`} className="w-full h-full" />
-            {/* Expand to theatre button when playing */}
+            {/* Floating expand/collapse button when playing */}
             {hasStartedPlaying && (
               <button
-                onClick={handleExpandToTheatre}
-                className="absolute top-3 right-3 p-2 bg-black/75 hover:bg-black/90 text-white rounded-full backdrop-blur-sm transition-all z-10"
-                title="Expand to Theatre Mode"
+                onClick={handleExpand}
+                className="absolute top-1/2 -right-3 -translate-y-1/2 p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full shadow-lg transition-all z-10"
+                title={isExpanded ? "Collapse" : "Expand"}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                </svg>
+                {isExpanded ? (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                ) : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                )}
               </button>
             )}
           </>

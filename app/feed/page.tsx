@@ -3,14 +3,12 @@
 import { useState, useEffect } from 'react';
 import { ContentCard } from '@/components/feed/content-card';
 import { Navigation } from '@/components/navigation';
-import { TheatreMode } from '@/components/theatre/theatre-mode';
 import type { FeedItem } from '@/domain/feed/feed-generator';
 
 export default function FeedPage() {
   const [feed, setFeed] = useState<FeedItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [currentItem, setCurrentItem] = useState<FeedItem | null>(null);
   const [isUpdatingFilter, setIsUpdatingFilter] = useState(false);
 
   useEffect(() => {
@@ -50,37 +48,6 @@ export default function FeedPage() {
     }
   };
 
-  const handleWatch = (contentId: string) => {
-    // Open theatre mode with the selected content
-    const item = feed.find((item) => item.content.id === contentId);
-    if (item) {
-      setCurrentItem(item);
-    }
-  };
-
-  const handleCloseTheatre = () => {
-    setCurrentItem(null);
-  };
-
-  const handleMarkWatched = async (contentId: string, duration?: number) => {
-    try {
-      const response = await fetch(`/api/content/${contentId}/watch`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ watchDuration: duration }),
-      });
-      if (!response.ok) {
-        throw new Error('Failed to mark as watched');
-      }
-      // Remove from feed after marking as watched
-      setFeed((prev) => prev.filter((item) => item.content.id !== contentId));
-    } catch (err) {
-      console.error('Error marking content as watched:', err);
-    }
-  };
-
   const handleMarkWatchedSilent = async (contentId: string) => {
     try {
       // Mark as watched in the database but don't remove from feed
@@ -95,21 +62,6 @@ export default function FeedPage() {
       // Don't remove from feed - let the user finish watching
     } catch (err) {
       console.error('Error marking content as watched:', err);
-    }
-  };
-
-  const handleNextInFeed = () => {
-    if (!currentItem) return;
-
-    // Find the index of the current item
-    const currentIndex = feed.findIndex((item) => item.content.id === currentItem.content.id);
-
-    // Get the next item (or wrap to first)
-    const nextIndex = (currentIndex + 1) % feed.length;
-    const nextItem = feed[nextIndex];
-
-    if (nextItem) {
-      setCurrentItem(nextItem);
     }
   };
 
@@ -301,11 +253,10 @@ export default function FeedPage() {
                 <ContentCard
                   key={item.content.id}
                   item={item}
-                  onWatch={handleWatch}
+                  onWatch={() => {}}
                   onSave={handleSave}
                   onDismiss={handleDismiss}
                   onNotNow={handleNotNow}
-                  onExpandToTheatre={handleWatch}
                   onMarkWatched={handleMarkWatchedSilent}
                 />
               ))}
@@ -314,13 +265,6 @@ export default function FeedPage() {
         </div>
       </div>
 
-      {/* Theatre Mode */}
-      <TheatreMode
-        item={currentItem}
-        onClose={handleCloseTheatre}
-        onNext={handleNextInFeed}
-        onMarkWatched={handleMarkWatched}
-      />
     </>
   );
 }
