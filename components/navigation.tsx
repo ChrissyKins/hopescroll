@@ -7,8 +7,12 @@ import { usePathname } from 'next/navigation';
 export function Navigation() {
   const pathname = usePathname();
 
-  const navItems = [
-    { href: '/feed', label: 'Feed' },
+  const mainNavItems = [
+    { href: '/watch', label: 'Watch' },
+    { href: '/scroll', label: 'Scroll' },
+  ];
+
+  const secondaryNavItems = [
     { href: '/sources', label: 'Sources' },
     { href: '/filters', label: 'Filters' },
     { href: '/saved', label: 'Saved' },
@@ -30,7 +34,26 @@ export function Navigation() {
               </h1>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
-              {navItems.map((item) => (
+              {/* Main navigation - Watch/Scroll */}
+              {mainNavItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-bold ${
+                    pathname === item.href
+                      ? 'border-blue-500 text-gray-900 dark:text-white'
+                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300'
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              ))}
+
+              {/* Divider */}
+              <div className="border-l border-gray-200 dark:border-gray-700 my-4"></div>
+
+              {/* Secondary navigation */}
+              {secondaryNavItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.href}

@@ -99,6 +99,32 @@ export default function FeedPage() {
     }
   };
 
+  const handleClearInteractions = async () => {
+    console.log('Clear interactions clicked - clearing without confirmation');
+
+    try {
+      console.log('Calling API...');
+      const response = await fetch('/api/debug/clear-interactions', {
+        method: 'POST',
+      });
+
+      console.log('Response:', response);
+
+      if (!response.ok) {
+        throw new Error('Failed to clear interactions');
+      }
+
+      const data = await response.json();
+      console.log('Success:', data);
+
+      // Refresh feed after clearing
+      await fetchFeed();
+      console.log('Feed refreshed');
+    } catch (err) {
+      console.error('Error clearing interactions:', err);
+    }
+  };
+
   if (isLoading) {
     return (
       <>
@@ -141,86 +167,49 @@ export default function FeedPage() {
     );
   }
 
-  const handleClearInteractions = async () => {
-    if (!confirm('This will clear all your watch history and interactions. Continue?')) {
-      return;
-    }
-
-    try {
-      const response = await fetch('/api/debug/clear-interactions', {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to clear interactions');
-      }
-
-      // Refresh feed after clearing
-      await fetchFeed();
-    } catch (err) {
-      console.error('Error clearing interactions:', err);
-      alert('Failed to clear interactions');
-    }
-  };
 
   return (
     <>
       <Navigation />
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Header - sticky, minimal */}
-        <div className="sticky top-0 z-10 bg-gray-50/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-gray-200/50 dark:border-gray-800/50">
-          <div className="max-w-2xl mx-auto px-4 py-4">
-            <div className="flex items-center justify-between">
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-white">HopeScroll</h1>
-              <button
-                onClick={fetchFeed}
-                className="text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"
-              >
-                Refresh
-              </button>
-            </div>
-
-            {/* Duration Filter Presets - Pill style */}
-            <div className="flex items-center gap-2 mt-3 overflow-x-auto pb-2">
-              <button
-                onClick={() => handleDurationFilterChange(300, 600)}
-                disabled={isUpdatingFilter}
-                className="px-4 py-1.5 text-sm bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 transition-all disabled:opacity-50 whitespace-nowrap"
-              >
-                5-10min
-              </button>
-              <button
-                onClick={() => handleDurationFilterChange(900, 1500)}
-                disabled={isUpdatingFilter}
-                className="px-4 py-1.5 text-sm bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 transition-all disabled:opacity-50 whitespace-nowrap"
-              >
-                15-25min
-              </button>
-              <button
-                onClick={() => handleDurationFilterChange(1800, 3600)}
-                disabled={isUpdatingFilter}
-                className="px-4 py-1.5 text-sm bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 transition-all disabled:opacity-50 whitespace-nowrap"
-              >
-                30-60min
-              </button>
-              <button
-                onClick={() => handleDurationFilterChange(null, null)}
-                disabled={isUpdatingFilter}
-                className="px-4 py-1.5 text-sm bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 transition-all disabled:opacity-50 whitespace-nowrap"
-              >
-                Any Length
-              </button>
-              {isUpdatingFilter && (
-                <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
-                  Updating...
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
         {/* Feed - centered single column */}
         <div className="max-w-2xl mx-auto px-4 py-6">
+          {/* Duration Filter Presets - at top of feed */}
+          <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+            <button
+              onClick={() => handleDurationFilterChange(300, 600)}
+              disabled={isUpdatingFilter}
+              className="px-4 py-1.5 text-sm bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 transition-all disabled:opacity-50 whitespace-nowrap"
+            >
+              5-10min
+            </button>
+            <button
+              onClick={() => handleDurationFilterChange(900, 1500)}
+              disabled={isUpdatingFilter}
+              className="px-4 py-1.5 text-sm bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 transition-all disabled:opacity-50 whitespace-nowrap"
+            >
+              15-25min
+            </button>
+            <button
+              onClick={() => handleDurationFilterChange(1800, 3600)}
+              disabled={isUpdatingFilter}
+              className="px-4 py-1.5 text-sm bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 transition-all disabled:opacity-50 whitespace-nowrap"
+            >
+              30-60min
+            </button>
+            <button
+              onClick={() => handleDurationFilterChange(null, null)}
+              disabled={isUpdatingFilter}
+              className="px-4 py-1.5 text-sm bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full border border-gray-200 dark:border-gray-700 transition-all disabled:opacity-50 whitespace-nowrap"
+            >
+              Any Length
+            </button>
+            {isUpdatingFilter && (
+              <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">
+                Updating...
+              </span>
+            )}
+          </div>
           {feed.length === 0 ? (
             <div className="text-center py-20">
               <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-3">

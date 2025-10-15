@@ -16,7 +16,11 @@ interface ContentCardProps {
 export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onMarkWatched }: ContentCardProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
-  const [expandMode, setExpandMode] = useState<'normal' | 'wide' | 'fullscreen'>('normal');
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
+  const [pinnedPosition, setPinnedPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const playerRef = useRef<YT.Player | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const { content, sourceDisplayName, isNew } = item;
@@ -110,108 +114,146 @@ export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onMark
   };
 
   const handleExpand = () => {
-    if (expandMode === 'normal') {
-      setExpandMode('wide');
-    } else if (expandMode === 'wide') {
-      setExpandMode('fullscreen');
-    } else {
-      setExpandMode('normal');
+    setIsExpanded(!isExpanded);
+  };
+
+  const handlePin = () => {
+    const newPinned = !isPinned;
+    setIsPinned(newPinned);
+    if (newPinned) {
+      // Set initial position in bottom-right
+      setPinnedPosition({
+        x: window.innerWidth - 336, // 320px width + 16px margin
+        y: window.innerHeight - 280  // approximate height + margin from bottom
+      });
     }
   };
 
-  const isFullscreen = expandMode === 'fullscreen';
-  const isWide = expandMode === 'wide';
+  const handleMouseDown = (e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+    setDragStart({
+      x: e.clientX - pinnedPosition.x,
+      y: e.clientY - pinnedPosition.y,
+    });
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (isDragging) {
+        setPinnedPosition({
+          x: e.clientX - dragStart.x,
+          y: e.clientY - dragStart.y,
+        });
+      }
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isDragging, dragStart, pinnedPosition]);
 
   return (
     <>
-      {isFullscreen && <div className="fixed inset-0 bg-black z-40" />}
-      <div className={`bg-white dark:bg-gray-800 overflow-hidden shadow-sm transition-all duration-300 relative ${
-        isFullscreen
-          ? 'fixed inset-0 z-50 m-0 rounded-none flex items-center justify-center bg-black'
-          : isWide
-            ? 'fixed left-0 right-0 top-20 z-40 rounded-none'
-            : 'rounded-2xl hover:shadow-md'
-      }`}>
-        {/* Video Player or Thumbnail */}
-        <div className={`relative bg-black ${isFullscreen ? 'w-full h-full' : 'aspect-video'}`} ref={containerRef}>
-          {isPlaying && videoId ? (
-            // YouTube player
-            <>
+      {/* Floating pinned video */}
+      {isPinned && isPlaying && videoId && (
+        <div
+          className="fixed z-50 w-80 shadow-2xl rounded-lg overflow-hidden bg-white dark:bg-gray-800 select-none"
+          style={{
+            left: `${pinnedPosition.x}px`,
+            top: `${pinnedPosition.y}px`,
+          }}
+        >
+          <div
+            className="p-2 bg-gray-100 dark:bg-gray-700 cursor-move flex items-center justify-between"
+            onMouseDown={handleMouseDown}
+          >
+            <p className="text-sm font-medium text-gray-900 dark:text-white line-clamp-1 flex-1">{content.title}</p>
+            <button
+              onClick={handlePin}
+              className="ml-2 p-1 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-400 rounded transition-all"
+              title="Unpin"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="relative bg-black aspect-video" ref={isPinned ? containerRef : undefined}>
+            <div id={`player-${content.id}`} className="w-full h-full" />
+          </div>
+        </div>
+      )}
+
+      <div className="relative group">
+        <div className={`bg-white dark:bg-gray-800 overflow-hidden shadow-sm transition-all duration-300 ${
+          isExpanded ? 'scale-125' : 'hover:shadow-md'
+        }`}>
+        {/* Video Player or Thumbnail - no rounded corners on video itself */}
+        <div className={`relative bg-black aspect-video ${isPinned ? 'opacity-20' : ''}`} ref={!isPinned ? containerRef : undefined}>
+            {isPlaying && videoId && !isPinned ? (
+              // YouTube player (only show when not pinned)
               <div id={`player-${content.id}`} className="w-full h-full" />
-            </>
-          ) : (
-            // Thumbnail with play button
-            content.thumbnailUrl && (
-              <div
-                className="relative w-full h-full cursor-pointer"
-                onClick={handlePlayClick}
-              >
-                <Image
-                  src={content.thumbnailUrl}
-                  alt={content.title}
-                  fill
-                  sizes="(max-width: 768px) 100vw, 672px"
-                  className="object-cover"
-                />
-                {/* Overlay gradient for better text readability */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            ) : isPinned ? (
+              // Placeholder when pinned
+              <div className="w-full h-full flex items-center justify-center">
+                <p className="text-white text-sm">Playing in pinned window</p>
+              </div>
+            ) : (
+              // Thumbnail with play button
+              content.thumbnailUrl && (
+                <div
+                  className="relative w-full h-full cursor-pointer"
+                  onClick={handlePlayClick}
+                >
+                  <Image
+                    src={content.thumbnailUrl}
+                    alt={content.title}
+                    fill
+                    sizes="(max-width: 768px) 100vw, 672px"
+                    className="object-cover"
+                  />
+                  {/* Overlay gradient for better text readability */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-                {/* Play button overlay on hover */}
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                  <div className="w-16 h-16 bg-white/90 dark:bg-gray-900/90 rounded-full flex items-center justify-center backdrop-blur-sm">
-                    <svg className="w-6 h-6 text-gray-900 dark:text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M8 5v14l11-7z"/>
-                    </svg>
+                  {/* Play button overlay on hover */}
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="w-16 h-16 bg-white/90 dark:bg-gray-900/90 rounded-full flex items-center justify-center backdrop-blur-sm">
+                      <svg className="w-6 h-6 text-gray-900 dark:text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                    </div>
                   </div>
-                </div>
 
-                {/* Badges */}
-                <div className="absolute top-3 left-3 flex gap-2">
-                  {isNew && (
-                    <span className="bg-blue-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm">
-                      NEW
+                  {/* Badges */}
+                  <div className="absolute top-3 left-3 flex gap-2">
+                    {isNew && (
+                      <span className="bg-blue-500 text-white text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm">
+                        NEW
+                      </span>
+                    )}
+                  </div>
+                  {content.duration && (
+                    <span className="absolute bottom-3 right-3 bg-black/75 text-white text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm">
+                      {formatDuration(content.duration)}
                     </span>
                   )}
                 </div>
-                {content.duration && (
-                  <span className="absolute bottom-3 right-3 bg-black/75 text-white text-xs font-semibold px-2.5 py-1 rounded-full backdrop-blur-sm">
-                    {formatDuration(content.duration)}
-                  </span>
-                )}
-              </div>
-            )
-          )}
+              )
+            )}
         </div>
 
-        {/* Expand button - outside card, in whitespace */}
-        {isPlaying && !isFullscreen && (
-          <button
-            onClick={handleExpand}
-            className="absolute top-1/2 -right-12 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:text-gray-600 dark:hover:text-gray-400 transition-colors z-10"
-            title={isWide ? "Fullscreen" : "Expand"}
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
-        )}
-
-        {/* Fullscreen close button */}
-        {isFullscreen && (
-          <button
-            onClick={handleExpand}
-            className="absolute top-4 right-4 p-2 text-white/60 hover:text-white transition-colors z-10"
-            title="Exit Fullscreen"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        )}
-
-        {/* Content - hide when fullscreen */}
-        {!isFullscreen && (
-          <div className="p-5">
+        {/* Content */}
+        <div className="p-5">
             {/* Title */}
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white line-clamp-2 mb-3">
               {content.title}
@@ -262,8 +304,39 @@ export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onMark
               </span>
             </div>
           </div>
+      </div>
+
+      {/* Floating buttons - positioned in whitespace to the right */}
+      <div className="absolute top-4 -right-12 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all">
+        <button
+          onClick={handleExpand}
+          className="p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-full transition-all"
+          title={isExpanded ? "Collapse" : "Expand"}
+        >
+          <svg
+            className={`w-5 h-5 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            strokeWidth={2}
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+
+        {isPlaying && !isPinned && (
+          <button
+            onClick={handlePin}
+            className="p-2 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-full transition-all"
+            title="Pin video"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+            </svg>
+          </button>
         )}
       </div>
+    </div>
     </>
   );
 }
