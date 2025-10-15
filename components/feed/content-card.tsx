@@ -19,9 +19,10 @@ export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow }: Cont
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const formatPublishedDate = (date: Date) => {
+  const formatPublishedDate = (date: Date | string) => {
     const now = new Date();
-    const diff = now.getTime() - date.getTime();
+    const publishedDate = typeof date === 'string' ? new Date(date) : date;
+    const diff = now.getTime() - publishedDate.getTime();
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
     if (days === 0) return 'Today';
