@@ -431,19 +431,23 @@ export default function WatchPage() {
                       {isInSources ? (
                         <button
                           onClick={handleRemoveFromSources}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-all text-xs border border-red-600/30"
+                          className="group flex items-center gap-1.5 px-3 py-2 bg-green-600/20 hover:bg-red-600/30 text-green-400 hover:text-red-400 rounded-lg transition-all text-xs border border-green-600/30 hover:border-red-600/30"
                           title="Remove channel from your sources"
                           disabled={isCheckingSources}
                         >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-4 h-4 group-hover:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                          <svg className="w-4 h-4 hidden group-hover:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <span className="hidden sm:inline">In Sources</span>
+                          <span className="hidden sm:inline group-hover:hidden">In Sources</span>
+                          <span className="hidden sm:group-hover:inline">Remove</span>
                         </button>
                       ) : (
                         <button
                           onClick={handleAddToSources}
-                          className="flex items-center gap-1.5 px-3 py-2 bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded-lg transition-all text-xs border border-green-600/30"
+                          className="group flex items-center gap-1.5 px-3 py-2 bg-gray-700/20 hover:bg-green-600/30 text-gray-400 hover:text-green-400 rounded-lg transition-all text-xs border border-gray-700/30 hover:border-green-600/30"
                           title="Add channel to your sources"
                           disabled={isCheckingSources}
                         >
