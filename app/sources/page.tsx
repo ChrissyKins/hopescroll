@@ -21,6 +21,8 @@ export default function SourcesPage() {
   const [newSourceId, setNewSourceId] = useState('');
   const [sourceType, setSourceType] = useState('YOUTUBE');
   const [isAdding, setIsAdding] = useState(false);
+  const [isFetching, setIsFetching] = useState(false);
+  const [fetchMessage, setFetchMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   useEffect(() => {
     fetchSources();
@@ -110,6 +112,44 @@ export default function SourcesPage() {
       await fetchSources();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Failed to update source');
+    }
+  };
+
+  const handleRefreshContent = async () => {
+    if (sources.length === 0) {
+      setFetchMessage({ type: 'error', text: 'Add sources first before fetching content' });
+      return;
+    }
+
+    try {
+      setIsFetching(true);
+      setFetchMessage(null);
+
+      const response = await fetch('/api/sources/fetch', {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch content');
+      }
+
+      const result = await response.json();
+      const stats = result.data.stats;
+
+      setFetchMessage({
+        type: 'success',
+        text: `Fetched content from ${stats.successCount}/${stats.totalSources} sources. Found ${stats.newItemsCount} new items!`,
+      });
+
+      // Refresh sources list to show updated status
+      await fetchSources();
+    } catch (err) {
+      setFetchMessage({
+        type: 'error',
+        text: err instanceof Error ? err.message : 'Failed to fetch content',
+      });
+    } finally {
+      setIsFetching(false);
     }
   };
 
@@ -216,9 +256,43 @@ export default function SourcesPage() {
           {/* Sources List */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
             <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-                Your Sources ({sources.length})
-              </h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+                  Your Sources ({sources.length})
+                </h2>
+                <button
+                  onClick={handleRefreshContent}
+                  disabled={isFetching || sources.length === 0}
+                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium rounded transition-colors"
+                >
+                  {isFetching ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      <span>Fetching...</span>
+                    </>
+                  ) : (
+                    <>
+                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      <span>Refresh Content</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {fetchMessage && (
+                <div className={`mb-4 p-4 rounded-lg ${
+                  fetchMessage.type === 'success'
+                    ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300'
+                    : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300'
+                }`}>
+                  {fetchMessage.text}
+                </div>
+              )}
               {sources.length === 0 ? (
                 <p className="text-gray-600 dark:text-gray-400 text-center py-8">
                   No sources yet. Add your first source above!
