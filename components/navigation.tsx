@@ -23,17 +23,19 @@ export function Navigation() {
     await signOut({ callbackUrl: '/login' });
   };
 
+  const isDarkMode = pathname === '/watch';
+
   return (
-    <nav className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+    <nav className={`border-b ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-16">
+        <div className="flex justify-between h-12">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <h1 className="text-xl font-bold text-gray-900 dark:text-white">
+              <h1 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
                 Forest Cabin
               </h1>
             </div>
-            <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+            <div className="hidden sm:ml-6 sm:flex sm:space-x-6">
               {/* Main navigation - Watch/Scroll */}
               {mainNavItems.map((item) => (
                 <Link
@@ -41,8 +43,8 @@ export function Navigation() {
                   href={item.href}
                   className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-bold ${
                     pathname === item.href
-                      ? 'border-blue-500 text-gray-900 dark:text-white'
-                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300'
+                      ? `border-blue-500 ${isDarkMode ? 'text-white' : 'text-gray-900 dark:text-white'}`
+                      : `border-transparent ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300'}`
                   }`}
                 >
                   {item.label}
@@ -50,7 +52,7 @@ export function Navigation() {
               ))}
 
               {/* Divider */}
-              <div className="border-l border-gray-200 dark:border-gray-700 my-4"></div>
+              <div className={`border-l my-3 ${isDarkMode ? 'border-gray-700' : 'border-gray-200 dark:border-gray-700'}`}></div>
 
               {/* Secondary navigation */}
               {secondaryNavItems.map((item) => (
@@ -59,8 +61,8 @@ export function Navigation() {
                   href={item.href}
                   className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                     pathname === item.href
-                      ? 'border-blue-500 text-gray-900 dark:text-white'
-                      : 'border-transparent text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300'
+                      ? `border-blue-500 ${isDarkMode ? 'text-white' : 'text-gray-900 dark:text-white'}`
+                      : `border-transparent ${isDarkMode ? 'text-gray-400 hover:text-gray-300' : 'text-gray-500 dark:text-gray-400 hover:border-gray-300 dark:hover:border-gray-600 hover:text-gray-700 dark:hover:text-gray-300'}`
                   }`}
                 >
                   {item.label}
@@ -71,7 +73,7 @@ export function Navigation() {
           <div className="flex items-center">
             <button
               onClick={handleSignOut}
-              className="text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+              className={`text-sm ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}`}
             >
               Sign out
             </button>

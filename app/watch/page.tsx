@@ -10,6 +10,9 @@ export default function WatchPage() {
   const [error, setError] = useState<string | null>(null);
   const [minDuration, setMinDuration] = useState<number | null>(null);
   const [maxDuration, setMaxDuration] = useState<number | null>(null);
+  const [customMin, setCustomMin] = useState<string>('');
+  const [customMax, setCustomMax] = useState<string>('');
+  const [showCustom, setShowCustom] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const playerRef = useRef<YT.Player | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -111,6 +114,7 @@ export default function WatchPage() {
   const handleDurationFilterChange = (min: number | null, max: number | null) => {
     setMinDuration(min);
     setMaxDuration(max);
+    setShowCustom(false);
     // Destroy current player and fetch new video
     if (playerRef.current) {
       playerRef.current.destroy();
@@ -120,6 +124,16 @@ export default function WatchPage() {
     setTimeout(() => {
       fetchRandomVideo();
     }, 100);
+  };
+
+  const handleCustomDuration = () => {
+    const min = customMin ? parseInt(customMin) * 60 : null;
+    const max = customMax ? parseInt(customMax) * 60 : null;
+    handleDurationFilterChange(min, max);
+  };
+
+  const isFilterActive = (min: number | null, max: number | null) => {
+    return minDuration === min && maxDuration === max;
   };
 
   const getYouTubeVideoId = (url: string): string | null => {
@@ -193,23 +207,23 @@ export default function WatchPage() {
 
   if (isLoading) {
     return (
-      <>
+      <div className="min-h-screen bg-gray-950">
         <Navigation />
-        <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+        <div className="flex items-center justify-center" style={{ height: 'calc(100vh - 3rem)' }}>
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
             <p className="text-gray-400">Finding a video for you...</p>
           </div>
         </div>
-      </>
+      </div>
     );
   }
 
   if (error || !currentVideo) {
     return (
-      <>
+      <div className="min-h-screen bg-gray-950">
         <Navigation />
-        <div className="min-h-screen bg-gray-900 flex items-center justify-center p-4">
+        <div className="flex items-center justify-center p-4" style={{ height: 'calc(100vh - 3rem)' }}>
           <div className="max-w-md text-center">
             <h2 className="text-2xl font-bold text-white mb-4">
               {error || 'No videos available'}
@@ -233,146 +247,208 @@ export default function WatchPage() {
             </div>
           </div>
         </div>
-      </>
+      </div>
     );
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-gray-950">
       <Navigation />
-      <div className="min-h-screen bg-gray-900">
-        {/* Length Filter Bar - Fixed at top */}
-        <div className="fixed top-16 left-0 right-0 bg-gray-800/95 backdrop-blur-sm z-40 border-b border-gray-700">
-          <div className="max-w-7xl mx-auto px-4 py-3">
-            <div className="flex items-center justify-center gap-2">
-              <span className="text-sm text-gray-400 mr-2">Length:</span>
-              <button
-                onClick={() => handleDurationFilterChange(300, 600)}
-                className={`px-4 py-1.5 text-sm rounded-full border transition-all ${
-                  minDuration === 300 && maxDuration === 600
-                    ? 'bg-blue-600 border-blue-600 text-white'
-                    : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
-                }`}
-              >
-                5-10min
-              </button>
-              <button
-                onClick={() => handleDurationFilterChange(900, 1500)}
-                className={`px-4 py-1.5 text-sm rounded-full border transition-all ${
-                  minDuration === 900 && maxDuration === 1500
-                    ? 'bg-blue-600 border-blue-600 text-white'
-                    : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
-                }`}
-              >
-                15-25min
-              </button>
-              <button
-                onClick={() => handleDurationFilterChange(1800, 3600)}
-                className={`px-4 py-1.5 text-sm rounded-full border transition-all ${
-                  minDuration === 1800 && maxDuration === 3600
-                    ? 'bg-blue-600 border-blue-600 text-white'
-                    : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
-                }`}
-              >
-                30-60min
-              </button>
-              <button
-                onClick={() => handleDurationFilterChange(null, null)}
-                className={`px-4 py-1.5 text-sm rounded-full border transition-all ${
-                  minDuration === null && maxDuration === null
-                    ? 'bg-blue-600 border-blue-600 text-white'
-                    : 'bg-gray-700 border-gray-600 text-gray-300 hover:bg-gray-600'
-                }`}
-              >
-                Any Length
-              </button>
-            </div>
+      <div className="bg-gray-950">
+        {/* Video Player Container - Full Width, Responsive Height */}
+        <div className="w-full flex-shrink-0" style={{ maxHeight: 'calc(100vh - 3rem)', height: 'min(calc(100vh - 3rem), calc(100vw * 9 / 16))' }}>
+          {/* Video Player - Full Width */}
+          <div className="relative bg-black w-full h-full" ref={containerRef}>
+            <div id={`player-${currentVideo.content.id}`} className="w-full h-full" />
           </div>
         </div>
 
-        {/* Video Player Container - Theatre Mode */}
-        <div className="pt-24 pb-8 px-4">
-          <div className="max-w-6xl mx-auto">
-            {/* Video Player */}
-            <div className="relative bg-black aspect-video rounded-lg overflow-hidden shadow-2xl" ref={containerRef}>
-              <div id={`player-${currentVideo.content.id}`} className="w-full h-full" />
-            </div>
-
-            {/* Video Info */}
-            <div className="mt-6 mb-8">
-              <h1 className="text-2xl font-bold text-white mb-2">
-                {currentVideo.content.title}
-              </h1>
-              <div className="flex items-center gap-3 text-gray-400">
-                <span className="font-medium text-gray-300">{currentVideo.sourceDisplayName}</span>
-                <span>•</span>
-                {currentVideo.content.duration && (
-                  <>
-                    <span>{formatDuration(currentVideo.content.duration)}</span>
-                    <span>•</span>
-                  </>
-                )}
-                {currentVideo.isNew && (
-                  <span className="bg-blue-500 text-white text-xs font-semibold px-2.5 py-0.5 rounded-full">
-                    NEW
-                  </span>
-                )}
+        {/* Content Below Video */}
+        <div className="bg-gray-950">
+          <div className="max-w-4xl mx-auto">
+            {/* Video Info & Controls */}
+            <div className="border-b border-gray-900 p-4">
+              {/* Video Title and Info */}
+              <div className="mb-4">
+                <h1 className="text-lg md:text-xl font-bold text-white mb-2">
+                  {currentVideo.content.title}
+                </h1>
+                <div className="flex items-center gap-2 text-xs md:text-sm text-gray-400">
+                  <span className="font-medium text-gray-300">{currentVideo.sourceDisplayName}</span>
+                  {currentVideo.content.duration && (
+                    <>
+                      <span>•</span>
+                      <span>{formatDuration(currentVideo.content.duration)}</span>
+                    </>
+                  )}
+                  {currentVideo.isNew && (
+                    <>
+                      <span>•</span>
+                      <span className="bg-blue-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+                        NEW
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
-              {currentVideo.content.description && (
-                <p className="mt-4 text-gray-400 line-clamp-3">
-                  {currentVideo.content.description}
-                </p>
-              )}
+
+              {/* Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                <button
+                  onClick={handleSave}
+                  className="flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-2 md:py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-full transition-all text-xs md:text-sm"
+                  title="Save for Later"
+                >
+                  <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                  </svg>
+                  <span>Save</span>
+                </button>
+
+                <button
+                  onClick={handleNotNow}
+                  className="flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-2 md:py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-full transition-all text-xs md:text-sm"
+                  title="Not Now"
+                >
+                  <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span>Not Now</span>
+                </button>
+
+                <button
+                  onClick={handleNext}
+                  className="flex items-center gap-1.5 md:gap-2 px-5 md:px-6 py-2 md:py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full transition-all text-xs md:text-sm"
+                >
+                  <span>Next Video</span>
+                  <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
+                  </svg>
+                </button>
+
+                <button
+                  onClick={handleDismiss}
+                  className="flex items-center gap-1.5 md:gap-2 px-4 md:px-5 py-2 md:py-2.5 bg-gray-700 hover:bg-gray-600 text-white rounded-full transition-all text-xs md:text-sm"
+                  title="Dismiss"
+                >
+                  <svg className="w-3.5 h-3.5 md:w-4 md:h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                  <span>Dismiss</span>
+                </button>
+              </div>
             </div>
 
-            {/* Action Buttons */}
-            <div className="flex items-center justify-center gap-4">
-              <button
-                onClick={handleSave}
-                className="flex items-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-full transition-all"
-                title="Save for Later"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                </svg>
-                <span>Save</span>
-              </button>
+            {/* Length Filter Section */}
+            <div className="p-4 border-b border-gray-900">
+              {/* Compact Filter Bar */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <span className="text-sm text-gray-400">Length:</span>
 
-              <button
-                onClick={handleNotNow}
-                className="flex items-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-full transition-all"
-                title="Not Now"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>Not Now</span>
-              </button>
+                <button
+                  onClick={() => handleDurationFilterChange(180, null)}
+                  className={`px-3 py-1.5 rounded-full text-sm transition-all ${
+                    isFilterActive(180, null)
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  3+ min
+                </button>
 
-              <button
-                onClick={handleNext}
-                className="flex items-center gap-2 px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-full transition-all"
-              >
-                <span>Next Video</span>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                </svg>
-              </button>
+                <button
+                  onClick={() => handleDurationFilterChange(300, 600)}
+                  className={`px-3 py-1.5 rounded-full text-sm transition-all ${
+                    isFilterActive(300, 600)
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  5-10 min
+                </button>
 
-              <button
-                onClick={handleDismiss}
-                className="flex items-center gap-2 px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white rounded-full transition-all"
-                title="Dismiss"
-              >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                <span>Dismiss</span>
-              </button>
+                <button
+                  onClick={() => handleDurationFilterChange(900, 1500)}
+                  className={`px-3 py-1.5 rounded-full text-sm transition-all ${
+                    isFilterActive(900, 1500)
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  15-25 min
+                </button>
+
+                <button
+                  onClick={() => handleDurationFilterChange(1800, 3600)}
+                  className={`px-3 py-1.5 rounded-full text-sm transition-all ${
+                    isFilterActive(1800, 3600)
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  30-60 min
+                </button>
+
+                <button
+                  onClick={() => handleDurationFilterChange(null, null)}
+                  className={`px-3 py-1.5 rounded-full text-sm transition-all ${
+                    isFilterActive(null, null) && !showCustom
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  Any
+                </button>
+
+                <button
+                  onClick={() => setShowCustom(!showCustom)}
+                  className={`px-3 py-1.5 rounded-full text-sm transition-all ${
+                    showCustom
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                  }`}
+                >
+                  Custom
+                </button>
+              </div>
+
+              {/* Custom Duration Input */}
+              {showCustom && (
+                <div className="mt-3 bg-gray-800 rounded-lg p-3 border border-gray-700">
+                  <div className="flex flex-col sm:flex-row gap-2 items-end">
+                    <div className="flex-1">
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="Min (minutes)"
+                        value={customMin}
+                        onChange={(e) => setCustomMin(e.target.value)}
+                        className="w-full px-3 py-1.5 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <div className="flex-1">
+                      <input
+                        type="number"
+                        min="0"
+                        placeholder="Max (minutes)"
+                        value={customMax}
+                        onChange={(e) => setCustomMax(e.target.value)}
+                        className="w-full px-3 py-1.5 bg-gray-900 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
+                      />
+                    </div>
+                    <button
+                      onClick={handleCustomDuration}
+                      className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-sm transition-all"
+                    >
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
