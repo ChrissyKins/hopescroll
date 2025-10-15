@@ -432,25 +432,25 @@ export default function WatchPage() {
                         <button
                           onClick={handleRemoveFromSources}
                           className="flex items-center gap-1.5 px-3 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-400 rounded-lg transition-all text-xs border border-red-600/30"
-                          title="Unsubscribe from this channel"
+                          title="Remove channel from your sources"
                           disabled={isCheckingSources}
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <span className="hidden sm:inline">Unsubscribe</span>
+                          <span className="hidden sm:inline">In Sources</span>
                         </button>
                       ) : (
                         <button
                           onClick={handleAddToSources}
                           className="flex items-center gap-1.5 px-3 py-2 bg-green-600/20 hover:bg-green-600/30 text-green-400 rounded-lg transition-all text-xs border border-green-600/30"
-                          title="Subscribe to this channel"
+                          title="Add channel to your sources"
                           disabled={isCheckingSources}
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
-                          <span className="hidden sm:inline">Subscribe</span>
+                          <span className="hidden sm:inline">Add Source</span>
                         </button>
                       )}
                     </>
