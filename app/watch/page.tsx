@@ -264,12 +264,14 @@ export default function WatchPage() {
     return match ? match[1] : null;
   };
 
-  const videoId = currentVideo?.content.sourceType === 'YOUTUBE'
-    ? getYouTubeVideoId(currentVideo.content.url)
-    : null;
-
   useEffect(() => {
-    if (!isPlaying || !videoId || !currentVideo) return;
+    if (!isPlaying || !currentVideo) return;
+
+    const videoId = currentVideo?.content.sourceType === 'YOUTUBE'
+      ? getYouTubeVideoId(currentVideo.content.url)
+      : null;
+
+    if (!videoId) return;
 
     // Load YouTube IFrame API
     const loadYouTubeAPI = () => {
@@ -319,7 +321,7 @@ export default function WatchPage() {
         playerRef.current = null;
       }
     };
-  }, [isPlaying, videoId, currentVideo]);
+  }, [isPlaying, currentVideo]);
 
   const formatDuration = (seconds: number | null) => {
     if (!seconds) return null;
