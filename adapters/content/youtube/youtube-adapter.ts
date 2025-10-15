@@ -31,7 +31,7 @@ export class YouTubeAdapter implements ContentAdapter {
       maxResults: 50,
     });
 
-    if (searchResponse.items.length === 0) {
+    if (!searchResponse || !searchResponse.items || searchResponse.items.length === 0) {
       return [];
     }
 
@@ -41,6 +41,10 @@ export class YouTubeAdapter implements ContentAdapter {
       .filter((id): id is string => id !== undefined);
 
     const videosResponse = await this.client.getVideos(videoIds);
+
+    if (!videosResponse || !videosResponse.items) {
+      return [];
+    }
 
     return videosResponse.items.map((video) =>
       this.mapToContentItem(video, channelId)
@@ -64,7 +68,7 @@ export class YouTubeAdapter implements ContentAdapter {
       pageToken,
     });
 
-    if (searchResponse.items.length === 0) {
+    if (!searchResponse || !searchResponse.items || searchResponse.items.length === 0) {
       return [];
     }
 
@@ -74,18 +78,33 @@ export class YouTubeAdapter implements ContentAdapter {
 
     const videosResponse = await this.client.getVideos(videoIds);
 
+    if (!videosResponse || !videosResponse.items) {
+      return [];
+    }
+
     return videosResponse.items.map((video) =>
       this.mapToContentItem(video, channelId)
     );
   }
 
-  async validateSource(channelId: string): Promise<SourceValidation> {
+  async validateSource(channelIdOrHandle: string): Promise<SourceValidation> {
     try {
-      log.debug({ channelId }, 'Validating YouTube channel');
+      log.debug({ input: channelIdOrHandle }, 'Validating YouTube channel');
 
+      // First, resolve the input to a channel ID (handles @username or channel IDs)
+      const channelId = await this.client.resolveChannelId(channelIdOrHandle);
+
+      if (!channelId) {
+        return {
+          isValid: false,
+          errorMessage: 'Channel not found. Please check the channel ID or handle.',
+        };
+      }
+
+      // Get the channel details
       const channelResponse = await this.client.getChannel(channelId);
 
-      if (channelResponse.items.length === 0) {
+      if (!channelResponse || !channelResponse.items || channelResponse.items.length === 0) {
         return {
           isValid: false,
           errorMessage: 'Channel not found',
@@ -98,9 +117,11 @@ export class YouTubeAdapter implements ContentAdapter {
         isValid: true,
         displayName: channel.snippet.title,
         avatarUrl: channel.snippet.thumbnails.high.url,
+        // Return the resolved channel ID so it can be stored
+        resolvedId: channelId,
       };
     } catch (error) {
-      log.error({ error, channelId }, 'Failed to validate YouTube channel');
+      log.error({ error, input: channelIdOrHandle }, 'Failed to validate YouTube channel');
       return {
         isValid: false,
         errorMessage:
@@ -114,7 +135,7 @@ export class YouTubeAdapter implements ContentAdapter {
 
     const channelResponse = await this.client.getChannel(channelId);
 
-    if (channelResponse.items.length === 0) {
+    if (!channelResponse || !channelResponse.items || channelResponse.items.length === 0) {
       throw new Error('Channel not found');
     }
 

@@ -4,16 +4,17 @@ import { ENV } from './config';
 
 export const logger = pino({
   level: ENV.logLevel,
-  transport: ENV.isDevelopment
+  // Use simple console logger in development to avoid worker thread issues in Next.js
+  // pino-pretty with worker threads causes MODULE_NOT_FOUND errors in Next.js build
+  ...(ENV.isDevelopment
     ? {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          translateTime: 'HH:MM:ss',
-          ignore: 'pid,hostname',
+        formatters: {
+          level: (label: string) => {
+            return { level: label };
+          },
         },
       }
-    : undefined,
+    : {}),
   base: {
     env: ENV.nodeEnv,
   },

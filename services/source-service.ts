@@ -34,13 +34,16 @@ export class SourceService {
       );
     }
 
+    // Use resolved ID if provided (e.g., @handle -> channel ID)
+    const finalSourceId = validation.resolvedId || sourceId;
+
     // Check if source already exists for user
     const existing = await this.db.contentSource.findUnique({
       where: {
         userId_type_sourceId: {
           userId,
           type,
-          sourceId,
+          sourceId: finalSourceId,
         },
       },
     });
@@ -54,8 +57,8 @@ export class SourceService {
       data: {
         userId,
         type,
-        sourceId,
-        displayName: validation.displayName || sourceId,
+        sourceId: finalSourceId,
+        displayName: validation.displayName || finalSourceId,
         avatarUrl: validation.avatarUrl,
         isMuted: false,
         alwaysSafe: false,

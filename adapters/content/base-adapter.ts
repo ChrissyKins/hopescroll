@@ -28,6 +28,8 @@ export interface SourceValidation {
   displayName?: string;
   avatarUrl?: string;
   errorMessage?: string;
+  // For cases where the input needs to be resolved (e.g., @handle -> channel ID)
+  resolvedId?: string;
 }
 
 export interface SourceMetadata {

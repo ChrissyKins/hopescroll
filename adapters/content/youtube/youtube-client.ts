@@ -55,7 +55,7 @@ export class YouTubeClient {
   }
 
   async getVideos(videoIds: string[]): Promise<YouTubeVideoResponse> {
-    if (videoIds.length === 0) {
+    if (!videoIds || videoIds.length === 0) {
       return { items: [] };
     }
 
@@ -80,6 +80,47 @@ export class YouTubeClient {
     return this.request<YouTubeChannelResponse>(
       `/channels?${searchParams.toString()}`
     );
+  }
+
+  async getChannelByHandle(handle: string): Promise<YouTubeChannelResponse> {
+    // Remove @ if present
+    const cleanHandle = handle.startsWith('@') ? handle.slice(1) : handle;
+
+    const searchParams = new URLSearchParams({
+      part: 'snippet,statistics',
+      forHandle: cleanHandle,
+      key: this.apiKey,
+    });
+
+    return this.request<YouTubeChannelResponse>(
+      `/channels?${searchParams.toString()}`
+    );
+  }
+
+  async resolveChannelId(input: string): Promise<string | null> {
+    // If it starts with @ or looks like a handle, use handle lookup
+    if (input.startsWith('@') || !input.startsWith('UC')) {
+      try {
+        const response = await this.getChannelByHandle(input);
+        if (response.items && response.items.length > 0) {
+          return response.items[0].id;
+        }
+      } catch (error) {
+        log.debug({ input, error }, 'Failed to resolve handle, will try as channel ID');
+      }
+    }
+
+    // Try as channel ID
+    try {
+      const response = await this.getChannel(input);
+      if (response.items && response.items.length > 0) {
+        return response.items[0].id;
+      }
+    } catch (error) {
+      log.debug({ input, error }, 'Failed to resolve as channel ID');
+    }
+
+    return null;
   }
 
   private async request<T>(path: string): Promise<T> {
