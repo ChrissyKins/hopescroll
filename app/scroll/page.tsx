@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ContentCard } from '@/components/feed/content-card';
 import { Navigation } from '@/components/navigation';
 import type { FeedItem } from '@/domain/feed/feed-generator';
@@ -10,12 +10,16 @@ export default function FeedPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isUpdatingFilter, setIsUpdatingFilter] = useState(false);
+  const fetchInProgress = useRef(false);
 
-  useEffect(() => {
-    fetchFeed();
-  }, []);
+  const fetchFeed = useCallback(async () => {
+    // Prevent duplicate fetches
+    if (fetchInProgress.current) {
+      return;
+    }
 
-  const fetchFeed = async () => {
+    fetchInProgress.current = true;
+
     try {
       setIsLoading(true);
       setError(null);
@@ -29,10 +33,15 @@ export default function FeedPage() {
       setError(err instanceof Error ? err.message : 'Failed to load feed');
     } finally {
       setIsLoading(false);
+      fetchInProgress.current = false;
     }
-  };
+  }, []);
 
-  const handleAction = async (action: string, contentId: string) => {
+  useEffect(() => {
+    fetchFeed();
+  }, [fetchFeed]);
+
+  const handleAction = useCallback(async (action: string, contentId: string) => {
     try {
       const response = await fetch(`/api/content/${contentId}/${action}`, {
         method: 'POST',
@@ -46,9 +55,9 @@ export default function FeedPage() {
       console.error(`Error ${action}ing content:`, err);
       // Could show toast notification here
     }
-  };
+  }, []);
 
-  const handleMarkWatchedSilent = async (contentId: string) => {
+  const handleMarkWatchedSilent = useCallback(async (contentId: string) => {
     try {
       // Mark as watched in the database but don't remove from feed
       // This is for inline playback tracking
@@ -63,21 +72,21 @@ export default function FeedPage() {
     } catch (err) {
       console.error('Error marking content as watched:', err);
     }
-  };
+  }, []);
 
-  const handleSave = (contentId: string) => {
+  const handleSave = useCallback((contentId: string) => {
     handleAction('save', contentId);
-  };
+  }, [handleAction]);
 
-  const handleDismiss = (contentId: string) => {
+  const handleDismiss = useCallback((contentId: string) => {
     handleAction('dismiss', contentId);
-  };
+  }, [handleAction]);
 
-  const handleNotNow = (contentId: string) => {
+  const handleNotNow = useCallback((contentId: string) => {
     handleAction('not-now', contentId);
-  };
+  }, [handleAction]);
 
-  const handleDurationFilterChange = async (minDuration: number | null, maxDuration: number | null) => {
+  const handleDurationFilterChange = useCallback(async (minDuration: number | null, maxDuration: number | null) => {
     try {
       setIsUpdatingFilter(true);
       const response = await fetch('/api/preferences', {
@@ -97,9 +106,9 @@ export default function FeedPage() {
     } finally {
       setIsUpdatingFilter(false);
     }
-  };
+  }, [fetchFeed]);
 
-  const handleClearInteractions = async () => {
+  const handleClearInteractions = useCallback(async () => {
     console.log('Clear interactions clicked - clearing without confirmation');
 
     try {
@@ -123,7 +132,7 @@ export default function FeedPage() {
     } catch (err) {
       console.error('Error clearing interactions:', err);
     }
-  };
+  }, [fetchFeed]);
 
   if (isLoading) {
     return (

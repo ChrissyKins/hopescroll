@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import Image from 'next/image';
 import type { FeedItem } from '@/domain/feed/feed-generator';
 
@@ -13,7 +13,7 @@ interface ContentCardProps {
   onMarkWatched?: (contentId: string) => void;
 }
 
-export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onMarkWatched }: ContentCardProps) {
+export const ContentCard = memo(function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onMarkWatched }: ContentCardProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [hasStartedPlaying, setHasStartedPlaying] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -221,6 +221,8 @@ export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onMark
                     fill
                     sizes="(max-width: 768px) 100vw, 672px"
                     className="object-cover"
+                    loading="lazy"
+                    quality={85}
                   />
                   {/* Overlay gradient for better text readability */}
                   <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -339,4 +341,4 @@ export function ContentCard({ item, onWatch, onSave, onDismiss, onNotNow, onMark
     </div>
     </>
   );
-}
+});

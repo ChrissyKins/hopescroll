@@ -20,7 +20,21 @@ const nextConfig = {
         hostname: 'static-cdn.jtvnw.net',
       },
     ],
+    // Optimize image loading
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 60,
   },
+  // Optimize compilation
+  swcMinify: true,
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
+  // Enable React strict mode for better performance in development
+  reactStrictMode: true,
+  // Optimize production builds
+  poweredByHeader: false,
 };
 
 module.exports = nextConfig;

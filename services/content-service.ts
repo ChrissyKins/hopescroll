@@ -190,59 +190,88 @@ export class ContentService {
 
   /**
    * Save content items to database, deduplicating against existing items
+   * Optimized with batch operations to avoid N+1 queries
    */
   private async saveContent(items: ContentItem[]): Promise<number> {
     if (items.length === 0) return 0;
 
-    let newCount = 0;
+    // Batch fetch all existing items in one query
+    const existingItems = await this.db.contentItem.findMany({
+      where: {
+        OR: items.map(item => ({
+          sourceType: item.sourceType,
+          originalId: item.originalId,
+        })),
+      },
+      select: {
+        id: true,
+        sourceType: true,
+        originalId: true,
+      },
+    });
+
+    // Create a map for quick lookup
+    const existingMap = new Map(
+      existingItems.map(item => [
+        `${item.sourceType}:${item.originalId}`,
+        item.id
+      ])
+    );
+
+    // Separate new items from existing items
+    const newItems: ContentItem[] = [];
+    const existingIds: string[] = [];
 
     for (const item of items) {
-      try {
-        // Check if content already exists
-        const existing = await this.db.contentItem.findUnique({
-          where: {
-            sourceType_originalId: {
-              sourceType: item.sourceType,
-              originalId: item.originalId,
-            },
-          },
-        });
+      const key = `${item.sourceType}:${item.originalId}`;
+      const existingId = existingMap.get(key);
 
-        if (!existing) {
-          // Create new content item
-          await this.db.contentItem.create({
-            data: {
-              sourceType: item.sourceType,
-              sourceId: item.sourceId,
-              originalId: item.originalId,
-              title: item.title,
-              description: item.description,
-              thumbnailUrl: item.thumbnailUrl,
-              url: item.url,
-              duration: item.duration,
-              publishedAt: item.publishedAt,
-              fetchedAt: new Date(),
-              lastSeenInFeed: new Date(),
-            },
-          });
-          newCount++;
-        } else {
-          // Update lastSeenInFeed for existing items
-          await this.db.contentItem.update({
-            where: { id: existing.id },
-            data: { lastSeenInFeed: new Date() },
-          });
-        }
-      } catch (error) {
-        log.warn(
-          { originalId: item.originalId, error },
-          'Failed to save content item'
-        );
-        // Continue with other items even if one fails
+      if (existingId) {
+        existingIds.push(existingId);
+      } else {
+        newItems.push(item);
       }
     }
 
-    log.debug({ totalItems: items.length, newCount }, 'Saved content items');
+    // Batch insert new items
+    let newCount = 0;
+    if (newItems.length > 0) {
+      try {
+        await this.db.contentItem.createMany({
+          data: newItems.map(item => ({
+            sourceType: item.sourceType,
+            sourceId: item.sourceId,
+            originalId: item.originalId,
+            title: item.title,
+            description: item.description,
+            thumbnailUrl: item.thumbnailUrl,
+            url: item.url,
+            duration: item.duration,
+            publishedAt: item.publishedAt,
+            fetchedAt: new Date(),
+            lastSeenInFeed: new Date(),
+          })),
+          skipDuplicates: true,
+        });
+        newCount = newItems.length;
+      } catch (error) {
+        log.error({ error, count: newItems.length }, 'Failed to batch insert content items');
+      }
+    }
+
+    // Batch update existing items
+    if (existingIds.length > 0) {
+      try {
+        await this.db.contentItem.updateMany({
+          where: { id: { in: existingIds } },
+          data: { lastSeenInFeed: new Date() },
+        });
+      } catch (error) {
+        log.error({ error, count: existingIds.length }, 'Failed to batch update content items');
+      }
+    }
+
+    log.debug({ totalItems: items.length, newCount, updatedCount: existingIds.length }, 'Saved content items');
     return newCount;
   }
 
