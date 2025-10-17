@@ -8,6 +8,7 @@ import {
   YouTubeSearchResponse,
   YouTubeVideoResponse,
   YouTubeChannelResponse,
+  YouTubeActivitiesResponse,
 } from './youtube-types';
 
 const log = createLogger('youtube-client');
@@ -15,11 +16,13 @@ const log = createLogger('youtube-client');
 export class YouTubeClient {
   private baseUrl = 'https://www.googleapis.com/youtube/v3';
   private apiKey: string;
+  private accessToken?: string;
 
-  constructor(apiKey?: string) {
+  constructor(apiKey?: string, accessToken?: string) {
     this.apiKey = apiKey || ENV.youtubeApiKey;
-    if (!this.apiKey) {
-      log.warn('YouTube API key not configured');
+    this.accessToken = accessToken;
+    if (!this.apiKey && !this.accessToken) {
+      log.warn('YouTube API key or access token not configured');
     }
   }
 
@@ -150,13 +153,73 @@ export class YouTubeClient {
     );
   }
 
-  private async request<T>(path: string): Promise<T> {
+  /**
+   * Get user's YouTube watch history
+   * Requires OAuth authentication with youtube.readonly scope
+   */
+  async getWatchHistory(params: {
+    maxResults?: number;
+    pageToken?: string;
+  }): Promise<YouTubeActivitiesResponse> {
+    if (!this.accessToken) {
+      throw new ExternalApiError(
+        'YouTube',
+        'OAuth access token required for watch history',
+        { requiresAuth: true }
+      );
+    }
+
+    const searchParams = new URLSearchParams({
+      part: 'snippet,contentDetails',
+      mine: 'true',
+      maxResults: (params.maxResults || 50).toString(),
+    });
+
+    if (params.pageToken) {
+      searchParams.append('pageToken', params.pageToken);
+    }
+
+    return this.request<YouTubeActivitiesResponse>(
+      `/activities?${searchParams.toString()}`,
+      true // Use OAuth
+    );
+  }
+
+  /**
+   * Get video IDs from user's watch history
+   * Returns array of video IDs that the user has watched
+   */
+  async getWatchedVideoIds(maxResults: number = 100): Promise<string[]> {
+    const activities = await this.getWatchHistory({ maxResults });
+
+    const videoIds: string[] = [];
+
+    for (const activity of activities.items) {
+      // YouTube activities include various types - we want uploads/watches
+      if (activity.contentDetails.upload?.videoId) {
+        videoIds.push(activity.contentDetails.upload.videoId);
+      }
+    }
+
+    log.info({ count: videoIds.length }, 'Fetched watched video IDs from YouTube');
+
+    return videoIds;
+  }
+
+  private async request<T>(path: string, useOAuth: boolean = false): Promise<T> {
     const url = `${this.baseUrl}${path}`;
 
     try {
-      log.debug({ url }, 'YouTube API request');
+      log.debug({ url, useOAuth }, 'YouTube API request');
 
-      const response = await fetch(url);
+      const headers: HeadersInit = {};
+
+      // Use OAuth token if available and requested, otherwise fall back to API key
+      if (useOAuth && this.accessToken) {
+        headers['Authorization'] = `Bearer ${this.accessToken}`;
+      }
+
+      const response = await fetch(url, { headers });
 
       if (!response.ok) {
         if (response.status === 429) {

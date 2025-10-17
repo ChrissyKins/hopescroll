@@ -79,3 +79,27 @@ export interface YouTubeChannel {
     videoCount: string;
   };
 }
+
+export interface YouTubeActivitiesResponse {
+  items: YouTubeActivity[];
+  nextPageToken?: string;
+  pageInfo: {
+    totalResults: number;
+    resultsPerPage: number;
+  };
+}
+
+export interface YouTubeActivity {
+  id: string;
+  snippet: {
+    publishedAt: string;
+    channelId: string;
+    channelTitle: string;
+    type: string;
+  };
+  contentDetails: {
+    upload?: {
+      videoId: string;
+    };
+  };
+}
