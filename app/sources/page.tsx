@@ -12,6 +12,10 @@ interface ContentSource {
   isMuted: boolean;
   lastFetchStatus: string;
   errorMessage: string | null;
+  videoStats?: {
+    totalFetched: number;
+    unwatched: number;
+  };
 }
 
 export default function SourcesPage() {
@@ -336,6 +340,16 @@ export default function SourcesPage() {
                           <p className="text-sm text-gray-500 dark:text-gray-400">
                             {source.type} • {source.sourceId}
                           </p>
+                          {source.videoStats && (
+                            <div className="flex items-center gap-3 mt-1 text-sm">
+                              <span className="text-blue-600 dark:text-blue-400">
+                                📹 {source.videoStats.totalFetched} fetched
+                              </span>
+                              <span className="text-green-600 dark:text-green-400">
+                                ⏳ {source.videoStats.unwatched} unwatched
+                              </span>
+                            </div>
+                          )}
                           {source.errorMessage && (
                             <p className="text-sm text-red-500 mt-1">
                               Error: {source.errorMessage}

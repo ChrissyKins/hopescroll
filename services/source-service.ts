@@ -122,10 +122,49 @@ export class SourceService {
   }
 
   async listSources(userId: string) {
-    return this.db.contentSource.findMany({
+    const sources = await this.db.contentSource.findMany({
       where: { userId },
       orderBy: { addedAt: 'desc' },
     });
+
+    // For each source, get video counts
+    const sourcesWithCounts = await Promise.all(
+      sources.map(async (source) => {
+        // Count total fetched videos for this source
+        const totalVideos = await this.db.contentItem.count({
+          where: {
+            sourceType: source.type,
+            sourceId: source.sourceId,
+          },
+        });
+
+        // Count unwatched videos (videos that haven't been interacted with)
+        const unwatchedVideos = await this.db.contentItem.count({
+          where: {
+            sourceType: source.type,
+            sourceId: source.sourceId,
+            NOT: {
+              interactions: {
+                some: {
+                  userId,
+                  type: { in: ['WATCHED', 'DISMISSED', 'BLOCKED'] },
+                },
+              },
+            },
+          },
+        });
+
+        return {
+          ...source,
+          videoStats: {
+            totalFetched: totalVideos,
+            unwatched: unwatchedVideos,
+          },
+        };
+      })
+    );
+
+    return sourcesWithCounts;
   }
 
   async getSource(userId: string, sourceId: string) {
