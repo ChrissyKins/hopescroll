@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -22,6 +23,19 @@ export default function LoginPage() {
 
     try {
       if (isSignUp) {
+        // Validate password confirmation
+        if (password !== confirmPassword) {
+          setError('Passwords do not match');
+          setIsLoading(false);
+          return;
+        }
+
+        if (password.length < 8) {
+          setError('Password must be at least 8 characters');
+          setIsLoading(false);
+          return;
+        }
+
         // Sign up
         const response = await fetch('/api/auth/signup', {
           method: 'POST',
@@ -31,7 +45,7 @@ export default function LoginPage() {
 
         if (!response.ok) {
           const data = await response.json();
-          throw new Error(data.error || 'Failed to create account');
+          throw new Error(data.error?.message || data.error || 'Failed to create account');
         }
       }
 
@@ -108,6 +122,25 @@ export default function LoginPage() {
                 placeholder="••••••••"
               />
             </div>
+
+            {isSignUp && (
+              <div>
+                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-300 mb-2">
+                  Confirm Password
+                </label>
+                <input
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  required
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-900 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  placeholder="••••••••"
+                />
+              </div>
+            )}
           </div>
 
           <button
@@ -124,6 +157,7 @@ export default function LoginPage() {
               onClick={() => {
                 setIsSignUp(!isSignUp);
                 setError('');
+                setConfirmPassword('');
               }}
               className="text-sm text-blue-400 hover:text-blue-300"
             >

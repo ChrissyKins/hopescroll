@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
-import { createApiResponse } from '@/lib/api-response';
+import { successResponse, errorResponse } from '@/lib/api-response';
 import { ValidationError } from '@/lib/errors';
 
 export async function POST(request: NextRequest) {
@@ -43,22 +43,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json(
-      createApiResponse(user, { message: 'Account created successfully' }),
-      { status: 201 }
+    return successResponse(
+      { user, message: 'Account created successfully' },
+      201
     );
   } catch (error) {
     if (error instanceof ValidationError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: 400 }
-      );
+      return errorResponse(error, 400);
     }
 
     console.error('Signup error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create account' },
-      { status: 500 }
-    );
+    return errorResponse(error, 500);
   }
 }
