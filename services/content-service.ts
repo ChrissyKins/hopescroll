@@ -67,8 +67,9 @@ export class ContentService {
 
   /**
    * Fetch content for a specific source
+   * @param forceBacklog - Force fetching backlog even if recently fetched (useful for manual refresh)
    */
-  async fetchSource(sourceId: string): Promise<number> {
+  async fetchSource(sourceId: string, forceBacklog: boolean = false): Promise<number> {
     const source = await this.db.contentSource.findUnique({
       where: { id: sourceId },
     });
@@ -113,7 +114,7 @@ export class ContentService {
 
       // Also fetch some backlog content if this is a new source or hasn't been fetched in a while
       let backlogItems: ContentItem[] = [];
-      const shouldFetchBacklog = this.shouldFetchBacklog(source);
+      const shouldFetchBacklog = forceBacklog || this.shouldFetchBacklog(source);
 
       if (shouldFetchBacklog) {
         log.info({ sourceId }, 'Fetching backlog content');
@@ -301,8 +302,9 @@ export class ContentService {
       };
     }
 
+    // Force backlog fetch for manual refresh
     const results = await Promise.allSettled(
-      sources.map((source) => this.fetchSource(source.id))
+      sources.map((source) => this.fetchSource(source.id, true))
     );
 
     const successCount = results.filter((r) => r.status === 'fulfilled').length;
