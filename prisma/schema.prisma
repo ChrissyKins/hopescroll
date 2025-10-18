@@ -17,11 +17,25 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sources        ContentSource[]
-  filters        FilterKeyword[]
-  preferences    UserPreferences?
-  interactions   ContentInteraction[]
-  savedContent   SavedContent[]
+  sources           ContentSource[]
+  filters           FilterKeyword[]
+  preferences       UserPreferences?
+  interactions      ContentInteraction[]
+  savedContent      SavedContent[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  used      Boolean  @default(false)
+
+  @@index([userId])
+  @@index([token])
 }
 
 model ContentSource {

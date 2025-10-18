@@ -3,6 +3,7 @@
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
@@ -151,7 +152,7 @@ export default function LoginPage() {
             {isLoading ? 'Please wait...' : isSignUp ? 'Sign Up' : 'Sign In'}
           </button>
 
-          <div className="text-center">
+          <div className="text-center space-y-2">
             <button
               type="button"
               onClick={() => {
@@ -159,10 +160,19 @@ export default function LoginPage() {
                 setError('');
                 setConfirmPassword('');
               }}
-              className="text-sm text-blue-400 hover:text-blue-300"
+              className="block w-full text-sm text-blue-400 hover:text-blue-300"
             >
               {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
             </button>
+
+            {!isSignUp && (
+              <Link
+                href="/forgot-password"
+                className="block text-sm text-gray-400 hover:text-gray-300"
+              >
+                Forgot your password?
+              </Link>
+            )}
           </div>
         </form>
       </div>
