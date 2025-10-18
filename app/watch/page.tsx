@@ -74,7 +74,8 @@ export default function WatchPage() {
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [currentVideo, error, fetchRandomVideo, minDuration, maxDuration, recencyFilter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [minDuration, maxDuration, recencyFilter]);
 
   const fetchRecommendedVideo = async () => {
     try {
