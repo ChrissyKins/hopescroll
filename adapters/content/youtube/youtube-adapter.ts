@@ -58,32 +58,49 @@ export class YouTubeAdapter implements ContentAdapter {
   ): Promise<ContentItem[]> {
     log.info({ channelId, limit, offset }, 'Fetching YouTube backlog');
 
-    // Note: offset is not directly supported by YouTube API
-    // We fetch without date filters to get historic content
-    // The limit parameter controls how many results we get
-    const searchResponse = await this.client.searchChannelVideos({
-      channelId,
-      maxResults: Math.min(limit, 50), // YouTube API max is 50
-      // No publishedAfter filter - get all historic content
-    });
+    // YouTube API uses page tokens instead of offset
+    // We'll fetch multiple pages to get more historic content
+    const allItems: ContentItem[] = [];
+    let pageToken: string | undefined = undefined;
+    const maxPages = Math.ceil(limit / 50); // YouTube API max per request is 50
 
-    if (!searchResponse || !searchResponse.items || searchResponse.items.length === 0) {
-      return [];
+    for (let page = 0; page < maxPages && allItems.length < limit; page++) {
+      const searchResponse = await this.client.searchChannelVideos({
+        channelId,
+        maxResults: 50, // Always request max to get as much as possible
+        pageToken,
+        // No publishedAfter filter - get all historic content
+      });
+
+      if (!searchResponse || !searchResponse.items || searchResponse.items.length === 0) {
+        break; // No more results
+      }
+
+      const videoIds = searchResponse.items
+        .map((item) => item.id.videoId)
+        .filter((id): id is string => id !== undefined);
+
+      const videosResponse = await this.client.getVideos(videoIds);
+
+      if (videosResponse && videosResponse.items) {
+        const items = videosResponse.items.map((video) =>
+          this.mapToContentItem(video, channelId)
+        );
+        allItems.push(...items);
+      }
+
+      // Check if there are more pages
+      if (!searchResponse.nextPageToken) {
+        break; // No more pages
+      }
+
+      pageToken = searchResponse.nextPageToken;
     }
 
-    const videoIds = searchResponse.items
-      .map((item) => item.id.videoId)
-      .filter((id): id is string => id !== undefined);
+    log.info({ channelId, fetchedCount: allItems.length, limit }, 'Fetched backlog items');
 
-    const videosResponse = await this.client.getVideos(videoIds);
-
-    if (!videosResponse || !videosResponse.items) {
-      return [];
-    }
-
-    return videosResponse.items.map((video) =>
-      this.mapToContentItem(video, channelId)
-    );
+    // Return up to the requested limit
+    return allItems.slice(0, limit);
   }
 
   async validateSource(channelIdOrHandle: string): Promise<SourceValidation> {

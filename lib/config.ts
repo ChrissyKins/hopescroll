@@ -13,7 +13,7 @@ export const CONFIG = {
   content: {
     fetchIntervalMinutes: 30,
     fetchRecentDays: 7,
-    backlogBatchSize: 50,
+    backlogBatchSize: 200, // Fetch 200 videos initially (4 pages of 50)
     maxBacklogDepth: 500,
     deduplicationWindowDays: 90,
   },
@@ -46,8 +46,8 @@ export const ENV = {
   databaseUrl: process.env.POSTGRES_PRISMA_URL || '',
 
   // Redis Cache (Upstash)
-  redisUrl: process.env.UPSTASH_REDIS_URL || '',
-  redisToken: process.env.UPSTASH_REDIS_TOKEN || '',
+  redisUrl: process.env.UPSTASH_REDIS_REST_URL || process.env.UPSTASH_REDIS_URL || '',
+  redisToken: process.env.UPSTASH_REDIS_REST_TOKEN || process.env.UPSTASH_REDIS_TOKEN || '',
 
   // Vercel Blob Storage
   blobToken: process.env.BLOB_READ_WRITE_TOKEN || '',

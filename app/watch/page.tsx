@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Navigation } from '@/components/navigation';
 import type { FeedItem } from '@/domain/feed/feed-generator';
 
@@ -20,11 +20,7 @@ export default function WatchPage() {
   const playerRef = useRef<YT.Player | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    fetchRandomVideo();
-  }, []);
-
-  const fetchRandomVideo = async () => {
+  const fetchRandomVideo = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
@@ -53,7 +49,32 @@ export default function WatchPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [minDuration, maxDuration, recencyFilter]);
+
+  // Initial load - fetch first video
+  useEffect(() => {
+    fetchRandomVideo();
+  }, [fetchRandomVideo]);
+
+  // When filters change, fetch new video automatically
+  useEffect(() => {
+    // Skip the initial render (let the first useEffect handle it)
+    if (currentVideo === null && !error) return;
+
+    // Destroy current player and fetch new video with updated filters
+    if (playerRef.current) {
+      playerRef.current.destroy();
+      playerRef.current = null;
+    }
+    setIsPlaying(false);
+
+    // Small delay to ensure player is destroyed
+    const timer = setTimeout(() => {
+      fetchRandomVideo();
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [currentVideo, error, fetchRandomVideo, minDuration, maxDuration, recencyFilter]);
 
   const fetchRecommendedVideo = async () => {
     try {
@@ -161,7 +182,7 @@ export default function WatchPage() {
     }
   };
 
-  const handleMarkWatched = async () => {
+  const handleMarkWatched = useCallback(async () => {
     if (!currentVideo) return;
     try {
       await fetch(`/api/content/${currentVideo.content.id}/watch`, {
@@ -174,7 +195,7 @@ export default function WatchPage() {
     } catch (err) {
       console.error('Error marking as watched:', err);
     }
-  };
+  }, [currentVideo]);
 
   const handleDiscover = async () => {
     // Destroy current player
@@ -241,15 +262,7 @@ export default function WatchPage() {
     setMinDuration(min);
     setMaxDuration(max);
     setShowCustom(false);
-    // Destroy current player and fetch new video
-    if (playerRef.current) {
-      playerRef.current.destroy();
-      playerRef.current = null;
-    }
-    setIsPlaying(false);
-    setTimeout(() => {
-      fetchRandomVideo();
-    }, 100);
+    // Video will be fetched automatically by the useEffect
   };
 
   const handleCustomDuration = () => {
@@ -264,15 +277,7 @@ export default function WatchPage() {
 
   const handleRecencyFilterChange = (days: number | null) => {
     setRecencyFilter(days);
-    // Destroy current player and fetch new video
-    if (playerRef.current) {
-      playerRef.current.destroy();
-      playerRef.current = null;
-    }
-    setIsPlaying(false);
-    setTimeout(() => {
-      fetchRandomVideo();
-    }, 100);
+    // Video will be fetched automatically by the useEffect
   };
 
   const isRecencyFilterActive = (days: number | null) => {
@@ -339,7 +344,7 @@ export default function WatchPage() {
         playerRef.current = null;
       }
     };
-  }, [isPlaying, videoId, currentVideo]);
+  }, [isPlaying, videoId, currentVideo, handleMarkWatched]);
 
   const formatDuration = (seconds: number | null) => {
     if (!seconds) return null;
