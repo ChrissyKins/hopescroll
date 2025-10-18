@@ -25,22 +25,19 @@ export async function GET(request: NextRequest) {
       return successResponse(null);
     }
 
-    // Get user's watched/dismissed/saved content IDs
-    const interactions = await db.contentInteraction.findMany({
-      where: {
-        userId,
-        type: { in: ['WATCHED', 'DISMISSED', 'SAVED', 'BLOCKED'] },
-      },
-      select: { contentId: true },
-    });
-
-    const excludeIds = interactions.map((i) => i.contentId);
-
-    // Build query filters
+    // Build query filters - use a subquery approach to avoid NOT IN with large arrays
     const whereClause: any = {
       sourceId: { in: sources.map((s) => s.sourceId) },
       sourceType: { in: sources.map((s) => s.type) },
-      id: { notIn: excludeIds },
+      // Exclude interacted content using a more efficient subquery approach
+      NOT: {
+        interactions: {
+          some: {
+            userId,
+            type: { in: ['WATCHED', 'DISMISSED', 'SAVED', 'BLOCKED'] },
+          },
+        },
+      },
     };
 
     // Apply duration filter if provided
