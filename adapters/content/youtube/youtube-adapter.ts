@@ -74,12 +74,12 @@ export class YouTubeAdapter implements ContentAdapter {
     log.info({ channelId, uploadsPlaylistId }, 'Using uploads playlist for backlog');
 
     // YouTube API uses page tokens instead of offset
-    // We'll fetch multiple pages from the uploads playlist to get more historic content
+    // We'll fetch ALL pages from the uploads playlist to get complete channel history
     const allItems: ContentItem[] = [];
     let pageToken: string | undefined = undefined;
-    const maxPages = Math.ceil(limit / 50); // YouTube API max per request is 50
 
-    for (let page = 0; page < maxPages && allItems.length < limit; page++) {
+    // Keep fetching until we run out of pages (no artificial limit)
+    while (true) {
       const playlistResponse = await this.client.getPlaylistItems({
         playlistId: uploadsPlaylistId,
         maxResults: 50, // Always request max to get as much as possible
@@ -115,10 +115,10 @@ export class YouTubeAdapter implements ContentAdapter {
       pageToken = playlistResponse.nextPageToken;
     }
 
-    log.info({ channelId, fetchedCount: allItems.length, limit }, 'Fetched backlog items');
+    log.info({ channelId, fetchedCount: allItems.length }, 'Fetched all backlog items from uploads playlist');
 
-    // Return up to the requested limit
-    return allItems.slice(0, limit);
+    // Return all items (no artificial limit)
+    return allItems;
   }
 
   async validateSource(channelIdOrHandle: string): Promise<SourceValidation> {
