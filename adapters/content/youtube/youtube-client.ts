@@ -75,13 +75,34 @@ export class YouTubeClient {
 
   async getChannel(channelId: string): Promise<YouTubeChannelResponse> {
     const searchParams = new URLSearchParams({
-      part: 'snippet,statistics',
+      part: 'snippet,statistics,contentDetails',
       id: channelId,
       key: this.apiKey,
     });
 
     return this.request<YouTubeChannelResponse>(
       `/channels?${searchParams.toString()}`
+    );
+  }
+
+  async getPlaylistItems(params: {
+    playlistId: string;
+    maxResults?: number;
+    pageToken?: string;
+  }): Promise<YouTubeSearchResponse> {
+    const searchParams = new URLSearchParams({
+      part: 'snippet',
+      playlistId: params.playlistId,
+      maxResults: (params.maxResults || 50).toString(),
+      key: this.apiKey,
+    });
+
+    if (params.pageToken) {
+      searchParams.append('pageToken', params.pageToken);
+    }
+
+    return this.request<YouTubeSearchResponse>(
+      `/playlistItems?${searchParams.toString()}`
     );
   }
 

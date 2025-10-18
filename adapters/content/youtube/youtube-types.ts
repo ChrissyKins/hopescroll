@@ -15,7 +15,12 @@ export interface YouTubeSearchItem {
     kind: string;
     videoId?: string;
   };
-  snippet: YouTubeSnippet;
+  snippet: YouTubeSnippet & {
+    resourceId?: {
+      kind: string;
+      videoId?: string;
+    };
+  };
 }
 
 export interface YouTubeVideoResponse {
@@ -73,6 +78,11 @@ export interface YouTubeChannel {
     description: string;
     thumbnails: YouTubeThumbnails;
     customUrl?: string;
+  };
+  contentDetails?: {
+    relatedPlaylists: {
+      uploads: string;
+    };
   };
   statistics?: {
     subscriberCount: string;

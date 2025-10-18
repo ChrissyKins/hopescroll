@@ -58,27 +58,45 @@ export class YouTubeAdapter implements ContentAdapter {
   ): Promise<ContentItem[]> {
     log.info({ channelId, limit, offset }, 'Fetching YouTube backlog');
 
+    // Get the channel's uploads playlist ID
+    const channelResponse = await this.client.getChannel(channelId);
+    if (!channelResponse || !channelResponse.items || channelResponse.items.length === 0) {
+      log.warn({ channelId }, 'Channel not found for backlog fetch');
+      return [];
+    }
+
+    const uploadsPlaylistId = channelResponse.items[0].contentDetails?.relatedPlaylists?.uploads;
+    if (!uploadsPlaylistId) {
+      log.warn({ channelId }, 'No uploads playlist found for channel');
+      return [];
+    }
+
+    log.info({ channelId, uploadsPlaylistId }, 'Using uploads playlist for backlog');
+
     // YouTube API uses page tokens instead of offset
-    // We'll fetch multiple pages to get more historic content
+    // We'll fetch multiple pages from the uploads playlist to get more historic content
     const allItems: ContentItem[] = [];
     let pageToken: string | undefined = undefined;
     const maxPages = Math.ceil(limit / 50); // YouTube API max per request is 50
 
     for (let page = 0; page < maxPages && allItems.length < limit; page++) {
-      const searchResponse = await this.client.searchChannelVideos({
-        channelId,
+      const playlistResponse = await this.client.getPlaylistItems({
+        playlistId: uploadsPlaylistId,
         maxResults: 50, // Always request max to get as much as possible
         pageToken,
-        // No publishedAfter filter - get all historic content
       });
 
-      if (!searchResponse || !searchResponse.items || searchResponse.items.length === 0) {
+      if (!playlistResponse || !playlistResponse.items || playlistResponse.items.length === 0) {
         break; // No more results
       }
 
-      const videoIds = searchResponse.items
-        .map((item) => item.id.videoId)
+      const videoIds = playlistResponse.items
+        .map((item) => item.snippet?.resourceId?.videoId || item.id?.videoId)
         .filter((id): id is string => id !== undefined);
+
+      if (videoIds.length === 0) {
+        break;
+      }
 
       const videosResponse = await this.client.getVideos(videoIds);
 
@@ -90,11 +108,11 @@ export class YouTubeAdapter implements ContentAdapter {
       }
 
       // Check if there are more pages
-      if (!searchResponse.nextPageToken) {
+      if (!playlistResponse.nextPageToken) {
         break; // No more pages
       }
 
-      pageToken = searchResponse.nextPageToken;
+      pageToken = playlistResponse.nextPageToken;
     }
 
     log.info({ channelId, fetchedCount: allItems.length, limit }, 'Fetched backlog items');
