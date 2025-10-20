@@ -2,6 +2,7 @@ import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/api-response';
 import { ValidationError } from '@/lib/errors';
+import { sendPasswordResetEmail } from '@/lib/email';
 import crypto from 'crypto';
 
 export async function POST(request: NextRequest) {
@@ -48,13 +49,9 @@ export async function POST(request: NextRequest) {
         },
       });
 
-      // In a real application, you would send an email here
-      // For development, we'll log the reset URL
+      // Send password reset email
       const resetUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/reset-password?token=${token}`;
-      console.log('Password reset link:', resetUrl);
-
-      // TODO: Send email with reset link
-      // await sendPasswordResetEmail(user.email, resetUrl);
+      await sendPasswordResetEmail(user.email, resetUrl);
     }
 
     return successResponse({
