@@ -152,7 +152,21 @@ async function setupDatabase() {
         CONSTRAINT "SavedContent_userId_contentId_key" UNIQUE ("userId", "contentId")
       );
     `);
-    console.log('✓ SavedContent table created\n');
+    console.log('✓ SavedContent table created');
+
+    // Create PasswordResetToken table
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "PasswordResetToken" (
+        "id" TEXT NOT NULL PRIMARY KEY,
+        "userId" TEXT NOT NULL,
+        "token" TEXT NOT NULL UNIQUE,
+        "expiresAt" TIMESTAMP(3) NOT NULL,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "used" BOOLEAN NOT NULL DEFAULT false,
+        CONSTRAINT "PasswordResetToken_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE
+      );
+    `);
+    console.log('✓ PasswordResetToken table created\n');
 
     // Create indexes
     console.log('Creating indexes...\n');
@@ -187,6 +201,14 @@ async function setupDatabase() {
 
     await prisma.$executeRawUnsafe(`
       CREATE INDEX IF NOT EXISTS "SavedContent_userId_collection_idx" ON "SavedContent"("userId", "collection");
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX IF NOT EXISTS "PasswordResetToken_userId_idx" ON "PasswordResetToken"("userId");
+    `);
+
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX IF NOT EXISTS "PasswordResetToken_token_idx" ON "PasswordResetToken"("token");
     `);
 
     console.log('✓ All indexes created\n');
