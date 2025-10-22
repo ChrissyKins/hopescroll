@@ -12,7 +12,7 @@ After reviewing all four pages, I've identified several areas for improvement ac
 - ❌ Basic table-like layout lacks visual hierarchy
 - ❌ Long channel IDs are hard to read (e.g., "UCHnyfMqiRRG1u-2MsSQLbXA")
 - ❌ No search/filter functionality for large source lists
-- ❌ Video stats use emoji (📹⏳) instead of proper icons
+- ✅ Video stats now use SVG icons instead of emoji
 - ❌ "Refresh Content" button placement could be improved
 - ❌ No visual feedback for muted sources beyond small badge
 - ❌ Error messages in alerts (blocking modals) instead of inline toasts
@@ -21,7 +21,7 @@ After reviewing all four pages, I've identified several areas for improvement ac
 ### Proposed Improvements
 
 #### Visual Design
-- [ ] Replace emoji with proper SVG icons for video stats
+- [x] Replace emoji with proper SVG icons for video stats ✅
 - [ ] Add card-based layout option (grid vs list view toggle)
 - [ ] Improve visual distinction for muted sources (opacity/grayscale)
 - [ ] Add hover state previews showing recent content from source
@@ -134,7 +134,7 @@ After reviewing all four pages, I've identified several areas for improvement ac
 - [ ] Improve filter tabs styling (capitalize, add icons, show counts)
 - [ ] Add visual progress bars for completion rate
 - [ ] Timeline view option (group by date)
-- [ ] Better interaction type icons (replace emoji with SVG)
+- [x] Better interaction type icons (replace emoji with SVG) ✅
 - [ ] Improve date formatting with relative times (2 hours ago, yesterday)
 
 #### UX Enhancements
@@ -197,15 +197,25 @@ After reviewing all four pages, I've identified several areas for improvement ac
 - [x] Improve empty states with helpful content across all pages
 - [x] Add sorting to Sources page (5 sort options)
 
+### ✅ Completed (Phase 2: Collection Management - October 22, 2025)
+- [x] Create Collection database model with foreign key relationships
+- [x] Create collection management service and API endpoints (GET, POST, PATCH, DELETE)
+- [x] Create CollectionManager component (sidebar with create/edit/delete)
+- [x] Create CollectionSelector component (dropdown for saved items)
+- [x] Update Saved page with collection filtering and organization
+- [x] Add collection icons (folder, plus, edit, trash, chevron)
+- [x] Support color-coded collections with 8 default colors
+- [x] Update saved items to use collectionId (FK) instead of collection string
+- [x] Update seed and verify scripts for new schema
+
 ### 🚧 In Progress
-- [ ] Replace emoji with SVG icons throughout
+None - Collection Management complete!
 
 ### 📋 Next Up (Medium Priority)
-- [ ] Add visual icons throughout (replace emoji)
-- [ ] Implement collection management in Saved page
 - [ ] Add date range filtering to History page
 - [ ] Add enable/disable toggles for filters
 - [ ] Improve source stats visualization
+- [ ] Add sorting to Saved page
 
 ---
 
@@ -219,11 +229,11 @@ After reviewing all four pages, I've identified several areas for improvement ac
 5. 📋 Add basic sorting to all list views
 
 ### Medium Priority (UX Improvements)
-6. Add visual icons throughout (replace emoji)
-7. Implement collection management in Saved page
-8. Add date range filtering to History page
-9. Add enable/disable toggles for filters
-10. Improve source stats visualization
+6. ✅ Add visual icons throughout (replace emoji)
+7. ✅ Implement collection management in Saved page
+8. 📋 Add date range filtering to History page
+9. 📋 Add enable/disable toggles for filters
+10. 📋 Improve source stats visualization
 
 ### Low Priority (Advanced Features)
 11. Timeline view for History

@@ -173,17 +173,26 @@ async function seed() {
     });
     console.log('✓ Sample interaction created\n');
 
-    // Add a saved content item
-    console.log('Creating saved content...');
+    // Add a collection and saved content item
+    console.log('Creating collection and saved content...');
+    const collection = await prisma.collection.create({
+      data: {
+        userId: user.id,
+        name: 'Watch Later',
+        description: 'Videos to watch on the weekend',
+        color: '#3B82F6',
+      },
+    });
+
     await prisma.savedContent.create({
       data: {
         userId: user.id,
         contentId: 'content-2',
-        collection: 'Watch Later',
+        collectionId: collection.id,
         notes: 'Looks interesting, save for weekend',
       },
     });
-    console.log('✓ Saved content created\n');
+    console.log('✓ Collection and saved content created\n');
 
     // Summary
     console.log('📊 Seed Summary:');

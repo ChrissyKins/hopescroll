@@ -21,6 +21,7 @@ async function verify() {
         savedContent: {
           include: {
             content: true,
+            collection: true,
           },
         },
       },
@@ -87,7 +88,7 @@ async function verify() {
     console.log('💾 Saved Content:');
     user.savedContent.forEach((saved) => {
       console.log(`   - ${saved.content.title}`);
-      console.log(`     Collection: ${saved.collection || 'None'}`);
+      console.log(`     Collection: ${saved.collection?.name || 'None'}`);
       if (saved.notes) {
         console.log(`     Notes: ${saved.notes}`);
       }

@@ -8,14 +8,6 @@ interface YouTubePlayerProps {
   onEnded?: () => void;
 }
 
-// YouTube IFrame Player API types
-declare global {
-  interface Window {
-    YT: any;
-    onYouTubeIframeAPIReady: () => void;
-  }
-}
-
 export function YouTubePlayer({ videoId, onPlay, onEnded }: YouTubePlayerProps) {
   const playerRef = useRef<any>(null);
   const containerRef = useRef<HTMLDivElement>(null);

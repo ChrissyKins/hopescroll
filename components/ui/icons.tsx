@@ -16,6 +16,11 @@ import {
   XMarkIcon,
   PauseIcon,
   NoSymbolIcon,
+  FolderIcon,
+  PlusIcon,
+  PencilIcon,
+  TrashIcon,
+  ChevronDownIcon,
 } from '@heroicons/react/24/outline';
 
 // Export icons with semantic names for easy reference
@@ -36,3 +41,10 @@ export { StarIcon };                       // Saved videos (reuse)
 export const DismissedIcon = XMarkIcon;    // Dismissed content
 export const NotNowIcon = PauseIcon;       // Not now (saved for later)
 export const BlockedIcon = NoSymbolIcon;   // Blocked content
+
+// Collection management icons
+export const CollectionIcon = FolderIcon; // Collection folder icon
+export { PlusIcon };                       // Add new collection
+export const EditIcon = PencilIcon;        // Edit collection
+export { TrashIcon };                      // Delete collection
+export { ChevronDownIcon };                // Dropdown indicator

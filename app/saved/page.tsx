@@ -1,14 +1,36 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Navigation } from '@/components/navigation';
 import { ContentCard } from '@/components/feed/content-card';
-import { useToast, Search, EmptyState, SavedIcon } from '@/components/ui';
+import {
+  useToast,
+  Search,
+  EmptyState,
+  SavedIcon,
+  CollectionManager,
+  CollectionSelector,
+} from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
+
+interface Collection {
+  id: string;
+  name: string;
+  description: string | null;
+  color: string | null;
+  itemCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
 
 interface SavedItem {
   id: string;
-  collection: string | null;
+  collectionId: string | null;
+  collection: {
+    id: string;
+    name: string;
+    color: string | null;
+  } | null;
   savedAt: string;
   notes: string | null;
   content: any;
@@ -16,6 +38,8 @@ interface SavedItem {
 
 export default function SavedPage() {
   const [saved, setSaved] = useState<SavedItem[]>([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -27,20 +51,34 @@ export default function SavedPage() {
     (item) => [
       item.content?.title || '',
       item.notes || '',
-      item.collection || '',
+      item.collection?.name || '',
       item.content?.sourceDisplayName || ''
     ]
   );
 
-  useEffect(() => {
-    fetchSaved();
+  const fetchCollections = useCallback(async () => {
+    try {
+      const response = await fetch('/api/collections');
+      if (!response.ok) {
+        throw new Error('Failed to fetch collections');
+      }
+      const data = await response.json();
+      setCollections(data.data);
+    } catch (err) {
+      console.error('Failed to load collections:', err);
+    }
   }, []);
 
-  const fetchSaved = async () => {
+  const fetchSaved = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
-      const response = await fetch('/api/saved');
+
+      const url = selectedCollectionId
+        ? `/api/saved?collectionId=${selectedCollectionId}`
+        : '/api/saved';
+
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch saved content');
       }
@@ -51,11 +89,19 @@ export default function SavedPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [selectedCollectionId]);
+
+  useEffect(() => {
+    fetchCollections();
+    fetchSaved();
+  }, [fetchCollections, fetchSaved]);
+
+  useEffect(() => {
+    fetchSaved();
+  }, [selectedCollectionId, fetchSaved]);
 
   const handleUnsave = async (contentId: string) => {
     try {
-      // Remove from saved via interaction service
       const response = await fetch(`/api/content/${contentId}/unsave`, {
         method: 'POST',
       });
@@ -65,11 +111,39 @@ export default function SavedPage() {
       }
 
       toast.success('Removed from saved content');
-      // Refresh list
-      await fetchSaved();
+      await Promise.all([fetchSaved(), fetchCollections()]);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to remove from saved');
     }
+  };
+
+  const handleCollectionChange = async (savedItemId: string, collectionId: string | null) => {
+    try {
+      const response = await fetch(`/api/saved/${savedItemId}/collection`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ collectionId }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to update collection');
+      }
+
+      toast.success('Collection updated');
+      await Promise.all([fetchSaved(), fetchCollections()]);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to update collection');
+    }
+  };
+
+  const handleCollectionsChange = () => {
+    fetchCollections();
+    fetchSaved();
+  };
+
+  const handleSelectCollection = (collectionId: string | null) => {
+    setSelectedCollectionId(collectionId);
+    clearSearch();
   };
 
   if (isLoading) {
@@ -116,7 +190,9 @@ export default function SavedPage() {
     );
   }
 
-  if (saved.length === 0) {
+  const totalSavedCount = collections.reduce((sum, c) => sum + c.itemCount, 0);
+
+  if (totalSavedCount === 0) {
     return (
       <>
         <Navigation />
@@ -154,61 +230,100 @@ export default function SavedPage() {
             </span>
           </div>
 
-          {/* Search */}
-          <div className="mb-6">
-            <Search
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onClear={clearSearch}
-              placeholder="Search by title, notes, collection, or source..."
-              resultCount={resultCount}
-              totalCount={totalCount}
-            />
-          </div>
-
-          {filteredItems.length === 0 ? (
-            <p className="text-gray-600 dark:text-gray-400 text-center py-8">
-              No saved items match your search.
-            </p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredItems.map((item) => (
-              <div key={item.id} className="relative">
-                <ContentCard
-                  item={{
-                    content: item.content,
-                    position: 0,
-                    isNew: false,
-                    sourceDisplayName: '',
-                    interactionState: null,
-                  }}
-                  onWatch={() => {}}
-                  onSave={() => {}}
-                  onDismiss={() => {}}
-                  onNotNow={() => {}}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            {/* Sidebar - Collections */}
+            <div className="lg:col-span-1">
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+                  Collections
+                </h2>
+                <CollectionManager
+                  collections={collections}
+                  selectedCollectionId={selectedCollectionId}
+                  onSelectCollection={handleSelectCollection}
+                  onCollectionsChange={handleCollectionsChange}
                 />
-                <div className="mt-2 flex items-center justify-between">
-                  {item.collection && (
-                    <span className="text-sm text-gray-600 dark:text-gray-400">
-                      Collection: {item.collection}
-                    </span>
-                  )}
-                  <button
-                    onClick={() => handleUnsave(item.content.id)}
-                    className="text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                  >
-                    Remove
-                  </button>
-                </div>
-                {item.notes && (
-                  <p className="mt-2 text-sm text-gray-600 dark:text-gray-400 italic">
-                    &ldquo;{item.notes}&rdquo;
-                  </p>
-                )}
               </div>
-            ))}
             </div>
-          )}
+
+            {/* Main Content */}
+            <div className="lg:col-span-3">
+              {/* Search */}
+              <div className="mb-6">
+                <Search
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  onClear={clearSearch}
+                  placeholder="Search by title, notes, collection, or source..."
+                  resultCount={resultCount}
+                  totalCount={totalCount}
+                />
+              </div>
+
+              {filteredItems.length === 0 ? (
+                <p className="text-gray-600 dark:text-gray-400 text-center py-8">
+                  No saved items match your search.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {filteredItems.map((item) => (
+                    <div key={item.id} className="flex flex-col gap-3">
+                      <ContentCard
+                        item={{
+                          content: item.content,
+                          position: 0,
+                          isNew: false,
+                          sourceDisplayName: '',
+                          interactionState: null,
+                        }}
+                        onWatch={() => {}}
+                        onSave={() => {}}
+                        onDismiss={() => {}}
+                        onNotNow={() => {}}
+                      />
+
+                      <div className="flex items-center justify-between gap-2">
+                        <CollectionSelector
+                          collections={collections}
+                          selectedCollectionId={item.collectionId}
+                          onSelect={(collectionId) =>
+                            handleCollectionChange(item.id, collectionId)
+                          }
+                        />
+
+                        <button
+                          onClick={() => handleUnsave(item.content.id)}
+                          className="text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 px-3 py-1.5"
+                        >
+                          Remove
+                        </button>
+                      </div>
+
+                      {item.notes && (
+                        <p className="text-sm text-gray-600 dark:text-gray-400 italic px-1">
+                          &ldquo;{item.notes}&rdquo;
+                        </p>
+                      )}
+
+                      {item.collection && (
+                        <div className="flex items-center gap-2 px-1">
+                          <div
+                            className="w-2 h-2 rounded-full"
+                            style={{
+                              backgroundColor: item.collection.color || '#3B82F6',
+                            }}
+                          />
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            {item.collection.name}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </div>
     </>

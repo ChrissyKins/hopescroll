@@ -25,6 +25,7 @@ model User {
   preferences       UserPreferences?
   interactions      ContentInteraction[]
   savedContent      SavedContent[]
+  collections       Collection[]
   passwordResetTokens PasswordResetToken[]
 }
 
@@ -146,18 +147,37 @@ model UserPreferences {
 }
 
 model SavedContent {
-  id          String      @id @default(cuid())
-  userId      String
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  contentId   String
-  content     ContentItem @relation(fields: [contentId], references: [id], onDelete: Cascade)
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contentId    String
+  content      ContentItem @relation(fields: [contentId], references: [id], onDelete: Cascade)
 
-  collection  String?     // Optional grouping
-  savedAt     DateTime    @default(now())
-  notes       String?     // User notes about saved item
+  collectionId String?     // Reference to Collection model
+  collection   Collection? @relation(fields: [collectionId], references: [id], onDelete: SetNull)
+  savedAt      DateTime    @default(now())
+  notes        String?     // User notes about saved item
 
   @@unique([userId, contentId])
-  @@index([userId, collection])
+  @@index([userId, collectionId])
+}
+
+model Collection {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  color       String?  // Hex color code for UI
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  savedItems  SavedContent[]
+
+  @@unique([userId, name])
+  @@index([userId])
 }
 
 enum SourceType {

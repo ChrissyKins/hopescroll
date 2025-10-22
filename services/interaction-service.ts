@@ -43,10 +43,10 @@ export class InteractionService {
   async saveContent(
     userId: string,
     contentId: string,
-    collection?: string,
+    collectionId?: string | null,
     notes?: string
   ): Promise<void> {
-    log.info({ userId, contentId, collection }, 'Saving content');
+    log.info({ userId, contentId, collectionId }, 'Saving content');
 
     // Check if already saved
     const existing = await this.db.savedContent.findUnique({
@@ -62,7 +62,7 @@ export class InteractionService {
       // Update if already exists
       await this.db.savedContent.update({
         where: { id: existing.id },
-        data: { collection, notes },
+        data: { collectionId, notes },
       });
     } else {
       // Create new saved content entry
@@ -70,19 +70,19 @@ export class InteractionService {
         data: {
           userId,
           contentId,
-          collection,
+          collectionId,
           notes,
         },
       });
     }
 
-    // Also record as interaction
+    // Also record as interaction (collection field is kept for historical tracking)
     await this.db.contentInteraction.create({
       data: {
         userId,
         contentId,
         type: 'SAVED',
-        collection,
+        collection: collectionId, // Store ID for now (can be migrated later if needed)
       },
     });
 
@@ -202,14 +202,15 @@ export class InteractionService {
   /**
    * Get saved content for a user
    */
-  async getSavedContent(userId: string, collection?: string) {
+  async getSavedContent(userId: string, collectionId?: string | null) {
     const saved = await this.db.savedContent.findMany({
       where: {
         userId,
-        ...(collection && { collection }),
+        ...(collectionId !== undefined && { collectionId }),
       },
       include: {
         content: true,
+        collection: true,
       },
       orderBy: {
         savedAt: 'desc',

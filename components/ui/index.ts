@@ -1,4 +1,4 @@
-export { Toast, ToastProvider, useToast } from './toast';
+export { ToastProvider, useToast } from './toast';
 export type { ToastType } from './toast';
 
 export { Button } from './button';
@@ -15,5 +15,11 @@ export type { SearchProps } from './search';
 
 export { ConfirmDialog, useConfirmDialog } from './confirm-dialog';
 export type { ConfirmDialogProps } from './confirm-dialog';
+
+export { CollectionManager } from './collection-manager';
+export type { Collection as CollectionManagerCollection } from './collection-manager';
+
+export { CollectionSelector } from './collection-selector';
+export type { Collection as CollectionSelectorCollection } from './collection-selector';
 
 export * from './icons';
