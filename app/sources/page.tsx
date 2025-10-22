@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
-import { useToast, useConfirmDialog } from '@/components/ui';
+import { useToast, useConfirmDialog, Search } from '@/components/ui';
+import { useSearch } from '@/hooks/use-search';
 
 interface ContentSource {
   id: string;
@@ -31,6 +32,12 @@ export default function SourcesPage() {
 
   const toast = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
+
+  // Search functionality
+  const { query, setQuery, clearSearch, filteredItems, resultCount, totalCount } = useSearch(
+    sources,
+    (source) => [source.displayName, source.sourceId, source.type]
+  );
 
   useEffect(() => {
     fetchSources();
@@ -327,13 +334,32 @@ export default function SourcesPage() {
                   {fetchMessage.text}
                 </div>
               )}
+
+              {/* Search */}
+              {sources.length > 0 && (
+                <div className="mb-4">
+                  <Search
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onClear={clearSearch}
+                    placeholder="Search sources by name, ID, or type..."
+                    resultCount={resultCount}
+                    totalCount={totalCount}
+                  />
+                </div>
+              )}
+
               {sources.length === 0 ? (
                 <p className="text-gray-600 dark:text-gray-400 text-center py-8">
                   No sources yet. Add your first source above!
                 </p>
+              ) : filteredItems.length === 0 ? (
+                <p className="text-gray-600 dark:text-gray-400 text-center py-8">
+                  No sources match your search.
+                </p>
               ) : (
                 <div className="space-y-4">
-                  {sources.map((source) => (
+                  {filteredItems.map((source) => (
                     <div
                       key={source.id}
                       className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"

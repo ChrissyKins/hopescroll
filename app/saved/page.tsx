@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
 import { ContentCard } from '@/components/feed/content-card';
-import { useToast } from '@/components/ui';
+import { useToast, Search } from '@/components/ui';
+import { useSearch } from '@/hooks/use-search';
 
 interface SavedItem {
   id: string;
@@ -19,6 +20,17 @@ export default function SavedPage() {
   const [error, setError] = useState<string | null>(null);
 
   const toast = useToast();
+
+  // Search functionality
+  const { query, setQuery, clearSearch, filteredItems, resultCount, totalCount } = useSearch(
+    saved,
+    (item) => [
+      item.content?.title || '',
+      item.notes || '',
+      item.collection || '',
+      item.content?.sourceDisplayName || ''
+    ]
+  );
 
   useEffect(() => {
     fetchSaved();
@@ -143,8 +155,26 @@ export default function SavedPage() {
               {saved.length} {saved.length === 1 ? 'item' : 'items'}
             </span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {saved.map((item) => (
+
+          {/* Search */}
+          <div className="mb-6">
+            <Search
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onClear={clearSearch}
+              placeholder="Search by title, notes, collection, or source..."
+              resultCount={resultCount}
+              totalCount={totalCount}
+            />
+          </div>
+
+          {filteredItems.length === 0 ? (
+            <p className="text-gray-600 dark:text-gray-400 text-center py-8">
+              No saved items match your search.
+            </p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filteredItems.map((item) => (
               <div key={item.id} className="relative">
                 <ContentCard
                   item={{
@@ -179,7 +209,8 @@ export default function SavedPage() {
                 )}
               </div>
             ))}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </>

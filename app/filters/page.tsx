@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
-import { useToast, useConfirmDialog } from '@/components/ui';
+import { useToast, useConfirmDialog, Search } from '@/components/ui';
+import { useSearch } from '@/hooks/use-search';
 
 interface FilterKeyword {
   id: string;
@@ -30,6 +31,12 @@ export default function FiltersPage() {
 
   const toast = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
+
+  // Search functionality for keywords
+  const { query, setQuery, clearSearch, filteredItems, resultCount, totalCount } = useSearch(
+    keywords,
+    (keyword) => [keyword.keyword]
+  );
 
   useEffect(() => {
     fetchFilters();
@@ -239,14 +246,32 @@ export default function FiltersPage() {
                 </button>
               </form>
 
+              {/* Search */}
+              {keywords.length > 0 && (
+                <div className="mb-4">
+                  <Search
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onClear={clearSearch}
+                    placeholder="Search keywords..."
+                    resultCount={resultCount}
+                    totalCount={totalCount}
+                  />
+                </div>
+              )}
+
               {/* Keywords List */}
               <div className="space-y-2">
                 {keywords.length === 0 ? (
                   <p className="text-gray-600 dark:text-gray-400 text-center py-4">
                     No keyword filters yet
                   </p>
+                ) : filteredItems.length === 0 ? (
+                  <p className="text-gray-600 dark:text-gray-400 text-center py-4">
+                    No keywords match your search.
+                  </p>
                 ) : (
-                  keywords.map((keyword) => (
+                  filteredItems.map((keyword) => (
                     <div
                       key={keyword.id}
                       className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"

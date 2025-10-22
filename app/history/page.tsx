@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
+import { Search } from '@/components/ui';
+import { useSearch } from '@/hooks/use-search';
 
 interface HistoryItem {
   id: string;
@@ -17,6 +19,16 @@ export default function HistoryPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>('all');
+
+  // Search functionality
+  const { query, setQuery, clearSearch, filteredItems, resultCount, totalCount } = useSearch(
+    history,
+    (item) => [
+      item.content?.title || '',
+      item.content?.sourceId || '',
+      item.type
+    ]
+  );
 
   useEffect(() => {
     fetchHistory();
@@ -148,16 +160,36 @@ export default function HistoryPage() {
             )}
           </div>
 
+          {/* Search */}
+          {history.length > 0 && (
+            <div className="mb-6">
+              <Search
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onClear={clearSearch}
+                placeholder="Search by title, source, or interaction type..."
+                resultCount={resultCount}
+                totalCount={totalCount}
+              />
+            </div>
+          )}
+
           {history.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-600 dark:text-gray-400">
                 No history found for this filter.
               </p>
             </div>
+          ) : filteredItems.length === 0 ? (
+            <div className="text-center py-12">
+              <p className="text-gray-600 dark:text-gray-400">
+                No history items match your search.
+              </p>
+            </div>
           ) : (
             <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
               <div className="p-6 space-y-4">
-                {history.map((item) => (
+                {filteredItems.map((item) => (
                   <div
                     key={item.id}
                     className="flex items-start space-x-4 p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
