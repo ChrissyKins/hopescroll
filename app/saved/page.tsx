@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
 import { ContentCard } from '@/components/feed/content-card';
-import { useToast, Search, EmptyState } from '@/components/ui';
+import { useToast, Search, EmptyState, SavedIcon } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
 
 interface SavedItem {
@@ -126,7 +126,7 @@ export default function SavedPage() {
               Saved Content
             </h1>
             <EmptyState
-              icon="⭐"
+              icon={<SavedIcon className="w-16 h-16 text-gray-400" />}
               heading="No saved content yet"
               description="Content you save from the feed will appear here for easy access later. Save items to create your personal library of valuable content."
               primaryAction={{

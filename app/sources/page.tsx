@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Navigation } from '@/components/navigation';
-import { useToast, useConfirmDialog, Search, EmptyState } from '@/components/ui';
+import { useToast, useConfirmDialog, Search, EmptyState, VideoIcon, UnwatchedIcon, SourceIcon } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
 
 interface ContentSource {
@@ -406,7 +406,7 @@ export default function SourcesPage() {
 
               {sources.length === 0 ? (
                 <EmptyState
-                  icon="📡"
+                  icon={<SourceIcon className="w-16 h-16 text-gray-400" />}
                   heading="No content sources yet"
                   description="Add YouTube channels, RSS feeds, or podcasts to start building your curated feed. Sources you add will automatically fetch new content within the last 7 days."
                   primaryAction={{
@@ -447,11 +447,13 @@ export default function SourcesPage() {
                           </p>
                           {source.videoStats && (
                             <div className="flex items-center gap-3 mt-1 text-sm">
-                              <span className="text-blue-600 dark:text-blue-400">
-                                📹 {source.videoStats.totalFetched} fetched
+                              <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                                <VideoIcon className="w-4 h-4" />
+                                {source.videoStats.totalFetched} fetched
                               </span>
-                              <span className="text-green-600 dark:text-green-400">
-                                ⏳ {source.videoStats.unwatched} unwatched
+                              <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                                <UnwatchedIcon className="w-4 h-4" />
+                                {source.videoStats.unwatched} unwatched
                               </span>
                             </div>
                           )}

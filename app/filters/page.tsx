@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
-import { useToast, useConfirmDialog, Search, EmptyState } from '@/components/ui';
+import { useToast, useConfirmDialog, Search, EmptyState, ShieldIcon } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
 
 interface FilterKeyword {
@@ -264,7 +264,7 @@ export default function FiltersPage() {
               <div className="space-y-2">
                 {keywords.length === 0 ? (
                   <EmptyState
-                    icon="🛡️"
+                    icon={<ShieldIcon className="w-16 h-16 text-gray-400" />}
                     heading="No keyword filters configured"
                     description="Create keyword filters to block content you don't want to see. You can filter by specific words or use wildcard matching for broader filtering."
                     primaryAction={{

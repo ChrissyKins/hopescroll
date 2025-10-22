@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
-import { Search, EmptyState } from '@/components/ui';
+import { Search, EmptyState, HistoryIcon, WatchedIcon, StarIcon, DismissedIcon, NotNowIcon, BlockedIcon } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
 
 interface HistoryItem {
@@ -72,19 +72,20 @@ export default function HistoryPage() {
   };
 
   const getInteractionIcon = (type: string) => {
+    const iconClass = "w-5 h-5";
     switch (type) {
       case 'WATCHED':
-        return '👁️';
+        return <WatchedIcon className={iconClass} />;
       case 'SAVED':
-        return '⭐';
+        return <StarIcon className={iconClass} />;
       case 'DISMISSED':
-        return '❌';
+        return <DismissedIcon className={iconClass} />;
       case 'NOT_NOW':
-        return '⏭️';
+        return <NotNowIcon className={iconClass} />;
       case 'BLOCKED':
-        return '🚫';
+        return <BlockedIcon className={iconClass} />;
       default:
-        return '•';
+        return <span className="w-5 h-5 flex items-center justify-center">•</span>;
     }
   };
 
@@ -176,7 +177,7 @@ export default function HistoryPage() {
 
           {history.length === 0 ? (
             <EmptyState
-              icon="📜"
+              icon={<HistoryIcon className="w-16 h-16 text-gray-400" />}
               heading="No interaction history"
               description="Your watched, saved, and dismissed content will be tracked here. Start browsing your feed to build up your history."
               primaryAction={{

@@ -15,3 +15,5 @@ export type { SearchProps } from './search';
 
 export { ConfirmDialog, useConfirmDialog } from './confirm-dialog';
 export type { ConfirmDialogProps } from './confirm-dialog';
+
+export * from './icons';
