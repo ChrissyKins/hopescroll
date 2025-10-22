@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
-import { useToast, useConfirmDialog, Search } from '@/components/ui';
+import { useToast, useConfirmDialog, Search, EmptyState } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
 
 interface FilterKeyword {
@@ -263,9 +263,19 @@ export default function FiltersPage() {
               {/* Keywords List */}
               <div className="space-y-2">
                 {keywords.length === 0 ? (
-                  <p className="text-gray-600 dark:text-gray-400 text-center py-4">
-                    No keyword filters yet
-                  </p>
+                  <EmptyState
+                    icon="🛡️"
+                    heading="No keyword filters configured"
+                    description="Create keyword filters to block content you don't want to see. You can filter by specific words or use wildcard matching for broader filtering."
+                    primaryAction={{
+                      label: "Add Your First Filter",
+                      onClick: () => {
+                        const input = document.querySelector('input[placeholder*="Enter keyword"]') as HTMLInputElement;
+                        input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        input?.focus();
+                      }
+                    }}
+                  />
                 ) : filteredItems.length === 0 ? (
                   <p className="text-gray-600 dark:text-gray-400 text-center py-4">
                     No keywords match your search.

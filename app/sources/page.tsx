@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
-import { useToast, useConfirmDialog, Search } from '@/components/ui';
+import { useToast, useConfirmDialog, Search, EmptyState } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
 
 interface ContentSource {
@@ -350,9 +350,19 @@ export default function SourcesPage() {
               )}
 
               {sources.length === 0 ? (
-                <p className="text-gray-600 dark:text-gray-400 text-center py-8">
-                  No sources yet. Add your first source above!
-                </p>
+                <EmptyState
+                  icon="📡"
+                  heading="No content sources yet"
+                  description="Add YouTube channels, RSS feeds, or podcasts to start building your curated feed. Sources you add will automatically fetch new content within the last 7 days."
+                  primaryAction={{
+                    label: "Add Your First Source",
+                    onClick: () => {
+                      const input = document.querySelector('input[placeholder*="Enter YouTube"]') as HTMLInputElement;
+                      input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      input?.focus();
+                    }
+                  }}
+                />
               ) : filteredItems.length === 0 ? (
                 <p className="text-gray-600 dark:text-gray-400 text-center py-8">
                   No sources match your search.

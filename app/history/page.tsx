@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
-import { Search } from '@/components/ui';
+import { Search, EmptyState } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
 
 interface HistoryItem {
@@ -175,11 +175,15 @@ export default function HistoryPage() {
           )}
 
           {history.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-gray-600 dark:text-gray-400">
-                No history found for this filter.
-              </p>
-            </div>
+            <EmptyState
+              icon="📜"
+              heading="No interaction history"
+              description="Your watched, saved, and dismissed content will be tracked here. Start browsing your feed to build up your history."
+              primaryAction={{
+                label: "Go to Feed",
+                onClick: () => window.location.href = '/scroll'
+              }}
+            />
           ) : filteredItems.length === 0 ? (
             <div className="text-center py-12">
               <p className="text-gray-600 dark:text-gray-400">

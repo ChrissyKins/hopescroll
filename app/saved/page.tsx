@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
 import { ContentCard } from '@/components/feed/content-card';
-import { useToast, Search } from '@/components/ui';
+import { useToast, Search, EmptyState } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
 
 interface SavedItem {
@@ -125,17 +125,15 @@ export default function SavedPage() {
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
               Saved Content
             </h1>
-            <div className="text-center py-12">
-              <p className="text-gray-600 dark:text-gray-400 mb-8">
-                You haven&apos;t saved any content yet.
-              </p>
-              <a
-                href="/feed"
-                className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded"
-              >
-                Browse Feed
-              </a>
-            </div>
+            <EmptyState
+              icon="⭐"
+              heading="No saved content yet"
+              description="Content you save from the feed will appear here for easy access later. Save items to create your personal library of valuable content."
+              primaryAction={{
+                label: "Browse Feed",
+                onClick: () => window.location.href = '/scroll'
+              }}
+            />
           </div>
         </div>
       </>
