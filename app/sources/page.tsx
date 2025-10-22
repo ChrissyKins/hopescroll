@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Navigation } from '@/components/navigation';
 import { useToast, useConfirmDialog, Search, EmptyState } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
@@ -20,6 +20,8 @@ interface ContentSource {
   };
 }
 
+type SortOption = 'name-asc' | 'name-desc' | 'recent' | 'unwatched' | 'status';
+
 export default function SourcesPage() {
   const [sources, setSources] = useState<ContentSource[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -29,6 +31,7 @@ export default function SourcesPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [fetchMessage, setFetchMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [sortBy, setSortBy] = useState<SortOption>('name-asc');
 
   const toast = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
@@ -38,6 +41,40 @@ export default function SourcesPage() {
     sources,
     (source) => [source.displayName, source.sourceId, source.type]
   );
+
+  // Sorting functionality
+  const sortedItems = useMemo(() => {
+    const items = [...filteredItems];
+
+    switch (sortBy) {
+      case 'name-asc':
+        return items.sort((a, b) => a.displayName.localeCompare(b.displayName));
+      case 'name-desc':
+        return items.sort((a, b) => b.displayName.localeCompare(a.displayName));
+      case 'unwatched':
+        return items.sort((a, b) => {
+          const aUnwatched = a.videoStats?.unwatched || 0;
+          const bUnwatched = b.videoStats?.unwatched || 0;
+          return bUnwatched - aUnwatched;
+        });
+      case 'status':
+        return items.sort((a, b) => {
+          const statusOrder = { success: 0, pending: 1, error: 2 };
+          const aOrder = statusOrder[a.lastFetchStatus as keyof typeof statusOrder] ?? 3;
+          const bOrder = statusOrder[b.lastFetchStatus as keyof typeof statusOrder] ?? 3;
+          return aOrder - bOrder;
+        });
+      case 'recent':
+        // Sort by most recent (success status first, then by name as proxy)
+        return items.sort((a, b) => {
+          if (a.lastFetchStatus === 'success' && b.lastFetchStatus !== 'success') return -1;
+          if (a.lastFetchStatus !== 'success' && b.lastFetchStatus === 'success') return 1;
+          return a.displayName.localeCompare(b.displayName);
+        });
+      default:
+        return items;
+    }
+  }, [filteredItems, sortBy]);
 
   useEffect(() => {
     fetchSources();
@@ -335,9 +372,9 @@ export default function SourcesPage() {
                 </div>
               )}
 
-              {/* Search */}
+              {/* Search and Sort */}
               {sources.length > 0 && (
-                <div className="mb-4">
+                <div className="mb-4 space-y-4">
                   <Search
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
@@ -346,6 +383,24 @@ export default function SourcesPage() {
                     resultCount={resultCount}
                     totalCount={totalCount}
                   />
+
+                  <div className="flex items-center gap-2">
+                    <label htmlFor="sort" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Sort by:
+                    </label>
+                    <select
+                      id="sort"
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value as SortOption)}
+                      className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm"
+                    >
+                      <option value="name-asc">Name (A-Z)</option>
+                      <option value="name-desc">Name (Z-A)</option>
+                      <option value="unwatched">Most Unwatched</option>
+                      <option value="status">Status</option>
+                      <option value="recent">Recently Active</option>
+                    </select>
+                  </div>
                 </div>
               )}
 
@@ -363,13 +418,13 @@ export default function SourcesPage() {
                     }
                   }}
                 />
-              ) : filteredItems.length === 0 ? (
+              ) : sortedItems.length === 0 ? (
                 <p className="text-gray-600 dark:text-gray-400 text-center py-8">
                   No sources match your search.
                 </p>
               ) : (
                 <div className="space-y-4">
-                  {filteredItems.map((source) => (
+                  {sortedItems.map((source) => (
                     <div
                       key={source.id}
                       className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
