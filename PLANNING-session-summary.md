@@ -113,12 +113,46 @@ Created a comprehensive feature roadmap (`docs/planning/FEATURE_ROADMAP.md`) tha
 - Feed feels smooth and engaging
 - Load/expand time < 2 seconds
 
+## Design Decisions Made ✅
+
+### Article Expansion
+- **Inline expansion** (not full-screen takeover)
+- Smooth animation, auto-collapse when scrolling past
+- Maintains feed context, less jarring
+
+### Paywalled Content
+- **Exclude entirely** from feed
+- No teasers, no "Open in browser" links
+- Focus on freely available content only
+
+### Onboarding Flow
+- **Require source setup** before showing feed
+- Preset source packs for quick start:
+  - "Tech News" (Ars Technica, The Verge, etc.)
+  - "Science" (Quanta, Veritasium, Kurzgesagt)
+  - "General Interest" (Aeon, Longform, etc.)
+- Minimum 3 sources required
+- Optional filter setup (can skip)
+
+### Content Filtering
+- **Title + excerpt only** (not full article text)
+- Fast filtering at feed generation time
+- Good enough for catching politics/negativity
+- Can add full-text filtering later if needed
+
+### Mobile Support
+- **Desktop-first** for MVP
+- Basic responsive CSS for mobile
+- Full mobile optimization (gestures, PWA) in Phase 3
+
 ## Open Questions (Still to Decide)
 
+1. **Video/Article ratio:** 50/50 mix or user preference slider?
 2. **Monetization:** Free forever? Freemium? Premium subscription?
 3. **Content types:** Start with RSS only or add Substack/Medium APIs?
 4. **Podcasts:** Audio player support? (Future phase)
 5. **Social:** Keep private or light social features?
+6. **New content notifications:** Badge only or email digest too?
 
 ## Why This Approach Works
 
@@ -138,9 +172,10 @@ But they're toxic because:
 
 ## References
 
-- Full roadmap: `docs/planning/FEATURE_ROADMAP.md`
-- UI improvements: `docs/planning/ui-improvements-features.md`
-- Database schema: `prisma/schema.prisma`
+- **Full roadmap:** `docs/planning/FEATURE_ROADMAP.md`
+- **Design decisions:** `docs/planning/DESIGN_DECISIONS.md`
+- **UI improvements:** `docs/planning/ui-improvements-features.md`
+- **Database schema:** `prisma/schema.prisma`
 
 ---
 
