@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
+import { useToast, useConfirmDialog } from '@/components/ui';
 
 interface FilterKeyword {
   id: string;
@@ -26,6 +27,9 @@ export default function FiltersPage() {
   const [newKeyword, setNewKeyword] = useState('');
   const [isWildcard, setIsWildcard] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
+
+  const toast = useToast();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   useEffect(() => {
     fetchFilters();
@@ -71,19 +75,27 @@ export default function FiltersPage() {
         throw new Error('Failed to add keyword');
       }
 
+      toast.success('Keyword filter added successfully');
       // Refresh filters list
       await fetchFilters();
       setNewKeyword('');
       setIsWildcard(false);
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to add keyword');
+      toast.error(err instanceof Error ? err.message : 'Failed to add keyword');
     } finally {
       setIsAdding(false);
     }
   };
 
   const handleDeleteKeyword = async (keywordId: string) => {
-    if (!confirm('Are you sure you want to remove this keyword filter?')) return;
+    const confirmed = await confirm({
+      title: 'Remove Keyword Filter',
+      message: 'Are you sure you want to remove this keyword filter?',
+      confirmLabel: 'Remove',
+      variant: 'danger',
+    });
+
+    if (!confirmed) return;
 
     try {
       const response = await fetch(`/api/filters/${keywordId}`, {
@@ -94,10 +106,11 @@ export default function FiltersPage() {
         throw new Error('Failed to delete keyword');
       }
 
+      toast.success('Keyword filter removed successfully');
       // Refresh filters list
       await fetchFilters();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete keyword');
+      toast.error(err instanceof Error ? err.message : 'Failed to delete keyword');
     }
   };
 
@@ -116,9 +129,9 @@ export default function FiltersPage() {
         throw new Error('Failed to update duration filters');
       }
 
-      alert('Duration filters updated!');
+      toast.success('Duration filters updated successfully');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to update duration filters');
+      toast.error(err instanceof Error ? err.message : 'Failed to update duration filters');
     }
   };
 
@@ -173,6 +186,7 @@ export default function FiltersPage() {
   return (
     <>
       <Navigation />
+      <ConfirmDialog />
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">

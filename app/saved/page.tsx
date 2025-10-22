@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
 import { ContentCard } from '@/components/feed/content-card';
+import { useToast } from '@/components/ui';
 
 interface SavedItem {
   id: string;
@@ -16,6 +17,8 @@ export default function SavedPage() {
   const [saved, setSaved] = useState<SavedItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const toast = useToast();
 
   useEffect(() => {
     fetchSaved();
@@ -49,10 +52,11 @@ export default function SavedPage() {
         throw new Error('Failed to remove from saved');
       }
 
+      toast.success('Removed from saved content');
       // Refresh list
       await fetchSaved();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to remove from saved');
+      toast.error(err instanceof Error ? err.message : 'Failed to remove from saved');
     }
   };
 

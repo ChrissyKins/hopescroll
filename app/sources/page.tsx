@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
+import { useToast, useConfirmDialog } from '@/components/ui';
 
 interface ContentSource {
   id: string;
@@ -27,6 +28,9 @@ export default function SourcesPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [fetchMessage, setFetchMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+
+  const toast = useToast();
+  const { confirm, ConfirmDialog } = useConfirmDialog();
 
   useEffect(() => {
     fetchSources();
@@ -89,14 +93,21 @@ export default function SourcesPage() {
       await fetchSources();
       setNewSourceId('');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to add source');
+      toast.error(err instanceof Error ? err.message : 'Failed to add source');
     } finally {
       setIsAdding(false);
     }
   };
 
   const handleDeleteSource = async (sourceId: string) => {
-    if (!confirm('Are you sure you want to remove this source?')) return;
+    const confirmed = await confirm({
+      title: 'Remove Source',
+      message: 'Are you sure you want to remove this source? This action cannot be undone.',
+      confirmLabel: 'Remove',
+      variant: 'danger',
+    });
+
+    if (!confirmed) return;
 
     try {
       const response = await fetch(`/api/sources/${sourceId}`, {
@@ -107,10 +118,11 @@ export default function SourcesPage() {
         throw new Error('Failed to delete source');
       }
 
+      toast.success('Source removed successfully');
       // Refresh sources list
       await fetchSources();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete source');
+      toast.error(err instanceof Error ? err.message : 'Failed to delete source');
     }
   };
 
@@ -128,10 +140,11 @@ export default function SourcesPage() {
         throw new Error('Failed to update source');
       }
 
+      toast.success(`Source ${source.isMuted ? 'unmuted' : 'muted'} successfully`);
       // Refresh sources list
       await fetchSources();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to update source');
+      toast.error(err instanceof Error ? err.message : 'Failed to update source');
     }
   };
 
@@ -218,6 +231,7 @@ export default function SourcesPage() {
   return (
     <>
       <Navigation />
+      <ConfirmDialog />
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">

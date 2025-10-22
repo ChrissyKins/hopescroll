@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { validateEnv } from "@/lib/config";
+import { ToastProvider } from "@/components/ui";
 import "./globals.css";
 
 // Validate environment variables on startup
@@ -29,7 +30,9 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
-        {children}
+        <ToastProvider>
+          {children}
+        </ToastProvider>
       </body>
     </html>
   );
