@@ -43,7 +43,7 @@ describe('CONFIG', () => {
     });
 
     it('should have backlog batch size', () => {
-      expect(CONFIG.content.backlogBatchSize).toBe(50);
+      expect(CONFIG.content.backlogBatchSize).toBe(200);
       expect(CONFIG.content.backlogBatchSize).toBeGreaterThan(0);
     });
 
@@ -157,22 +157,22 @@ describe('validateEnv', () => {
   });
 
   it('should pass when all required vars are present', () => {
-    process.env.POSTGRES_PRISMA_URL = 'postgresql://test';
+    process.env.POSTGRES_URL = 'postgresql://test';
     process.env.NEXTAUTH_SECRET = 'test-secret';
 
     expect(() => validateEnv()).not.toThrow();
   });
 
-  it('should throw when POSTGRES_PRISMA_URL is missing', () => {
-    delete process.env.POSTGRES_PRISMA_URL;
+  it('should throw when POSTGRES_URL is missing', () => {
+    delete process.env.POSTGRES_URL;
     process.env.NEXTAUTH_SECRET = 'test-secret';
 
     expect(() => validateEnv()).toThrow('Missing required environment variables');
-    expect(() => validateEnv()).toThrow('POSTGRES_PRISMA_URL');
+    expect(() => validateEnv()).toThrow('POSTGRES_URL');
   });
 
   it('should throw when NEXTAUTH_SECRET is missing', () => {
-    process.env.POSTGRES_PRISMA_URL = 'postgresql://test';
+    process.env.POSTGRES_URL = 'postgresql://test';
     delete process.env.NEXTAUTH_SECRET;
 
     expect(() => validateEnv()).toThrow('Missing required environment variables');
@@ -180,11 +180,11 @@ describe('validateEnv', () => {
   });
 
   it('should throw when multiple required vars are missing', () => {
-    delete process.env.POSTGRES_PRISMA_URL;
+    delete process.env.POSTGRES_URL;
     delete process.env.NEXTAUTH_SECRET;
 
     expect(() => validateEnv()).toThrow('Missing required environment variables');
-    expect(() => validateEnv()).toThrow('POSTGRES_PRISMA_URL');
+    expect(() => validateEnv()).toThrow('POSTGRES_URL');
     expect(() => validateEnv()).toThrow('NEXTAUTH_SECRET');
   });
 });

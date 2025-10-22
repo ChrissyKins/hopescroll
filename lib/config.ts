@@ -43,7 +43,7 @@ export const CONFIG = {
 // Environment variables with validation
 export const ENV = {
   // Database
-  databaseUrl: process.env.POSTGRES_PRISMA_URL || '',
+  databaseUrl: process.env.POSTGRES_URL || '',
 
   // Redis Cache (Upstash)
   redisUrl: process.env.UPSTASH_REDIS_REST_URL || process.env.UPSTASH_REDIS_URL || '',
@@ -80,7 +80,7 @@ export const ENV = {
 // Validate critical environment variables
 export function validateEnv(): void {
   const requiredVars = [
-    'POSTGRES_PRISMA_URL',
+    'POSTGRES_URL',
     'NEXTAUTH_SECRET',
   ];
 

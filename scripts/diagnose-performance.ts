@@ -103,7 +103,7 @@ async function main() {
   }
 
   // Database location check (WSL-specific)
-  const dbUrl = process.env.POSTGRES_PRISMA_URL || process.env.DATABASE_URL || '';
+  const dbUrl = process.env.POSTGRES_URL || process.env.DATABASE_URL || '';
   log(`\nDatabase Configuration:`, 'cyan');
   log(`  URL: ${dbUrl.replace(/:[^:@]+@/, ':****@')}`);
 
