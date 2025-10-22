@@ -11,6 +11,12 @@ export const db =
   globalForPrisma.prisma ??
   new PrismaClient({
     log: ENV.isDevelopment ? ['query', 'error', 'warn'] : ['error'],
+    // Performance optimizations
+    datasources: {
+      db: {
+        url: process.env.POSTGRES_PRISMA_URL,
+      },
+    },
   });
 
 if (ENV.isDevelopment) globalForPrisma.prisma = db;
