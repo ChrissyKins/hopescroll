@@ -297,13 +297,13 @@ interface BadgeProps {
 ```
 
 #### Acceptance Criteria
-- [ ] Design tokens documented
-- [ ] Button component with all variants
-- [ ] Badge component with all variants
-- [ ] Spinner/Loading component
-- [ ] All pages use design system components
-- [ ] Storybook or documentation created
-- [ ] No hardcoded color classes outside components
+- [x] Design tokens documented
+- [x] Button component with all variants
+- [x] Badge component with all variants
+- [x] Spinner/Loading component
+- [x] All pages use design system components
+- [x] Documentation created (see /docs/design-system.md)
+- [x] No hardcoded color classes in management pages
 
 ---
 

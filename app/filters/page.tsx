@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
-import { useToast, useConfirmDialog, Search, EmptyState, ShieldIcon, DurationSlider, KeywordListSkeleton } from '@/components/ui';
+import { useToast, useConfirmDialog, Search, EmptyState, ShieldIcon, DurationSlider, KeywordListSkeleton, Button } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
 
 interface FilterKeyword {
@@ -198,12 +198,14 @@ export default function FiltersPage() {
                 Error loading filters
               </h2>
               <p className="text-red-600 dark:text-red-400">{error}</p>
-              <button
-                onClick={fetchFilters}
-                className="mt-4 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded"
-              >
-                Try again
-              </button>
+              <div className="mt-4">
+                <Button
+                  variant="danger"
+                  onClick={fetchFilters}
+                >
+                  Try again
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -258,13 +260,14 @@ export default function FiltersPage() {
                     Wildcard match (partial words)
                   </label>
                 </div>
-                <button
+                <Button
                   type="submit"
+                  variant="primary"
                   disabled={isAdding}
-                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded transition-colors"
+                  loading={isAdding}
                 >
                   {isAdding ? 'Adding...' : 'Add Keyword'}
-                </button>
+                </Button>
               </form>
 
               {/* Search */}
@@ -317,12 +320,13 @@ export default function FiltersPage() {
                           </span>
                         )}
                       </div>
-                      <button
+                      <Button
+                        variant="danger"
+                        size="sm"
                         onClick={() => handleDeleteKeyword(keyword.id)}
-                        className="text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                       >
                         Remove
-                      </button>
+                      </Button>
                     </div>
                   ))
                 )}
@@ -354,47 +358,51 @@ export default function FiltersPage() {
                     Quick Presets:
                   </p>
                   <div className="grid grid-cols-2 gap-2">
-                    <button
+                    <Button
+                      variant="neutral"
+                      size="sm"
                       onClick={() =>
                         setPreferences({ minDuration: 300, maxDuration: 600 })
                       }
-                      className="px-3 py-2 text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded transition-colors"
                     >
                       Coffee Break (5-10min)
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="neutral"
+                      size="sm"
                       onClick={() =>
                         setPreferences({ minDuration: 900, maxDuration: 1500 })
                       }
-                      className="px-3 py-2 text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded transition-colors"
                     >
                       Meal Time (15-25min)
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="neutral"
+                      size="sm"
                       onClick={() =>
                         setPreferences({ minDuration: 1800, maxDuration: 3600 })
                       }
-                      className="px-3 py-2 text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded transition-colors"
                     >
                       Evening (30-60min)
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="neutral"
+                      size="sm"
                       onClick={() =>
                         setPreferences({ minDuration: null, maxDuration: null })
                       }
-                      className="px-3 py-2 text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded transition-colors"
                     >
                       Any Length
-                    </button>
+                    </Button>
                   </div>
                 </div>
 
-                <button
+                <Button
+                  variant="primary"
                   onClick={handleUpdateDuration}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded transition-colors"
                 >
                   Save Duration Filters
-                </button>
+                </Button>
               </div>
             </div>
           </div>

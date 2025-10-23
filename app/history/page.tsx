@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
-import { Search, EmptyState, HistoryIcon, WatchedIcon, StarIcon, DismissedIcon, NotNowIcon, BlockedIcon, HistoryListSkeleton } from '@/components/ui';
+import { Search, EmptyState, HistoryIcon, WatchedIcon, StarIcon, DismissedIcon, NotNowIcon, BlockedIcon, HistoryListSkeleton, Button, Badge } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
 
 interface HistoryItem {
@@ -137,12 +137,14 @@ export default function HistoryPage() {
                 Error loading history
               </h2>
               <p className="text-red-600 dark:text-red-400">{error}</p>
-              <button
-                onClick={fetchHistory}
-                className="mt-4 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded"
-              >
-                Try again
-              </button>
+              <div className="mt-4">
+                <Button
+                  variant="danger"
+                  onClick={fetchHistory}
+                >
+                  Try again
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -165,17 +167,13 @@ export default function HistoryPage() {
           <div className="flex space-x-2 mb-6 overflow-x-auto">
             {['all', 'watched', 'saved', 'dismissed', 'not_now', 'blocked'].map(
               (type) => (
-                <button
+                <Button
                   key={type}
+                  variant={filterType === type ? 'primary' : 'ghost'}
                   onClick={() => setFilterType(type)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors whitespace-nowrap ${
-                    filterType === type
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
                 >
                   {type === 'all' ? 'All' : type.replace('_', ' ')}
-                </button>
+                </Button>
               )
             )}
           </div>
@@ -240,21 +238,22 @@ export default function HistoryPage() {
                         </a>
                       </div>
                       <div className="flex items-center space-x-4 mt-2">
-                        <span
-                          className={`px-2 py-1 text-xs rounded ${
+                        <Badge
+                          variant={
                             item.type === 'WATCHED'
-                              ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                              ? 'success'
                               : item.type === 'SAVED'
-                              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+                              ? 'info'
                               : item.type === 'DISMISSED'
-                              ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+                              ? 'error'
                               : item.type === 'NOT_NOW'
-                              ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                              : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                          }`}
+                              ? 'warning'
+                              : 'neutral'
+                          }
+                          size="sm"
                         >
                           {item.type}
-                        </span>
+                        </Badge>
                         {item.watchDuration && (
                           <span className="text-xs text-gray-600 dark:text-gray-400">
                             Watched: {formatDuration(item.watchDuration)}

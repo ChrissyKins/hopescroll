@@ -7,6 +7,9 @@ export type { ButtonProps, ButtonVariant, ButtonSize } from './button';
 export { Badge } from './badge';
 export type { BadgeProps, BadgeVariant, BadgeSize } from './badge';
 
+export { Spinner, CenteredSpinner } from './spinner';
+export type { SpinnerProps, SpinnerVariant, SpinnerSize, CenteredSpinnerProps } from './spinner';
+
 export { EmptyState } from './empty-state';
 export type { EmptyStateProps } from './empty-state';
 

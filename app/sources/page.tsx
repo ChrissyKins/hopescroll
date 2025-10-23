@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Navigation } from '@/components/navigation';
-import { useToast, useConfirmDialog, Search, EmptyState, VideoIcon, UnwatchedIcon, SourceIcon, SourceListSkeleton } from '@/components/ui';
+import { useToast, useConfirmDialog, Search, EmptyState, VideoIcon, UnwatchedIcon, SourceIcon, SourceListSkeleton, Button, Badge, Spinner } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
 
 interface ContentSource {
@@ -272,12 +272,14 @@ export default function SourcesPage() {
                 Error loading sources
               </h2>
               <p className="text-red-600 dark:text-red-400">{error}</p>
-              <button
-                onClick={fetchSources}
-                className="mt-4 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded"
-              >
-                Try again
-              </button>
+              <div className="mt-4">
+                <Button
+                  variant="danger"
+                  onClick={fetchSources}
+                >
+                  Try again
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -334,13 +336,14 @@ export default function SourcesPage() {
                   required
                 />
               </div>
-              <button
+              <Button
                 type="submit"
+                variant="primary"
                 disabled={isAdding}
-                className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded transition-colors"
+                loading={isAdding}
               >
                 {isAdding ? 'Adding...' : 'Add Source'}
-              </button>
+              </Button>
             </form>
           </div>
 
@@ -351,19 +354,14 @@ export default function SourcesPage() {
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                   Your Sources ({sources.length})
                 </h2>
-                <button
+                <Button
                   onClick={handleRefreshContent}
+                  variant="success"
                   disabled={isFetching || sources.length === 0}
-                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-medium rounded transition-colors"
+                  loading={isFetching}
                 >
                   {isFetching ? (
-                    <>
-                      <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      <span>Fetching...</span>
-                    </>
+                    <>Fetching...</>
                   ) : (
                     <>
                       <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -372,7 +370,7 @@ export default function SourcesPage() {
                       <span>Refresh Content</span>
                     </>
                   )}
-                </button>
+                </Button>
               </div>
 
               {fetchMessage && (
@@ -477,37 +475,40 @@ export default function SourcesPage() {
                           )}
                         </div>
                         <div className="flex items-center space-x-2">
-                          <span
-                            className={`px-2 py-1 text-xs rounded ${
+                          <Badge
+                            variant={
                               source.lastFetchStatus === 'success'
-                                ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+                                ? 'success'
                                 : source.lastFetchStatus === 'error'
-                                ? 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-                                : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
-                            }`}
+                                ? 'error'
+                                : 'neutral'
+                            }
+                            size="sm"
                           >
                             {source.lastFetchStatus}
-                          </span>
+                          </Badge>
                           {source.isMuted && (
-                            <span className="px-2 py-1 text-xs rounded bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400">
+                            <Badge variant="warning" size="sm">
                               Muted
-                            </span>
+                            </Badge>
                           )}
                         </div>
                       </div>
                       <div className="flex items-center space-x-2 ml-4">
-                        <button
+                        <Button
+                          variant="neutral"
+                          size="sm"
                           onClick={() => handleToggleMute(source)}
-                          className="px-3 py-1 text-sm bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded transition-colors"
                         >
                           {source.isMuted ? 'Unmute' : 'Mute'}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="danger"
+                          size="sm"
                           onClick={() => handleDeleteSource(source.id)}
-                          className="px-3 py-1 text-sm bg-red-600 hover:bg-red-700 text-white rounded transition-colors"
                         >
                           Remove
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ))}

@@ -12,6 +12,7 @@ import {
   CollectionSelector,
   SavedContentSkeleton,
   CollectionListSkeleton,
+  Button,
 } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
 
@@ -194,12 +195,14 @@ export default function SavedPage() {
                 Error loading saved content
               </h2>
               <p className="text-red-600 dark:text-red-400">{error}</p>
-              <button
-                onClick={fetchSaved}
-                className="mt-4 bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded"
-              >
-                Try again
-              </button>
+              <div className="mt-4">
+                <Button
+                  variant="danger"
+                  onClick={fetchSaved}
+                >
+                  Try again
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -308,12 +311,13 @@ export default function SavedPage() {
                           }
                         />
 
-                        <button
+                        <Button
+                          variant="danger"
+                          size="sm"
                           onClick={() => handleUnsave(item.content.id)}
-                          className="text-sm text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300 px-3 py-1.5"
                         >
                           Remove
-                        </button>
+                        </Button>
                       </div>
 
                       {item.notes && (
