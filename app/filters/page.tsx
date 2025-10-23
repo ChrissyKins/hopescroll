@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
-import { useToast, useConfirmDialog, Search, EmptyState, ShieldIcon } from '@/components/ui';
+import { useToast, useConfirmDialog, Search, EmptyState, ShieldIcon, DurationSlider } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
 
 interface FilterKeyword {
@@ -140,12 +140,6 @@ export default function FiltersPage() {
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update duration filters');
     }
-  };
-
-  const formatDuration = (seconds: number | null) => {
-    if (!seconds) return 'None';
-    const mins = Math.floor(seconds / 60);
-    return `${mins} minutes`;
   };
 
   if (isLoading) {
@@ -314,51 +308,18 @@ export default function FiltersPage() {
                 Duration Filters
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-                Filter content by length (in seconds).
+                Filter content by length. Adjust the slider or enter precise values below.
               </p>
 
               <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Minimum Duration (seconds)
-                  </label>
-                  <input
-                    type="number"
-                    value={preferences.minDuration || ''}
-                    onChange={(e) =>
-                      setPreferences({
-                        ...preferences,
-                        minDuration: e.target.value ? parseInt(e.target.value) : null,
-                      })
-                    }
-                    placeholder="No minimum"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Current: {formatDuration(preferences.minDuration)}
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Maximum Duration (seconds)
-                  </label>
-                  <input
-                    type="number"
-                    value={preferences.maxDuration || ''}
-                    onChange={(e) =>
-                      setPreferences({
-                        ...preferences,
-                        maxDuration: e.target.value ? parseInt(e.target.value) : null,
-                      })
-                    }
-                    placeholder="No maximum"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  />
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    Current: {formatDuration(preferences.maxDuration)}
-                  </p>
-                </div>
+                {/* Visual Duration Slider */}
+                <DurationSlider
+                  min={preferences.minDuration}
+                  max={preferences.maxDuration}
+                  onChange={(min, max) =>
+                    setPreferences({ minDuration: min, maxDuration: max })
+                  }
+                />
 
                 {/* Quick Presets */}
                 <div>

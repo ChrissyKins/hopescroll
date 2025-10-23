@@ -22,4 +22,7 @@ export type { Collection as CollectionManagerCollection } from './collection-man
 export { CollectionSelector } from './collection-selector';
 export type { Collection as CollectionSelectorCollection } from './collection-selector';
 
+export { DurationSlider } from './duration-slider';
+export type { DurationSliderProps } from './duration-slider';
+
 export * from './icons';
