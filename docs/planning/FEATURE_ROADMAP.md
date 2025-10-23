@@ -126,31 +126,33 @@ Seamlessly blend video and text content in a cohesive, engaging app that fully r
 
 ### Epic 2A.1: RSS/Blog Source Support
 **Priority:** P0 (Must Have)
+**Status:** 🔴 NOT STARTED
+**Blockers:** None
 **Estimated Effort:** 2-3 weeks
 
 #### Stories:
-1. **Add RSS feed sources**
-   - [ ] Update `SourceType` enum to include RSS/BLOG types (already has RSS/PODCAST)
-   - [ ] Create RSS parser utility (use `rss-parser` or `fast-xml-parser`)
-   - [ ] Fetch and parse RSS feed content
-   - [ ] Store articles as ContentItem records
-   - [ ] Handle feed images, descriptions, publish dates
-   - [ ] Support common RSS formats (RSS 2.0, Atom)
+1. **Add RSS feed sources** 🔴 Not Started
+   - [x] ✅ Update `SourceType` enum to include RSS/BLOG types (already has RSS/PODCAST)
+   - [ ] 🔴 Create RSS parser utility (use `rss-parser` or `@extractus/article-extractor`)
+   - [ ] 🔴 Fetch and parse RSS feed content
+   - [ ] 🔴 Store articles as ContentItem records
+   - [ ] 🔴 Handle feed images, descriptions, publish dates
+   - [ ] 🔴 Support common RSS formats (RSS 2.0, Atom)
 
-2. **Add source UI for RSS feeds**
-   - [ ] Input for RSS feed URL
-   - [ ] Auto-detect feed from website URL
-   - [ ] Preview feed before adding
-   - [ ] Show article count and last updated
-   - [ ] Validate feed health
+2. **Add source UI for RSS feeds** 🔴 Not Started
+   - [ ] 🔴 Input for RSS feed URL
+   - [ ] 🔴 Auto-detect feed from website URL
+   - [ ] 🔴 Preview feed before adding
+   - [ ] 🔴 Show article count and last updated
+   - [ ] 🔴 Validate feed health
 
-3. **Article content parsing**
-   - [ ] Extract article content (not just summary)
-   - [ ] Use readability/mercury parser for full text
-   - [ ] Handle paywalled content gracefully
-   - [ ] Extract main image
-   - [ ] Calculate estimated read time
-   - [ ] Store content snippets for preview
+3. **Article content parsing** 🔴 Not Started
+   - [ ] 🔴 Extract article content (not just summary)
+   - [ ] 🔴 Use readability/mercury parser for full text
+   - [ ] 🔴 Handle paywalled content gracefully
+   - [ ] 🔴 Extract main image
+   - [ ] 🔴 Calculate estimated read time
+   - [ ] 🔴 Store content snippets for preview
 
 #### Technical Considerations:
 ```typescript
@@ -186,17 +188,19 @@ interface RSSItem {
 
 ### Epic 2A.2: Article Display Cards
 **Priority:** P0 (Must Have)
+**Status:** 🔴 NOT STARTED
+**Blockers:** Requires Epic 2A.1 (RSS support)
 **Estimated Effort:** 1 week
 
 #### Stories:
-1. **Create ArticleCard component**
-   - [ ] Card layout for articles (image, title, excerpt, metadata)
-   - [ ] Show source, publish date, read time
-   - [ ] Action buttons (Save, Read, Dismiss, Not Now)
-   - [ ] "Read" button opens article in modal/overlay or new tab
-   - [ ] Inline expand to show full article
+1. **Create ArticleCard component** 🔴 Not Started
+   - [ ] 🔴 Card layout for articles (image, title, excerpt, metadata)
+   - [ ] 🔴 Show source, publish date, read time
+   - [ ] 🔴 Action buttons (Save, Read, Dismiss, Not Now)
+   - [ ] 🔴 "Read" button opens article inline (NOT modal/new tab - ADHD principle!)
+   - [ ] 🔴 Inline expand to show full article
 
-2. **Article reader view (ADHD-optimized)**
+2. **Article reader view (ADHD-optimized)** 🔴 Not Started
    - [ ] Clean reading experience (like Reader Mode)
    - [ ] **Inline expansion** - no modals, no new tabs, read right in the feed
    - [ ] **Quick skim mode** - collapsible sections, TL;DR at top
@@ -217,10 +221,12 @@ interface RSSItem {
 
 ### Epic 2A.3: Enhanced Filtering for Articles
 **Priority:** P1 (Should Have)
+**Status:** 🔴 NOT STARTED
+**Blockers:** Requires Epic 2A.2 (Article display)
 **Estimated Effort:** 1 week
 
 #### Stories:
-1. **Topic-based filtering**
+1. **Topic-based filtering** 🔴 Not Started
    - [ ] Filter keywords apply to article content
    - [ ] Category tagging (Politics, Tech, Sports, etc.)
    - [ ] Automatic category detection (NLP/keyword matching)
