@@ -28,6 +28,23 @@ export type { Collection as CollectionSelectorCollection } from './collection-se
 export { DurationSlider } from './duration-slider';
 export type { DurationSliderProps } from './duration-slider';
 
+export { SavedItemCard } from './saved-item-card';
+export type { SavedItemCardProps } from './saved-item-card';
+
+export { SavedItemList } from './saved-item-list';
+export type { SavedItemListProps } from './saved-item-list';
+
+export { SavedItemCompact } from './saved-item-compact';
+export type { SavedItemCompactProps } from './saved-item-compact';
+
+export { FilterSort } from './filter-sort';
+export type { FilterState, ContentType, DateRange, SortOption } from './filter-sort';
+
+export { ViewToggle } from './view-toggle';
+export type { ViewMode } from './view-toggle';
+
+export { BulkActionToolbar } from './bulk-action-toolbar';
+
 export * from './skeletons';
 
 export * from './icons';

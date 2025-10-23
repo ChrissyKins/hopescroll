@@ -21,6 +21,13 @@ import {
   PencilIcon,
   TrashIcon,
   ChevronDownIcon,
+  CheckIcon,
+  ArrowRightIcon,
+  FunnelIcon,
+  Bars3Icon,
+  Squares2X2Icon,
+  ListBulletIcon,
+  ArrowsUpDownIcon,
 } from '@heroicons/react/24/outline';
 
 // Export icons with semantic names for easy reference
@@ -45,6 +52,17 @@ export const BlockedIcon = NoSymbolIcon;   // Blocked content
 // Collection management icons
 export const CollectionIcon = FolderIcon; // Collection folder icon
 export { PlusIcon };                       // Add new collection
+export { PencilIcon };                     // Edit icon
 export const EditIcon = PencilIcon;        // Edit collection
 export { TrashIcon };                      // Delete collection
 export { ChevronDownIcon };                // Dropdown indicator
+export { CheckIcon };                      // Check/confirm icon
+export { XMarkIcon };                      // Close/cancel icon
+export { ArrowRightIcon };                 // Arrow right icon
+
+// Filter and sort icons
+export const FilterIcon = FunnelIcon;      // Filter dropdown
+export const SortIcon = ArrowsUpDownIcon;  // Sort dropdown
+export const GridIcon = Squares2X2Icon;    // Grid view
+export const ListIcon = ListBulletIcon;    // List view
+export const CompactIcon = Bars3Icon;      // Compact view
