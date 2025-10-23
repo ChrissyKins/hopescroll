@@ -244,18 +244,18 @@
 
 ## 📋 Recent Changes (Last 10 Commits)
 
-1. **e6c05d3** - Implement standardized design system across management pages
-2. **dd73228** - Add loading skeletons across all management pages
-3. **a5c41b9** - Add visual duration slider to Filters page
-4. **a2dba4d** - Add collection management system for saved content
-5. **d769b89** - Replace emoji with SVG icons using Heroicons
-6. **afc0de5** - Add continuation prompt for next agent
-7. **13723f4** - Update UI improvements planning doc
-8. **09dd18f** - Add sorting functionality to Sources page
-9. **9c642af** - Improve empty states across all management pages
-10. **690e13e** - Add search functionality to all management pages
+1. **f118349** - Fix Next.js build errors for production deployment (Suspense boundary + API dynamic routes)
+2. **e6c05d3** - Implement standardized design system across management pages
+3. **dd73228** - Add loading skeletons across all management pages
+4. **a5c41b9** - Add visual duration slider to Filters page
+5. **a2dba4d** - Add collection management system for saved content
+6. **d769b89** - Replace emoji with SVG icons using Heroicons
+7. **afc0de5** - Add continuation prompt for next agent
+8. **13723f4** - Update UI improvements planning doc
+9. **09dd18f** - Add sorting functionality to Sources page
+10. **9c642af** - Improve empty states across all management pages
 
-**Summary:** Recent work focused on **UI polish and management features** (collections, search, sorting, loading states, design system). Ready to move to **Phase 2A: Article/RSS support**.
+**Summary:** Recent work focused on **build stability fixes** and **UI polish**. Production builds now complete successfully with no errors. Ready to move to **Phase 2A: Article/RSS support**.
 
 ---
 
@@ -268,10 +268,11 @@
 4. **No contentType field** - Database can't distinguish VIDEO vs. ARTICLE
 
 ### Technical Debt
-1. **No deployment docs** - Missing `/docs/how-to/deploy.md`
-2. **No how-to guides** - Referenced in CLAUDE.md but don't exist
-3. **Empty explanation docs** - `/docs/explanation/` is empty
-4. **No E2E tests** - Only unit tests exist
+1. **Some test failures** - ~60 pre-existing test failures in integration tests (mostly mock setup issues, not blocking)
+2. **No deployment docs** - Missing `/docs/how-to/deploy.md`
+3. **No how-to guides** - Referenced in CLAUDE.md but don't exist
+4. **Empty explanation docs** - `/docs/explanation/` is empty
+5. **No E2E tests** - Only unit tests exist
 
 ### Design Decisions Needed
 1. **Article storage strategy** - Store full content in DB or fetch on-demand?
