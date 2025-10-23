@@ -25,4 +25,6 @@ export type { Collection as CollectionSelectorCollection } from './collection-se
 export { DurationSlider } from './duration-slider';
 export type { DurationSliderProps } from './duration-slider';
 
+export * from './skeletons';
+
 export * from './icons';

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Navigation } from '@/components/navigation';
-import { useToast, useConfirmDialog, Search, EmptyState, VideoIcon, UnwatchedIcon, SourceIcon } from '@/components/ui';
+import { useToast, useConfirmDialog, Search, EmptyState, VideoIcon, UnwatchedIcon, SourceIcon, SourceListSkeleton } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
 
 interface ContentSource {
@@ -236,11 +236,24 @@ export default function SourcesPage() {
         <Navigation />
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex items-center justify-center h-96">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                <p className="text-gray-600 dark:text-gray-400">Loading sources...</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
+              Content Sources
+            </h1>
+
+            {/* Add Source Form Skeleton */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
+              <div className="animate-pulse space-y-4">
+                <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-48 mb-4" />
+                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full" />
               </div>
+            </div>
+
+            {/* Sources List Skeleton */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <div className="animate-pulse h-6 bg-gray-300 dark:bg-gray-600 rounded w-48 mb-4" />
+              <SourceListSkeleton count={5} />
             </div>
           </div>
         </div>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
-import { Search, EmptyState, HistoryIcon, WatchedIcon, StarIcon, DismissedIcon, NotNowIcon, BlockedIcon } from '@/components/ui';
+import { Search, EmptyState, HistoryIcon, WatchedIcon, StarIcon, DismissedIcon, NotNowIcon, BlockedIcon, HistoryListSkeleton } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
 
 interface HistoryItem {
@@ -95,11 +95,30 @@ export default function HistoryPage() {
         <Navigation />
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex items-center justify-center h-96">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                <p className="text-gray-600 dark:text-gray-400">Loading history...</p>
-              </div>
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+                Interaction History
+              </h1>
+            </div>
+
+            {/* Filter Tabs Skeleton */}
+            <div className="flex space-x-2 mb-6 overflow-x-auto">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div
+                  key={i}
+                  className="animate-pulse h-10 bg-gray-200 dark:bg-gray-700 rounded-lg w-24"
+                />
+              ))}
+            </div>
+
+            {/* Search Skeleton */}
+            <div className="mb-6">
+              <div className="animate-pulse h-10 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+            </div>
+
+            {/* History List Skeleton */}
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+              <HistoryListSkeleton count={8} />
             </div>
           </div>
         </div>

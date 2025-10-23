@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
-import { useToast, useConfirmDialog, Search, EmptyState, ShieldIcon, DurationSlider } from '@/components/ui';
+import { useToast, useConfirmDialog, Search, EmptyState, ShieldIcon, DurationSlider, KeywordListSkeleton } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
 
 interface FilterKeyword {
@@ -148,10 +148,37 @@ export default function FiltersPage() {
         <Navigation />
         <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="flex items-center justify-center h-96">
-              <div className="text-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                <p className="text-gray-600 dark:text-gray-400">Loading filters...</p>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
+              Content Filters
+            </h1>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Keyword Filters Skeleton */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <div className="animate-pulse space-y-4">
+                  <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-48 mb-4" />
+                  <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+                  <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48" />
+                  <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+                </div>
+                <div className="mt-6">
+                  <KeywordListSkeleton count={5} />
+                </div>
+              </div>
+
+              {/* Duration Filters Skeleton */}
+              <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+                <div className="animate-pulse space-y-6">
+                  <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-48" />
+                  <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded" />
+                    <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded" />
+                    <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded" />
+                    <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded" />
+                  </div>
+                  <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full" />
+                </div>
               </div>
             </div>
           </div>
