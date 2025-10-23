@@ -6,6 +6,8 @@ import { requireAuth } from '@/lib/get-user-session';
 import { FilterService } from '@/services/filter-service';
 import { cache } from '@/lib/cache';
 
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await requireAuth();

@@ -9,6 +9,8 @@ import { getAdapters } from '@/lib/adapters';
 import { successResponse, errorResponse } from '@/lib/api-response';
 import { createLogger } from '@/lib/logger';
 
+export const dynamic = 'force-dynamic';
+
 const log = createLogger('cron-fetch-content');
 
 export async function GET(request: NextRequest) {

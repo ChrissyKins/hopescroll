@@ -6,6 +6,8 @@ import { requireAuth } from '@/lib/get-user-session';
 import { YouTubeClient } from '@/adapters/content/youtube/youtube-client';
 import { createLogger } from '@/lib/logger';
 
+export const dynamic = 'force-dynamic';
+
 const log = createLogger('watch-recommended');
 
 function parseDuration(duration: string): number {
