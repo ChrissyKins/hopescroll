@@ -1,0 +1,106 @@
+# Claude Code Rules
+
+## ⚠️ CRITICAL: Session End Protocol (MANDATORY)
+
+When user says: "stop", "done", "finish", "that's all", "end session", or when task is complete:
+
+**STOP EVERYTHING and run this checklist FIRST:**
+
+### Required Actions (In Order):
+
+1. **[ ] Update PROJECT_STATUS.md**
+   - File: `docs/planning/PROJECT_STATUS.md`
+   - Add changes to "Recent Changes" section
+   - Update relevant status sections
+   - Document any new technical debt or blockers
+
+2. **[ ] Update FEATURE_ROADMAP.md (if applicable)**
+   - File: `docs/planning/FEATURE_ROADMAP.md`
+   - Only if working on epic-level features
+   - Update epic status and completion percentage
+
+3. **[ ] Run linter**
+   - Command: `npm run lint`
+   - Must pass with no errors
+   - Fix any issues before proceeding
+
+4. **[ ] Verify tests**
+   - Command: `npm run test` (or check existing test run)
+   - Document any failures in PROJECT_STATUS.md Technical Debt
+   - Ensure your changes didn't break passing tests
+
+5. **[ ] Commit all changes**
+   - Use descriptive commit messages
+   - Follow git commit format in CLAUDE.md
+   - Include co-author footer
+
+6. **[ ] Update "Last Updated" dates**
+   - Update date in any modified documentation files
+   - Use format: YYYY-MM-DD
+
+7. **[ ] Leave clear notes**
+   - Summarize what was accomplished
+   - Document any incomplete work or blockers
+   - Help the next agent pick up where you left off
+
+### ❌ DO NOT:
+
+- ❌ Just commit and say "done"
+- ❌ Skip documentation updates "because it's minor"
+- ❌ Leave uncommitted changes
+- ❌ Forget to update PROJECT_STATUS.md
+- ❌ Skip the checklist "to save time"
+
+### Why This Matters:
+
+**The next AI agent has ZERO context about your session.** Without proper documentation:
+- They waste 30+ minutes reconstructing what you did
+- They might undo your work
+- They can't build on your progress
+- The human gets frustrated
+
+**This checklist is part of EVERY task. Not optional. Not negotiable.**
+
+---
+
+## Additional Rules
+
+### Documentation Requirements
+
+- **Always update docs after code changes** - See CLAUDE.md for details
+- **Use the right doc type** (Tutorial, How-To, Reference, Explanation)
+- **Keep docs in sync with code** - Outdated docs are worse than no docs
+
+### Testing Requirements
+
+- **Write tests for domain logic** (required)
+- **Integration tests for API routes** (recommended)
+- **Run tests before committing** (required)
+
+### Code Quality
+
+- **Follow the design system** - Never hardcode styles
+- **Respect hexagonal architecture** - No external deps in domain/
+- **ADHD-first principles** - No outlinks, no modals for content
+- **TypeScript strict mode** - No `any` without justification
+
+### Git Practices
+
+- **Commit frequently** - Logical, atomic commits
+- **Descriptive messages** - Explain why, not what
+- **Include co-author** - Add Claude co-author footer
+- **Never force push to main** - Warn user if requested
+
+---
+
+## Quick Reference
+
+For full details, see:
+- `CLAUDE.md` - Complete AI assistant guide
+- `CLAUDE-SESSION-GUIDE.md` - Session workflow details
+- `docs/planning/PROJECT_STATUS.md` - Current project state
+- `docs/planning/FEATURE_ROADMAP.md` - Feature priorities
+
+---
+
+**Last Updated:** 2025-10-23
