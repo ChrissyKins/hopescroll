@@ -1,7 +1,224 @@
 # HopeScroll - Feature Plan & Roadmap
 
-**Last Updated:** 2025-10-22
+**Last Updated:** 2025-10-24
 **Status:** Planning Phase
+
+---
+
+## 🚨 IMMEDIATE PRIORITY: Testing Roadmap to A+
+
+**Current Test Grade:** B- (Excellent service layer, critical gaps in API/components/auth)
+**Target Grade:** A+
+**Estimated Effort:** 3-4 weeks
+**Status:** 🔴 NOT STARTED
+
+### Why This is Priority #1
+
+The current test suite has **exceptional coverage of business logic** (services/domain) but **dangerous gaps** in the presentation and integration layers. This creates a false sense of security—we'll catch business logic bugs but miss:
+- Authentication failures
+- API validation errors
+- UI rendering bugs
+- Integration issues between layers
+
+**Before building new features, we need confidence that existing features work correctly.**
+
+---
+
+### Testing Epic: Achieve A+ Test Coverage
+
+#### Phase 1: Security & Core API (CRITICAL - Week 1-2)
+**Priority:** P0 (Security Risk)
+**Blockers:** None
+**Goal:** Ensure authentication, authorization, and core API routes are tested
+
+##### Stories:
+1. **Authentication & Authorization Testing** 🔴 Not Started
+   - [ ] Add unit tests for `/lib/auth.ts` (NextAuth configuration)
+   - [ ] Add unit tests for `/lib/get-user-session.ts` (session helpers)
+   - [ ] Add integration tests for `/app/api/auth/signup/route.ts`
+   - [ ] Add integration tests for `/app/api/auth/reset-password/route.ts`
+   - [ ] Add integration tests for `/app/api/auth/forgot-password/route.ts`
+   - [ ] Test token generation and validation
+   - [ ] Test session expiry handling
+   - [ ] Test authorization checks across routes
+
+2. **Email Functionality Testing** 🔴 Not Started
+   - [ ] Add unit tests for `/lib/email.ts`
+   - [ ] Mock SMTP client for testing
+   - [ ] Test email template rendering
+   - [ ] Test password reset email flow
+   - [ ] Test error handling (SMTP failures)
+
+3. **Core API Route Integration Tests** 🔴 Not Started
+   - [ ] Convert `/tests/api/feed.test.ts` from structural to real HTTP tests
+   - [ ] Convert `/tests/api/sources.test.ts` from structural to real HTTP tests
+   - [ ] Convert `/tests/api/filters.test.ts` from structural to real HTTP tests
+   - [ ] Convert `/tests/api/content-interactions.test.ts` from structural to real HTTP tests
+   - [ ] Add integration tests for `/app/api/sources/[id]/route.ts` (DELETE)
+   - [ ] Add integration tests for `/app/api/filters/[id]/route.ts` (DELETE)
+   - [ ] Test authentication on all routes
+   - [ ] Test validation on all routes
+   - [ ] Test error responses (401, 400, 404, 500)
+
+**Success Criteria:**
+- ✅ All authentication flows tested end-to-end
+- ✅ Email functionality verified with mocks
+- ✅ Core API routes have real HTTP integration tests
+- ✅ Security vulnerabilities caught by tests
+
+---
+
+#### Phase 2: Design System & Components (HIGH - Week 2-3)
+**Priority:** P1 (User Experience)
+**Blockers:** None
+**Goal:** Ensure UI components render correctly and handle interactions
+
+##### Stories:
+1. **Design System Component Tests** 🔴 Not Started
+   - [ ] Add tests for `/components/ui/button.tsx` (all variants, disabled state)
+   - [ ] Add tests for `/components/ui/badge.tsx` (all variants, truncation)
+   - [ ] Add tests for `/components/ui/spinner.tsx` (sizes, aria-labels)
+   - [ ] Add tests for `/components/ui/toast.tsx` (show, hide, auto-dismiss)
+   - [ ] Add tests for `/components/ui/confirm-dialog.tsx` (open, confirm, cancel)
+   - [ ] Add tests for `/components/ui/empty-state.tsx` (with/without actions)
+   - [ ] Add tests for `/components/ui/search.tsx` (input, clear, debounce)
+
+2. **Complex Component Tests** 🔴 Not Started
+   - [ ] Add tests for `/components/ui/collection-selector.tsx`
+   - [ ] Add tests for `/components/ui/collection-manager.tsx` (CRUD operations)
+   - [ ] Add tests for `/components/ui/duration-slider.tsx` (range selection)
+   - [ ] Add tests for `/components/ui/filter-sort.tsx` (sorting, filtering UI)
+   - [ ] Add tests for `/components/ui/saved-item-card.tsx` (interactions)
+   - [ ] Add tests for `/components/ui/saved-item-list.tsx` (empty state, loading)
+   - [ ] Add tests for `/components/ui/bulk-action-toolbar.tsx` (selections)
+
+3. **Component Accessibility Tests** 🔴 Not Started
+   - [ ] Add aria-label tests for all interactive components
+   - [ ] Test keyboard navigation (Tab, Enter, Escape)
+   - [ ] Test screen reader compatibility
+   - [ ] Test focus management
+
+**Success Criteria:**
+- ✅ All design system components tested for rendering and interactions
+- ✅ Complex components tested for user flows
+- ✅ Accessibility standards verified
+
+---
+
+#### Phase 3: API Routes & Features (MEDIUM - Week 3)
+**Priority:** P1 (Feature Completeness)
+**Blockers:** Phase 1 complete
+**Goal:** Test all remaining API routes and feature flows
+
+##### Stories:
+1. **Collections API Tests** 🔴 Not Started
+   - [ ] Add tests for `/app/api/collections/route.ts` (GET/POST)
+   - [ ] Add tests for `/app/api/collections/[collectionId]/route.ts` (GET/PATCH/DELETE)
+   - [ ] Add tests for `/app/api/saved/[savedItemId]/collection/route.ts` (PATCH)
+   - [ ] Test collection name uniqueness
+   - [ ] Test item count aggregation
+   - [ ] Test moving items between collections
+
+2. **Content API Tests** 🔴 Not Started
+   - [ ] Add tests for `/app/api/watch/random/route.ts`
+   - [ ] Add tests for `/app/api/watch/recommended/route.ts`
+   - [ ] Add tests for `/app/api/saved/[savedItemId]/notes/route.ts`
+   - [ ] Test content filtering logic
+   - [ ] Test content ranking logic
+
+3. **Preferences & Settings API Tests** 🔴 Not Started
+   - [ ] Add tests for `/app/api/preferences/route.ts` (PATCH)
+   - [ ] Add tests for `/app/api/sources/fetch/route.ts` (POST trigger)
+   - [ ] Test preference validation
+   - [ ] Test settings persistence
+
+4. **Debug & Utility API Tests** 🔴 Not Started
+   - [ ] Add tests for `/app/api/debug/feed/route.ts`
+   - [ ] Add tests for `/app/api/debug/clear-interactions/route.ts`
+   - [ ] Add tests for `/app/api/cron/fetch-content/route.ts`
+   - [ ] Test debug endpoints only work in development
+
+**Success Criteria:**
+- ✅ All API routes have integration tests
+- ✅ Feature flows tested end-to-end
+- ✅ Edge cases covered (empty states, errors, validation)
+
+---
+
+#### Phase 4: Integration & E2E Tests (POLISH - Week 4)
+**Priority:** P2 (Quality Assurance)
+**Blockers:** Phases 1-3 complete
+**Goal:** Verify complete user flows work end-to-end
+
+##### Stories:
+1. **Complete Integration Test Assertions** 🔴 Not Started
+   - [ ] Review and complete `/tests/integration/feed-flow.integration.test.ts`
+   - [ ] Add full assertions for feed generation results
+   - [ ] Add error scenario testing
+   - [ ] Add performance benchmarks (feed generation time)
+
+2. **E2E User Flow Tests** 🔴 Not Started
+   - [ ] New user onboarding flow (signup → add sources → see feed)
+   - [ ] Content interaction flow (watch → save → organize in collection)
+   - [ ] Filter management flow (add filter → verify content filtered)
+   - [ ] Source management flow (add source → fetch content → see in feed)
+
+3. **Missing Domain/Lib Tests** 🔴 Not Started
+   - [ ] Add tests for `/domain/filtering/filter-rule.ts` (constructor logic)
+   - [ ] Add tests for `/lib/adapters.ts` (adapter registry)
+   - [ ] Add tests for `/lib/db.ts` (Prisma client initialization)
+
+**Success Criteria:**
+- ✅ Integration tests have complete assertions
+- ✅ Critical user flows tested end-to-end
+- ✅ 100% of domain layer tested
+- ✅ 80%+ of lib layer tested
+
+---
+
+### Testing Tools & Standards
+
+**Framework:** Vitest + React Testing Library
+**API Testing:** Supertest (for HTTP integration tests)
+**Mocking:** Vitest mocks for external services (YouTube API, SMTP)
+**Coverage Target:** 80% overall, 100% for domain layer
+
+**Test Standards:**
+- Use Arrange-Act-Assert pattern
+- Integration tests use real database (test environment)
+- Mock external APIs (YouTube, email)
+- Test edge cases (empty, null, invalid input)
+- Test error handling paths
+- Test authentication/authorization on all protected routes
+
+**Running Tests:**
+```bash
+npm run test              # Run all tests
+npm run test:watch        # Watch mode for development
+npm run test:coverage     # Generate coverage report
+```
+
+---
+
+### Definition of Done for A+ Grade
+
+- [ ] **100% of API routes** have integration tests with real HTTP requests
+- [ ] **80%+ of components** tested (all design system, all complex components)
+- [ ] **100% of authentication flows** tested (signup, login, password reset, sessions)
+- [ ] **Email functionality** tested with mocked SMTP
+- [ ] **Integration tests** have complete assertions (not just structural)
+- [ ] **E2E tests** for 3+ critical user flows
+- [ ] **Domain layer** 100% coverage (maintain current level)
+- [ ] **Service layer** 100% coverage (maintain current level)
+- [ ] **Test suite runs in CI/CD** (GitHub Actions)
+- [ ] **Coverage report** generated and tracked
+
+**When complete:**
+- Test suite catches security vulnerabilities
+- Test suite catches integration bugs
+- Test suite catches UI rendering bugs
+- Confident to deploy to production
+- New features can be added with confidence
 
 ---
 

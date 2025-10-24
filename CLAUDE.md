@@ -13,8 +13,9 @@ This guide helps AI coding assistants understand HopeScroll's architecture, conv
 ### Quick Start (5 minutes)
 1. **Read the session guide:** [CLAUDE-SESSION-GUIDE.md](./CLAUDE-SESSION-GUIDE.md) - Fast onboarding
 2. **Check project status:** [docs/planning/PROJECT_STATUS.md](./docs/planning/PROJECT_STATUS.md) - What's implemented
-3. **Review recent work:** `git log -10 --oneline` - What happened last
-4. **Verify working state:** `npm run build && npm run test` - Ensure everything works
+3. **⚠️ IMMEDIATE PRIORITY:** [Testing Roadmap to A+](./docs/planning/FEATURE_ROADMAP.md#-immediate-priority-testing-roadmap-to-a) - Critical testing gaps
+4. **Review recent work:** `git log -10 --oneline` - What happened last
+5. **Verify working state:** `npm run build && npm run test` - Ensure everything works
 
 ### Critical Constraints (Never Violate!)
 
