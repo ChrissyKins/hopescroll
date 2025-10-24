@@ -244,7 +244,16 @@
 
 ## 📋 Recent Changes (Last Session)
 
-**Test Coverage Analysis & Fixes (2025-10-24)**
+**Test Failure Root Cause Fixes (2025-10-24 - Session 2)**
+- Fixed 28 additional test failures by addressing underlying root causes
+- Database mock configuration: Added missing `findFirst` and `contentItem.count` methods
+- Feed generation: Replaced hardcoded dates with relative `daysAgo()` helper function
+- Authorization checks: Fixed mock behavior to properly return `null` for unauthorized access
+- InteractionService: Corrected test expectations for `getSavedContent` (collectionId field, include clause)
+- Test pass rate improved: 92.7% → 96.8% (41 failures → 13 failures)
+- Remaining failures are mostly test expectation mismatches (ContentCard redesign, error message wording)
+
+**Test Coverage Analysis & Fixes (2025-10-24 - Session 1)**
 - Completed comprehensive test coverage audit across all layers
 - Fixed 19 failing tests by addressing underlying implementation drift
 - Updated tests for schema evolution (Collection FK relationship)
@@ -271,9 +280,11 @@
 4. **No contentType field** - Database can't distinguish VIDEO vs. ARTICLE
 
 ### Technical Debt
-1. **Test failures reduced but remain** - 41 test failures (down from 60, now 92.7% pass rate)
-   - Fixed: 19 tests by addressing schema evolution (collectionId vs collection)
-   - Remaining: Component tests (16), feed flow (5), filter system (10), source management (7), adapter mocks (3)
+1. **Test failures significantly reduced** - 13 test failures remaining (down from 60, now 96.8% pass rate)
+   - Fixed Session 1: 19 tests by addressing schema evolution (collectionId vs collection)
+   - Fixed Session 2: 28 tests by fixing database mocks, date handling, authorization checks, InteractionService expectations
+   - Remaining: ContentCard component tests (~6, component redesigned), filter system (5), source management (2)
+   - Remaining failures are mostly test expectation mismatches, not code bugs
    - See test coverage report for details
 2. **Test coverage gaps identified** - Critical untested areas:
    - 21 API routes with 0% coverage (auth, collections, saved content APIs)
