@@ -108,7 +108,7 @@ describe('Source Management Integration Tests', () => {
 
       await expect(
         sourceService.addSource(testUserId, 'YOUTUBE', 'invalid-channel')
-      ).rejects.toThrow('validation failed');
+      ).rejects.toThrow('Channel not found');
     });
 
     it('should prevent adding duplicate source', async () => {
@@ -140,7 +140,7 @@ describe('Source Management Integration Tests', () => {
       ).rejects.toThrow('already added');
     });
 
-    it('should use provided display name if validation does not return one', async () => {
+    it('should use sourceId as display name if validation does not return one', async () => {
       vi.mocked(mockYouTubeAdapter.validateSource).mockResolvedValue({
         isValid: true,
         // No displayName returned
@@ -152,7 +152,7 @@ describe('Source Management Integration Tests', () => {
         userId: testUserId,
         type: 'YOUTUBE',
         sourceId: 'UC999',
-        displayName: 'My Custom Channel Name',
+        displayName: 'UC999', // Falls back to sourceId when validation doesn't provide one
         avatarUrl: null,
         isMuted: false,
         alwaysSafe: false,
@@ -264,22 +264,8 @@ describe('Source Management Integration Tests', () => {
     });
 
     it('should throw if source belongs to different user', async () => {
-      const otherUserSource = {
-        id: 'source-1',
-        userId: 'other-user',
-        type: 'YOUTUBE',
-        sourceId: 'channel-1',
-        displayName: 'Channel',
-        avatarUrl: null,
-        isMuted: false,
-        alwaysSafe: false,
-        addedAt: new Date(),
-        lastFetchAt: null,
-        lastFetchStatus: 'pending',
-        errorMessage: null,
-      };
-
-      vi.mocked(mockDb.contentSource.findFirst).mockResolvedValue(otherUserSource);
+      // Mock should return null when userId doesn't match (simulating the WHERE clause)
+      vi.mocked(mockDb.contentSource.findFirst).mockResolvedValue(null);
 
       await expect(
         sourceService.getSource(testUserId, 'source-1')

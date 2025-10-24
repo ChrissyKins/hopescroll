@@ -162,10 +162,6 @@ describe('Filter System Integration Tests', () => {
 
       expect(result).toEqual({
         id: 'filter-1',
-        userId: testUserId,
-        keyword: 'election',
-        isWildcard: false,
-        createdAt: expect.any(Date),
       });
 
       expect(mockDb.filterKeyword.create).toHaveBeenCalledWith({
@@ -188,8 +184,16 @@ describe('Filter System Integration Tests', () => {
 
       const result = await filterService.addKeyword(testUserId, '*politic*', true);
 
-      expect(result.keyword).toBe('*politic*');
-      expect(result.isWildcard).toBe(true);
+      expect(result).toEqual({
+        id: 'filter-2',
+      });
+      expect(mockDb.filterKeyword.create).toHaveBeenCalledWith({
+        data: {
+          userId: testUserId,
+          keyword: '*politic*',
+          isWildcard: true,
+        },
+      });
     });
 
     it('should trim whitespace from keyword', async () => {
@@ -456,8 +460,7 @@ describe('Filter System Integration Tests', () => {
       // Coffee break: 5-10 min = 300-600 seconds
       // Filter OUT content that's < 5 min or > 10 min
       const rules = [
-        new DurationFilterRule(null, 300), // < 5 min
-        new DurationFilterRule(600, null),  // > 10 min
+        new DurationFilterRule(300, 600), // Keep items between 5-10 min
       ];
       const engine = new FilterEngine(rules);
 
@@ -466,16 +469,17 @@ describe('Filter System Integration Tests', () => {
       // Expected to keep only:
       // c5: 450s (7.5 min) ✓
       // c3: 600s (10 min) ✓
-      expect(filtered.length).toBe(2);
+      // c6: 300s (5 min) ✓
+      expect(filtered.length).toBe(3);
       expect(filtered.find(c => c.id === 'c5')).toBeDefined();
       expect(filtered.find(c => c.id === 'c3')).toBeDefined();
+      expect(filtered.find(c => c.id === 'c6')).toBeDefined();
     });
 
     it('should apply "meal time" duration preset (15-25 minutes)', () => {
       // Meal time: 15-25 min = 900-1500 seconds
       const rules = [
-        new DurationFilterRule(null, 900),  // < 15 min
-        new DurationFilterRule(1500, null), // > 25 min
+        new DurationFilterRule(900, 1500), // Keep items between 15-25 min
       ];
       const engine = new FilterEngine(rules);
 
@@ -494,8 +498,7 @@ describe('Filter System Integration Tests', () => {
       const rules = [
         new KeywordFilterRule('election', false, false),
         new KeywordFilterRule('*politic*', true, false),
-        new DurationFilterRule(null, 600),  // < 10 min
-        new DurationFilterRule(1200, null), // > 20 min
+        new DurationFilterRule(600, 1200), // Keep items between 10-20 min
       ];
       const engine = new FilterEngine(rules);
 

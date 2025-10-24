@@ -115,6 +115,7 @@ describe('YouTubeAdapter', () => {
         isValid: true,
         displayName: 'Test Channel',
         avatarUrl: 'thumb3.jpg',
+        resolvedId: 'channel123',
       });
     });
 

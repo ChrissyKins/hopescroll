@@ -17,7 +17,7 @@ vi.mock('next-auth/react', () => ({
 describe('Navigation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(usePathname).mockReturnValue('/feed');
+    vi.mocked(usePathname).mockReturnValue('/watch');
   });
 
   it('renders the app title', () => {
@@ -27,7 +27,8 @@ describe('Navigation', () => {
 
   it('renders all navigation links', () => {
     render(<Navigation />);
-    expect(screen.getByText('Feed')).toBeInTheDocument();
+    expect(screen.getByText('Watch')).toBeInTheDocument();
+    expect(screen.getByText('Scroll')).toBeInTheDocument();
     expect(screen.getByText('Sources')).toBeInTheDocument();
     expect(screen.getByText('Filters')).toBeInTheDocument();
     expect(screen.getByText('Saved')).toBeInTheDocument();
@@ -40,15 +41,15 @@ describe('Navigation', () => {
   });
 
   it('highlights active navigation item', () => {
-    vi.mocked(usePathname).mockReturnValue('/feed');
+    vi.mocked(usePathname).mockReturnValue('/watch');
     render(<Navigation />);
 
-    const feedLink = screen.getByText('Feed').closest('a');
-    expect(feedLink).toHaveClass('border-blue-500');
+    const watchLink = screen.getByText('Watch').closest('a');
+    expect(watchLink).toHaveClass('border-blue-500');
   });
 
   it('does not highlight inactive navigation items', () => {
-    vi.mocked(usePathname).mockReturnValue('/feed');
+    vi.mocked(usePathname).mockReturnValue('/watch');
     render(<Navigation />);
 
     const sourcesLink = screen.getByText('Sources').closest('a');
@@ -58,16 +59,16 @@ describe('Navigation', () => {
   it('updates active state when pathname changes', () => {
     const { rerender } = render(<Navigation />);
 
-    // Initially on /feed
-    vi.mocked(usePathname).mockReturnValue('/feed');
+    // Initially on /watch
+    vi.mocked(usePathname).mockReturnValue('/watch');
     rerender(<Navigation />);
-    expect(screen.getByText('Feed').closest('a')).toHaveClass('border-blue-500');
+    expect(screen.getByText('Watch').closest('a')).toHaveClass('border-blue-500');
 
     // Navigate to /sources
     vi.mocked(usePathname).mockReturnValue('/sources');
     rerender(<Navigation />);
     expect(screen.getByText('Sources').closest('a')).toHaveClass('border-blue-500');
-    expect(screen.getByText('Feed').closest('a')).toHaveClass('border-transparent');
+    expect(screen.getByText('Watch').closest('a')).toHaveClass('border-transparent');
   });
 
   it('calls signOut with correct callback when sign out button is clicked', async () => {
@@ -83,32 +84,44 @@ describe('Navigation', () => {
   it('has correct href for each navigation link', () => {
     render(<Navigation />);
 
-    expect(screen.getByText('Feed').closest('a')).toHaveAttribute('href', '/feed');
+    expect(screen.getByText('Watch').closest('a')).toHaveAttribute('href', '/watch');
+    expect(screen.getByText('Scroll').closest('a')).toHaveAttribute('href', '/scroll');
     expect(screen.getByText('Sources').closest('a')).toHaveAttribute('href', '/sources');
     expect(screen.getByText('Filters').closest('a')).toHaveAttribute('href', '/filters');
     expect(screen.getByText('Saved').closest('a')).toHaveAttribute('href', '/saved');
     expect(screen.getByText('History').closest('a')).toHaveAttribute('href', '/history');
   });
 
-  it('applies dark mode classes', () => {
+  it('applies dark mode classes when not on watch page', () => {
+    vi.mocked(usePathname).mockReturnValue('/sources');
     const { container } = render(<Navigation />);
     const nav = container.querySelector('nav');
     expect(nav).toHaveClass('dark:bg-gray-800', 'dark:border-gray-700');
   });
 
+  it('applies dark mode styles when on watch page', () => {
+    vi.mocked(usePathname).mockReturnValue('/watch');
+    const { container } = render(<Navigation />);
+    const nav = container.querySelector('nav');
+    expect(nav).toHaveClass('bg-gray-900', 'border-gray-800');
+  });
+
   it('applies hover styles to inactive links', () => {
-    vi.mocked(usePathname).mockReturnValue('/feed');
+    vi.mocked(usePathname).mockReturnValue('/watch');
     render(<Navigation />);
 
     const sourcesLink = screen.getByText('Sources').closest('a');
-    expect(sourcesLink).toHaveClass('hover:border-gray-300', 'dark:hover:border-gray-600');
+    // When on /watch page, links use dark mode styles
+    expect(sourcesLink).toHaveClass('hover:text-gray-300');
   });
 
   it('applies hover styles to sign out button', () => {
+    vi.mocked(usePathname).mockReturnValue('/watch');
     render(<Navigation />);
 
     const signOutButton = screen.getByText('Sign out');
-    expect(signOutButton).toHaveClass('hover:text-gray-900', 'dark:hover:text-white');
+    // When on /watch page, uses dark mode styles
+    expect(signOutButton).toHaveClass('hover:text-white');
   });
 
   it('renders with correct responsive container', () => {
@@ -131,7 +144,8 @@ describe('Navigation', () => {
 
   it('highlights different navigation items correctly', () => {
     const navItems = [
-      { path: '/feed', label: 'Feed' },
+      { path: '/watch', label: 'Watch' },
+      { path: '/scroll', label: 'Scroll' },
       { path: '/sources', label: 'Sources' },
       { path: '/filters', label: 'Filters' },
       { path: '/saved', label: 'Saved' },
@@ -150,17 +164,17 @@ describe('Navigation', () => {
   });
 
   it('maintains border bottom style for active item', () => {
-    vi.mocked(usePathname).mockReturnValue('/feed');
+    vi.mocked(usePathname).mockReturnValue('/watch');
     render(<Navigation />);
 
-    const feedLink = screen.getByText('Feed').closest('a');
-    expect(feedLink).toHaveClass('border-b-2');
+    const watchLink = screen.getByText('Watch').closest('a');
+    expect(watchLink).toHaveClass('border-b-2');
   });
 
   it('renders title with correct styling', () => {
     render(<Navigation />);
 
     const title = screen.getByText('Forest Cabin');
-    expect(title).toHaveClass('text-xl', 'font-bold');
+    expect(title).toHaveClass('text-lg', 'font-bold');
   });
 });
