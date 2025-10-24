@@ -1,7 +1,7 @@
 # HopeScroll - Project Status
 
-**Last Updated:** 2025-10-24 (Session 10 - Test Coverage Analysis & Testing Roadmap)
-**Current Phase:** Phase 1 (MVP Video Feed) → **Test Coverage Improvement (PRIORITY)** → Phase 2A (Article/RSS Support)
+**Last Updated:** 2025-10-24 (Session 11 - Security Tests & Diversity Bug Fix)
+**Current Phase:** Phase 1 (MVP Video Feed) → **Test Coverage Improvement (IN PROGRESS)** → Phase 2A (Article/RSS Support)
 
 ---
 
@@ -244,7 +244,26 @@
 
 ## 📋 Recent Changes (Last Session)
 
-**Test Coverage Analysis & Testing Roadmap (2025-10-24 - Session 10)**
+**Security Tests & Diversity Bug Fix (2025-10-24 - Session 11)**
+- 🐛 **Fixed diversity enforcer bug** - Reverted Session 8's incorrect fix
+  - Root cause: Changed `===` back to `>=` in diversity-enforcer.ts:23
+  - Was allowing 5 consecutive items when maxConsecutive=3
+  - Now correctly enforces diversity limit (602 tests passing)
+  - Commit: `d2eeae7 - fix: correct diversity enforcer logic`
+- 🔐 **Added comprehensive security tests** - Phase 1 of Testing Roadmap (58 new tests)
+  - **Authentication tests** (19 tests): lib/auth.ts password hashing, bcrypt validation, user lookup
+  - **Session tests** (17 tests): lib/get-user-session.ts session validation, authorization
+  - **Email tests** (22 tests): lib/email.ts password reset emails, SMTP error handling
+  - All tests passing: 660/660 (100% pass rate, up from 602)
+  - Test files: 32 → 35 (+3 files)
+  - Commit: `a8c1a64 - test: add comprehensive authentication and email tests`
+- 📊 **Testing progress**:
+  - Phase 1 Security (auth/email): ✅ COMPLETE
+  - Remaining Phase 1: API auth routes, signup/password-reset routes
+  - Grade improvement: B- → B (security layer tested)
+- 🎯 **Next**: Continue Phase 1 - Add API route integration tests
+
+**Previous Session: Test Coverage Analysis & Testing Roadmap (2025-10-24 - Session 10)**
 - 📊 **Comprehensive test coverage analysis completed**
   - Current test grade: **B-** (excellent services/domain, gaps in API/components/auth)
   - 31 test files analyzed across all layers
@@ -414,7 +433,7 @@
 4. **No contentType field** - Database can't distinguish VIDEO vs. ARTICLE
 
 ### Technical Debt
-1. **✅ All tests passing!** - 602/602 tests passing (100% pass rate, up from 557)
+1. **✅ All tests passing!** - 660/660 tests passing (100% pass rate, up from 602)
    - Fixed Session 1: 19 tests by addressing schema evolution
    - Fixed Session 2: 28 tests by fixing database mocks, date handling, authorization checks
    - Fixed Session 3: 9 tests by updating to match implementation
@@ -427,10 +446,13 @@
    - ✅ Created: `content-service.test.ts` - 19 tests covering fetch operations, errors, deduplication
    - Service layer now has 100% coverage (6/6 services tested)
    - Production risks eliminated: No more risk of data loss or silent failures
-3. **🟡 Test coverage gaps identified** - Remaining improvements (medium priority):
-   - 21 API routes with weak structural tests (need behavioral tests for A+ grade)
-   - Authentication system (lib/auth.ts, lib/get-user-session.ts)
-   - Email service (lib/email.ts)
+3. **🟢 Phase 1 Security Tests COMPLETE!** - Added 58 tests for auth/email (high priority):
+   - ✅ Authentication system (lib/auth.ts) - 19 tests
+   - ✅ Session helpers (lib/get-user-session.ts) - 17 tests
+   - ✅ Email service (lib/email.ts) - 22 tests
+4. **🟡 Test coverage gaps remaining** - Phase 1 continues (high priority):
+   - 🔴 Auth API routes (signup, password-reset, forgot-password) - P0
+   - 🟡 21 API routes with weak structural tests (need behavioral tests for A+ grade) - P1
 3. **No deployment docs** - Missing `/docs/how-to/deploy.md`
 4. **No how-to guides** - Referenced in CLAUDE.md but don't exist
 5. **Empty explanation docs** - `/docs/explanation/` is empty
@@ -502,27 +524,34 @@
 - Design system components live in `/components/ui/` - use them!
 - Inline reading is non-negotiable (no modals, no new tabs)
 
-### Notes for Next Session (Session 10)
-**NEXT STEP:** Begin RSS/Article Support (Epic 2A.1)!
+### Notes for Next Session (Session 12)
+**NEXT STEP:** Continue Phase 1 Testing - Add Auth API Route Tests
+
+**Progress on Testing Roadmap:**
+- ✅ Phase 1.1: Security layer tests (auth, session, email) - COMPLETE (58 tests)
+- 🚧 Phase 1.2: Auth API routes (signup, password-reset, forgot-password) - NEXT
+- 🔴 Phase 1.3: Core API route integration tests - TODO
+- 🔴 Phase 2: Design system & component tests - TODO
 
 **Why we're ready:**
-- ✅ All 602 tests passing (100%) - verified Session 9
+- ✅ All 660 tests passing (100%) - verified Session 11
 - ✅ Service layer fully tested (6/6 services)
 - ✅ Production risks eliminated
 - ✅ Strong foundation for new features
 - ✅ Linting clean (no warnings/errors)
 
-**Suggested approach for RSS work:**
-1. Create RSS adapter in `/adapters/content/rss/`
-2. Follow YouTube adapter pattern
-3. Write tests for RSS adapter FIRST (TDD)
-4. Update database schema for article content type
-5. Test as you go (don't batch testing at the end)
+**Suggested approach for Auth API tests:**
+1. Create integration tests for `/app/api/auth/signup/route.ts`
+2. Create integration tests for `/app/api/auth/reset-password/route.ts`
+3. Create integration tests for `/app/api/auth/forgot-password/route.ts`
+4. Test authentication flows end-to-end (signup → login → reset)
+5. Test error cases: invalid emails, weak passwords, expired tokens
+6. Estimated effort: 2-3 hours
 
-**Optional improvement (if time allows):**
-- Improve API tests from structural → behavioral (2-3 hours)
-- Would push grade from A- → A+ (90 → 95/100)
-- Not blocking for RSS work, but nice to have
+**After Phase 1 complete:**
+- Can shift to RSS/Article Support (Epic 2A.1) OR
+- Continue Phase 2: Design system component tests
+- Recommend completing Phase 1 first for security confidence
 
 ---
 
