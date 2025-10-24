@@ -81,13 +81,13 @@ describe('InteractionService', () => {
     it('should create new saved content if not exists', async () => {
       mockPrisma.savedContent.findUnique = vi.fn().mockResolvedValue(null);
 
-      await service.saveContent('user1', 'content1', 'Watch Later', 'Good stuff');
+      await service.saveContent('user1', 'content1', 'collection-id-123', 'Good stuff');
 
       expect(mockPrisma.savedContent.create).toHaveBeenCalledWith({
         data: {
           userId: 'user1',
           contentId: 'content1',
-          collection: 'Watch Later',
+          collectionId: 'collection-id-123',
           notes: 'Good stuff',
         },
       });
@@ -100,25 +100,25 @@ describe('InteractionService', () => {
         contentId: 'content1',
       });
 
-      await service.saveContent('user1', 'content1', 'New Collection');
+      await service.saveContent('user1', 'content1', 'new-collection-id');
 
       expect(mockPrisma.savedContent.update).toHaveBeenCalledWith({
         where: { id: 'saved1' },
-        data: { collection: 'New Collection', notes: undefined },
+        data: { collectionId: 'new-collection-id', notes: undefined },
       });
     });
 
     it('should create SAVED interaction', async () => {
       mockPrisma.savedContent.findUnique = vi.fn().mockResolvedValue(null);
 
-      await service.saveContent('user1', 'content1', 'Watch Later');
+      await service.saveContent('user1', 'content1', 'collection-id-watch-later');
 
       expect(mockPrisma.contentInteraction.create).toHaveBeenCalledWith({
         data: {
           userId: 'user1',
           contentId: 'content1',
           type: 'SAVED',
-          collection: 'Watch Later',
+          collection: 'collection-id-watch-later',
         },
       });
     });

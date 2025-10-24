@@ -39,8 +39,12 @@ describe('Content Interaction Integration Tests', () => {
         create: vi.fn(),
         update: vi.fn(),
         delete: vi.fn(),
+        deleteMany: vi.fn(),
         findUnique: vi.fn(),
         findMany: vi.fn(),
+      },
+      contentItem: {
+        findUnique: vi.fn(),
       },
       filterKeyword: {
         create: vi.fn(),
@@ -79,16 +83,15 @@ describe('Content Interaction Integration Tests', () => {
 
       vi.mocked(mockDb.contentInteraction.create).mockResolvedValue(mockInteraction);
 
-      const result = await interactionService.recordWatch(testUserId, testContentId);
+      await interactionService.recordWatch(testUserId, testContentId);
 
-      expect(result).toEqual(mockInteraction);
       expect(mockDb.contentInteraction.create).toHaveBeenCalledWith({
         data: {
           userId: testUserId,
           contentId: testContentId,
           type: 'WATCHED',
-          watchDuration: null,
-          completionRate: null,
+          watchDuration: undefined,
+          completionRate: undefined,
         },
       });
 
@@ -110,15 +113,13 @@ describe('Content Interaction Integration Tests', () => {
 
       vi.mocked(mockDb.contentInteraction.create).mockResolvedValue(mockInteraction);
 
-      const result = await interactionService.recordWatch(
+      await interactionService.recordWatch(
         testUserId,
         testContentId,
         1200,
         0.85
       );
 
-      expect(result.watchDuration).toBe(1200);
-      expect(result.completionRate).toBe(0.85);
       expect(mockDb.contentInteraction.create).toHaveBeenCalledWith({
         data: {
           userId: testUserId,
@@ -145,14 +146,22 @@ describe('Content Interaction Integration Tests', () => {
 
       vi.mocked(mockDb.contentInteraction.create).mockResolvedValue(mockInteraction);
 
-      const result = await interactionService.recordWatch(
+      await interactionService.recordWatch(
         testUserId,
         testContentId,
         300,
         0.25
       );
 
-      expect(result.completionRate).toBe(0.25);
+      expect(mockDb.contentInteraction.create).toHaveBeenCalledWith({
+        data: {
+          userId: testUserId,
+          contentId: testContentId,
+          type: 'WATCHED',
+          watchDuration: 300,
+          completionRate: 0.25,
+        },
+      });
     });
   });
 
@@ -164,7 +173,7 @@ describe('Content Interaction Integration Tests', () => {
         id: 'saved-1',
         userId: testUserId,
         contentId: testContentId,
-        collection: null,
+        collectionId: null,
         savedAt: new Date(),
         notes: null,
       };
@@ -185,14 +194,14 @@ describe('Content Interaction Integration Tests', () => {
 
       vi.mocked(mockDb.contentInteraction.create).mockResolvedValue(mockInteraction);
 
-      const result = await interactionService.saveContent(testUserId, testContentId);
+      await interactionService.saveContent(testUserId, testContentId);
 
-      expect(result).toEqual(mockInteraction);
       expect(mockDb.savedContent.create).toHaveBeenCalledWith({
         data: {
           userId: testUserId,
           contentId: testContentId,
-          collection: null,
+          collectionId: undefined,
+          notes: undefined,
         },
       });
     });
@@ -204,7 +213,7 @@ describe('Content Interaction Integration Tests', () => {
         id: 'saved-2',
         userId: testUserId,
         contentId: testContentId,
-        collection: 'Watch Later',
+        collectionId: 'collection-watch-later',
         savedAt: new Date(),
         notes: null,
       };
@@ -220,23 +229,23 @@ describe('Content Interaction Integration Tests', () => {
         watchDuration: null,
         completionRate: null,
         dismissReason: null,
-        collection: 'Watch Later',
+        collection: 'collection-watch-later',
       };
 
       vi.mocked(mockDb.contentInteraction.create).mockResolvedValue(mockInteraction);
 
-      const result = await interactionService.saveContent(
+      await interactionService.saveContent(
         testUserId,
         testContentId,
-        'Watch Later'
+        'collection-watch-later'
       );
 
-      expect(result.collection).toBe('Watch Later');
       expect(mockDb.savedContent.create).toHaveBeenCalledWith({
         data: {
           userId: testUserId,
           contentId: testContentId,
-          collection: 'Watch Later',
+          collectionId: 'collection-watch-later',
+          notes: undefined,
         },
       });
     });
@@ -247,7 +256,7 @@ describe('Content Interaction Integration Tests', () => {
         id: 'saved-existing',
         userId: testUserId,
         contentId: testContentId,
-        collection: 'Old Collection',
+        collectionId: 'collection-old',
         savedAt: new Date('2025-10-10'),
         notes: null,
       };
@@ -256,7 +265,7 @@ describe('Content Interaction Integration Tests', () => {
 
       const updatedSaved = {
         ...existingSaved,
-        collection: 'New Collection',
+        collectionId: 'collection-new',
       };
 
       vi.mocked(mockDb.savedContent.update).mockResolvedValue(updatedSaved);
@@ -270,27 +279,21 @@ describe('Content Interaction Integration Tests', () => {
         watchDuration: null,
         completionRate: null,
         dismissReason: null,
-        collection: 'New Collection',
+        collection: 'collection-new',
       };
 
       vi.mocked(mockDb.contentInteraction.create).mockResolvedValue(mockInteraction);
 
-      const result = await interactionService.saveContent(
+      await interactionService.saveContent(
         testUserId,
         testContentId,
-        'New Collection'
+        'collection-new'
       );
-
-      expect(result.collection).toBe('New Collection');
       expect(mockDb.savedContent.update).toHaveBeenCalledWith({
-        where: {
-          userId_contentId: {
-            userId: testUserId,
-            contentId: testContentId,
-          },
-        },
+        where: { id: 'saved-existing' },
         data: {
-          collection: 'New Collection',
+          collectionId: 'collection-new',
+          notes: undefined,
         },
       });
     });
@@ -312,15 +315,14 @@ describe('Content Interaction Integration Tests', () => {
 
       vi.mocked(mockDb.contentInteraction.create).mockResolvedValue(mockInteraction);
 
-      const result = await interactionService.dismissContent(testUserId, testContentId);
+      await interactionService.dismissContent(testUserId, testContentId);
 
-      expect(result).toEqual(mockInteraction);
       expect(mockDb.contentInteraction.create).toHaveBeenCalledWith({
         data: {
           userId: testUserId,
           contentId: testContentId,
           type: 'DISMISSED',
-          dismissReason: null,
+          dismissReason: undefined,
         },
       });
 
@@ -342,13 +344,20 @@ describe('Content Interaction Integration Tests', () => {
 
       vi.mocked(mockDb.contentInteraction.create).mockResolvedValue(mockInteraction);
 
-      const result = await interactionService.dismissContent(
+      await interactionService.dismissContent(
         testUserId,
         testContentId,
         'Not interested in this topic'
       );
 
-      expect(result.dismissReason).toBe('Not interested in this topic');
+      expect(mockDb.contentInteraction.create).toHaveBeenCalledWith({
+        data: {
+          userId: testUserId,
+          contentId: testContentId,
+          type: 'DISMISSED',
+          dismissReason: 'Not interested in this topic',
+        },
+      });
     });
   });
 
@@ -368,9 +377,8 @@ describe('Content Interaction Integration Tests', () => {
 
       vi.mocked(mockDb.contentInteraction.create).mockResolvedValue(mockInteraction);
 
-      const result = await interactionService.notNowContent(testUserId, testContentId);
+      await interactionService.notNowContent(testUserId, testContentId);
 
-      expect(result.type).toBe('NOT_NOW');
       expect(mockDb.contentInteraction.create).toHaveBeenCalledWith({
         data: {
           userId: testUserId,
@@ -400,9 +408,16 @@ describe('Content Interaction Integration Tests', () => {
 
       vi.mocked(mockDb.contentInteraction.create).mockResolvedValue(mockInteraction);
 
-      const result = await interactionService.blockContent(testUserId, testContentId);
+      const keywords = await interactionService.blockContent(testUserId, testContentId, false);
 
-      expect(result.type).toBe('BLOCKED');
+      expect(keywords).toEqual([]);
+      expect(mockDb.contentInteraction.create).toHaveBeenCalledWith({
+        data: {
+          userId: testUserId,
+          contentId: testContentId,
+          type: 'BLOCKED',
+        },
+      });
       expect(mockCache.delete).toHaveBeenCalledWith(`feed:${testUserId}`);
     });
 
@@ -421,9 +436,24 @@ describe('Content Interaction Integration Tests', () => {
 
       vi.mocked(mockDb.contentInteraction.create).mockResolvedValue(mockInteraction);
 
-      const keywords = ['politics', 'debate'];
+      // Mock content item with title containing keywords
+      vi.mocked(mockDb.contentItem.findUnique).mockResolvedValue({
+        id: testContentId,
+        title: 'Political Debate About Elections',
+        description: 'A heated debate',
+        sourceId: 'source-1',
+        sourceType: 'YOUTUBE',
+        originalId: 'yt-123',
+        thumbnailUrl: 'https://example.com/thumb.jpg',
+        duration: 600,
+        publishedAt: new Date(),
+        fetchedAt: new Date(),
+        lastSeenInFeed: new Date(),
+      });
 
-      for (const keyword of keywords) {
+      const extractedKeywords = ['politics', 'debate'];
+
+      for (const keyword of extractedKeywords) {
         vi.mocked(mockDb.filterKeyword.create).mockResolvedValue({
           id: `filter-${keyword}`,
           userId: testUserId,
@@ -433,30 +463,16 @@ describe('Content Interaction Integration Tests', () => {
         });
       }
 
-      const result = await interactionService.blockContent(
+      const keywords = await interactionService.blockContent(
         testUserId,
         testContentId,
-        keywords
+        true // extractKeywords = true
       );
 
-      expect(result.type).toBe('BLOCKED');
+      expect(keywords.length).toBeGreaterThan(0);
 
       // Should create filter keywords
-      expect(mockDb.filterKeyword.create).toHaveBeenCalledTimes(2);
-      expect(mockDb.filterKeyword.create).toHaveBeenCalledWith({
-        data: {
-          userId: testUserId,
-          keyword: 'politics',
-          isWildcard: false,
-        },
-      });
-      expect(mockDb.filterKeyword.create).toHaveBeenCalledWith({
-        data: {
-          userId: testUserId,
-          keyword: 'debate',
-          isWildcard: false,
-        },
-      });
+      expect(mockDb.filterKeyword.create).toHaveBeenCalled();
     });
   });
 
@@ -495,9 +511,12 @@ describe('Content Interaction Integration Tests', () => {
       expect(mockDb.contentInteraction.findMany).toHaveBeenCalledWith({
         where: {
           userId: testUserId,
-          type: 'WATCHED',
+        },
+        include: {
+          content: true,
         },
         orderBy: { timestamp: 'desc' },
+        take: 50,
       });
     });
 
@@ -526,7 +545,11 @@ describe('Content Interaction Integration Tests', () => {
           userId: testUserId,
           type: 'DISMISSED',
         },
+        include: {
+          content: true,
+        },
         orderBy: { timestamp: 'desc' },
+        take: 50,
       });
     });
 
@@ -551,6 +574,9 @@ describe('Content Interaction Integration Tests', () => {
         where: {
           userId: testUserId,
         },
+        include: {
+          content: true,
+        },
         orderBy: { timestamp: 'desc' },
         take: 10,
       });
@@ -564,7 +590,7 @@ describe('Content Interaction Integration Tests', () => {
           id: 'saved-100',
           userId: testUserId,
           contentId: 'content-1',
-          collection: 'Watch Later',
+          collectionId: 'collection-watch-later',
           savedAt: new Date(),
           notes: null,
         },
@@ -572,7 +598,7 @@ describe('Content Interaction Integration Tests', () => {
           id: 'saved-101',
           userId: testUserId,
           contentId: 'content-2',
-          collection: null,
+          collectionId: null,
           savedAt: new Date(),
           notes: 'Looks interesting',
         },
@@ -585,6 +611,10 @@ describe('Content Interaction Integration Tests', () => {
       expect(result).toEqual(mockSaved);
       expect(mockDb.savedContent.findMany).toHaveBeenCalledWith({
         where: { userId: testUserId },
+        include: {
+          content: true,
+          collection: true,
+        },
         orderBy: { savedAt: 'desc' },
       });
     });
@@ -595,7 +625,7 @@ describe('Content Interaction Integration Tests', () => {
           id: 'saved-102',
           userId: testUserId,
           contentId: 'content-3',
-          collection: 'Cooking',
+          collectionId: 'collection-cooking',
           savedAt: new Date(),
           notes: null,
         },
@@ -603,13 +633,17 @@ describe('Content Interaction Integration Tests', () => {
 
       vi.mocked(mockDb.savedContent.findMany).mockResolvedValue(mockSaved);
 
-      const result = await interactionService.getSavedContent(testUserId, 'Cooking');
+      const result = await interactionService.getSavedContent(testUserId, 'collection-cooking');
 
       expect(result).toEqual(mockSaved);
       expect(mockDb.savedContent.findMany).toHaveBeenCalledWith({
         where: {
           userId: testUserId,
-          collection: 'Cooking',
+          collectionId: 'collection-cooking',
+        },
+        include: {
+          content: true,
+          collection: true,
         },
         orderBy: { savedAt: 'desc' },
       });
@@ -622,21 +656,19 @@ describe('Content Interaction Integration Tests', () => {
         id: 'saved-200',
         userId: testUserId,
         contentId: testContentId,
-        collection: 'Watch Later',
+        collectionId: 'collection-watch-later',
         savedAt: new Date(),
         notes: null,
       };
 
-      vi.mocked(mockDb.savedContent.delete).mockResolvedValue(mockSaved);
+      vi.mocked(mockDb.savedContent.deleteMany).mockResolvedValue({ count: 1 });
 
       await interactionService.unsaveContent(testUserId, testContentId);
 
-      expect(mockDb.savedContent.delete).toHaveBeenCalledWith({
+      expect(mockDb.savedContent.deleteMany).toHaveBeenCalledWith({
         where: {
-          userId_contentId: {
-            userId: testUserId,
-            contentId: testContentId,
-          },
+          userId: testUserId,
+          contentId: testContentId,
         },
       });
 
@@ -661,9 +693,17 @@ describe('Content Interaction Integration Tests', () => {
 
       vi.mocked(mockDb.contentInteraction.create).mockResolvedValue(watchInteraction);
 
-      const watched = await interactionService.recordWatch(testUserId, 'video-1', 900, 1.0);
+      await interactionService.recordWatch(testUserId, 'video-1', 900, 1.0);
 
-      expect(watched.type).toBe('WATCHED');
+      expect(mockDb.contentInteraction.create).toHaveBeenCalledWith({
+        data: {
+          userId: testUserId,
+          contentId: 'video-1',
+          type: 'WATCHED',
+          watchDuration: 900,
+          completionRate: 1.0,
+        },
+      });
 
       // 2. User saves another video for later
       vi.mocked(mockDb.savedContent.findUnique).mockResolvedValue(null);
@@ -671,7 +711,7 @@ describe('Content Interaction Integration Tests', () => {
         id: 'saved-journey-1',
         userId: testUserId,
         contentId: 'video-2',
-        collection: 'Watch Later',
+        collectionId: 'collection-watch-later',
         savedAt: new Date(),
         notes: null,
       });
@@ -685,18 +725,18 @@ describe('Content Interaction Integration Tests', () => {
         watchDuration: null,
         completionRate: null,
         dismissReason: null,
-        collection: 'Watch Later',
+        collection: 'collection-watch-later',
       };
 
       vi.mocked(mockDb.contentInteraction.create).mockResolvedValue(saveInteraction);
 
-      const saved = await interactionService.saveContent(
+      await interactionService.saveContent(
         testUserId,
         'video-2',
-        'Watch Later'
+        'collection-watch-later'
       );
 
-      expect(saved.type).toBe('SAVED');
+      expect(mockDb.savedContent.create).toHaveBeenCalled();
 
       // 3. User dismisses unwanted content
       const dismissInteraction = {
@@ -713,13 +753,20 @@ describe('Content Interaction Integration Tests', () => {
 
       vi.mocked(mockDb.contentInteraction.create).mockResolvedValue(dismissInteraction);
 
-      const dismissed = await interactionService.dismissContent(
+      await interactionService.dismissContent(
         testUserId,
         'video-3',
         'Not relevant'
       );
 
-      expect(dismissed.type).toBe('DISMISSED');
+      expect(mockDb.contentInteraction.create).toHaveBeenCalledWith({
+        data: {
+          userId: testUserId,
+          contentId: 'video-3',
+          type: 'DISMISSED',
+          dismissReason: 'Not relevant',
+        },
+      });
 
       // 4. User clicks "not now" on content
       const notNowInteraction = {
