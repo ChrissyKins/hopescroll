@@ -20,7 +20,7 @@ export class DiversityEnforcer {
           item.sourceId === lastSource && item.sourceType === lastN[0].sourceType
       );
 
-      if (allSameSource && lastN.length === maxConsecutive) {
+      if (allSameSource && lastN.length >= maxConsecutive) {
         // Find item from different source
         const differentSourceIndex = remaining.findIndex(
           (item) =>
