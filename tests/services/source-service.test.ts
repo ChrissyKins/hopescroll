@@ -259,6 +259,7 @@ describe('SourceService', () => {
       ];
 
       mockPrisma.contentSource.findMany = vi.fn().mockResolvedValue(mockSources);
+      mockPrisma.contentItem.count = vi.fn().mockResolvedValue(0); // No videos yet
 
       const result = await service.listSources('user1');
 
@@ -266,7 +267,11 @@ describe('SourceService', () => {
         where: { userId: 'user1' },
         orderBy: { addedAt: 'desc' },
       });
-      expect(result).toEqual(mockSources);
+      // Service now adds videoStats to each source
+      expect(result).toEqual([
+        { ...mockSources[0], videoStats: { totalFetched: 0, unwatched: 0 } },
+        { ...mockSources[1], videoStats: { totalFetched: 0, unwatched: 0 } },
+      ]);
     });
 
     it('should return empty array if no sources', async () => {

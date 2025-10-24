@@ -12,6 +12,7 @@ describe('YouTubeAdapter', () => {
       searchChannelVideos: vi.fn(),
       getVideos: vi.fn(),
       getChannel: vi.fn(),
+      resolveChannelId: vi.fn(),
     } as any;
 
     adapter = new YouTubeAdapter(mockClient);
@@ -90,6 +91,7 @@ describe('YouTubeAdapter', () => {
 
   describe('validateSource', () => {
     it('validates existing channel', async () => {
+      vi.mocked(mockClient.resolveChannelId).mockResolvedValue('channel123');
       vi.mocked(mockClient.getChannel).mockResolvedValue({
         items: [
           {
@@ -117,20 +119,18 @@ describe('YouTubeAdapter', () => {
     });
 
     it('returns invalid for non-existent channel', async () => {
-      vi.mocked(mockClient.getChannel).mockResolvedValue({
-        items: [],
-      });
+      vi.mocked(mockClient.resolveChannelId).mockResolvedValue(null);
 
       const result = await adapter.validateSource('invalid123');
 
       expect(result).toEqual({
         isValid: false,
-        errorMessage: 'Channel not found',
+        errorMessage: 'Channel not found. Please check the channel ID or handle.',
       });
     });
 
     it('handles API errors gracefully', async () => {
-      vi.mocked(mockClient.getChannel).mockRejectedValue(
+      vi.mocked(mockClient.resolveChannelId).mockRejectedValue(
         new Error('API Error')
       );
 
