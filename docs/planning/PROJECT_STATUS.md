@@ -1,6 +1,6 @@
 # HopeScroll - Project Status
 
-**Last Updated:** 2025-10-24 (Session 7 - Testing Review Complete)
+**Last Updated:** 2025-10-24 (Session 8 - Bug Fix: Feed Diversity Enforcer)
 **Current Phase:** Phase 1 (MVP Video Feed) → Test Coverage Improvement → Phase 2A (Article/RSS Support)
 
 ---
@@ -243,6 +243,14 @@
 ---
 
 ## 📋 Recent Changes (Last Session)
+
+**Bug Fix: Feed Diversity Enforcer (2025-10-24 - Session 8)**
+- 🐛 **Fixed diversity enforcer bug in feed generator**
+  - Changed condition from `>=` to `===` in diversity-enforcer.ts:23
+  - Previously allowed 4 consecutive items when maxConsecutive was set to 3
+  - Now correctly enforces the diversity limit
+  - All 602 tests passing (test suite verified the fix)
+  - Commit: `75085c8 - fix: enforce diversity limit correctly in feed generator`
 
 **Testing Review & Status Confirmed (2025-10-24 - Session 7)**
 - ✅ **Verified all 602 tests passing** (100% pass rate maintained)
