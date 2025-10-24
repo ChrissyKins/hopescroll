@@ -1,16 +1,16 @@
 # HopeScroll - Feature Plan & Roadmap
 
-**Last Updated:** 2025-10-24 (Session 11 - Phase 1.1 Complete)
+**Last Updated:** 2025-10-24 (Session 12 - Phase 1.2 Complete)
 **Status:** Planning Phase
 
 ---
 
 ## 🚨 IMMEDIATE PRIORITY: Testing Roadmap to A+
 
-**Current Test Grade:** B (Security layer tested, gaps remain in API routes/components)
+**Current Test Grade:** B+ (Security layer + Auth API tested, gaps remain in Core API/components)
 **Target Grade:** A+
 **Estimated Effort:** 3-4 weeks
-**Status:** 🚧 IN PROGRESS (Phase 1.1 Complete)
+**Status:** 🚧 IN PROGRESS (Phase 1.1 & 1.2 Complete)
 
 ### Why This is Priority #1
 
@@ -32,15 +32,16 @@ The current test suite has **exceptional coverage of business logic** (services/
 **Goal:** Ensure authentication, authorization, and core API routes are tested
 
 ##### Stories:
-1. **Authentication & Authorization Testing** 🚧 Partially Complete
-   - [x] Add unit tests for `/lib/auth.ts` (NextAuth configuration) - **19 tests added**
-   - [x] Add unit tests for `/lib/get-user-session.ts` (session helpers) - **17 tests added**
-   - [ ] Add integration tests for `/app/api/auth/signup/route.ts`
-   - [ ] Add integration tests for `/app/api/auth/reset-password/route.ts`
-   - [ ] Add integration tests for `/app/api/auth/forgot-password/route.ts`
+1. **Authentication & Authorization Testing** ✅ Complete
+   - [x] Add unit tests for `/lib/auth.ts` (NextAuth configuration) - **19 tests added (Session 11)**
+   - [x] Add unit tests for `/lib/get-user-session.ts` (session helpers) - **17 tests added (Session 11)**
+   - [x] Add integration tests for `/app/api/auth/signup/route.ts` - **18 tests added (Session 12)**
+   - [x] Add integration tests for `/app/api/auth/reset-password/route.ts` - **22 tests added (Session 12)**
+   - [x] Add integration tests for `/app/api/auth/forgot-password/route.ts` - **35 tests added (Session 12)**
    - [x] Test token generation and validation - **covered in auth tests**
    - [x] Test session expiry handling - **covered in session tests**
    - [x] Test authorization checks across routes - **covered in requireAuth tests**
+   - [x] Test end-to-end auth flows - **11 E2E tests added (Session 12)**
 
 2. **Email Functionality Testing** ✅ Complete
    - [x] Add unit tests for `/lib/email.ts` - **22 tests added**
@@ -61,10 +62,10 @@ The current test suite has **exceptional coverage of business logic** (services/
    - [ ] Test error responses (401, 400, 404, 500)
 
 **Success Criteria:**
-- 🚧 All authentication flows tested end-to-end (lib layer done, API routes remain)
+- ✅ All authentication flows tested end-to-end (lib + API routes COMPLETE)
 - ✅ Email functionality verified with mocks (22 tests, COMPLETE)
 - 🔴 Core API routes have real HTTP integration tests (NOT STARTED)
-- 🚧 Security vulnerabilities caught by tests (auth layer done, routes remain)
+- ✅ Security vulnerabilities caught by tests (auth layer COMPLETE)
 
 **Session 11 Progress:**
 - ✅ Added 58 tests for auth/session/email (Phase 1.1 COMPLETE)
@@ -72,6 +73,14 @@ The current test suite has **exceptional coverage of business logic** (services/
 - 📈 Test count: 602 → 660 tests (+58)
 - 📈 Test files: 32 → 35 files (+3)
 - 📈 Grade: B- → B
+
+**Session 12 Progress:**
+- ✅ Added 75 tests for auth API routes (Phase 1.2 COMPLETE)
+- ✅ Real HTTP integration tests (not mocked!)
+- ✅ Comprehensive E2E authentication flows
+- 📈 Test count: 660 → 735 tests (+75)
+- 📈 Test files: 35 → 39 files (+4)
+- 📈 Grade: B → B+
 
 ---
 
