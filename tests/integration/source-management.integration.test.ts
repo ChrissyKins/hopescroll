@@ -38,6 +38,9 @@ describe('Source Management Integration Tests', () => {
         delete: vi.fn(),
         count: vi.fn(),
       },
+      contentItem: {
+        count: vi.fn().mockResolvedValue(0),
+      },
     } as unknown as PrismaClient;
 
     // Mock YouTube adapter
@@ -61,7 +64,7 @@ describe('Source Management Integration Tests', () => {
     const adapters = new Map<string, ContentAdapter>();
     adapters.set('YOUTUBE', mockYouTubeAdapter);
 
-    sourceService = new SourceService(mockDb, adapters, mockLogger);
+    sourceService = new SourceService(mockDb, adapters);
   });
 
   describe('Adding Sources', () => {
@@ -385,22 +388,8 @@ describe('Source Management Integration Tests', () => {
     });
 
     it('should prevent updating source owned by different user', async () => {
-      const otherUserSource = {
-        id: 'source-1',
-        userId: 'other-user',
-        type: 'YOUTUBE',
-        sourceId: 'channel-1',
-        displayName: 'Channel',
-        avatarUrl: null,
-        isMuted: false,
-        alwaysSafe: false,
-        addedAt: new Date(),
-        lastFetchAt: null,
-        lastFetchStatus: 'pending',
-        errorMessage: null,
-      };
-
-      vi.mocked(mockDb.contentSource.findFirst).mockResolvedValue(otherUserSource);
+      // When querying with userId filter, Prisma returns null for sources owned by other users
+      vi.mocked(mockDb.contentSource.findFirst).mockResolvedValue(null);
 
       await expect(
         sourceService.updateSource(testUserId, 'source-1', { isMuted: true })
@@ -446,22 +435,8 @@ describe('Source Management Integration Tests', () => {
     });
 
     it('should prevent removing source owned by different user', async () => {
-      const otherUserSource = {
-        id: 'source-1',
-        userId: 'other-user',
-        type: 'YOUTUBE',
-        sourceId: 'channel-1',
-        displayName: 'Channel',
-        avatarUrl: null,
-        isMuted: false,
-        alwaysSafe: false,
-        addedAt: new Date(),
-        lastFetchAt: null,
-        lastFetchStatus: 'pending',
-        errorMessage: null,
-      };
-
-      vi.mocked(mockDb.contentSource.findFirst).mockResolvedValue(otherUserSource);
+      // When querying with userId filter, Prisma returns null for sources owned by other users
+      vi.mocked(mockDb.contentSource.findFirst).mockResolvedValue(null);
 
       await expect(
         sourceService.removeSource(testUserId, 'source-1')

@@ -16,6 +16,9 @@ const mockPrisma = {
     delete: vi.fn(),
     update: vi.fn(),
   },
+  contentItem: {
+    count: vi.fn().mockResolvedValue(0),
+  },
 } as unknown as PrismaClient;
 
 // Mock ContentAdapter

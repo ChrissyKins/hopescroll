@@ -259,8 +259,8 @@ describe('InteractionService', () => {
   describe('getSavedContent', () => {
     it('should retrieve all saved content', async () => {
       const mockSaved = [
-        { id: '1', contentId: 'c1', collection: null },
-        { id: '2', contentId: 'c2', collection: 'Watch Later' },
+        { id: '1', contentId: 'c1', collectionId: null },
+        { id: '2', contentId: 'c2', collectionId: 'collection-123' },
       ];
       mockPrisma.savedContent.findMany = vi.fn().mockResolvedValue(mockSaved);
 
@@ -268,18 +268,18 @@ describe('InteractionService', () => {
 
       expect(mockPrisma.savedContent.findMany).toHaveBeenCalledWith({
         where: { userId: 'user1' },
-        include: { content: true },
+        include: { content: true, collection: true },
         orderBy: { savedAt: 'desc' },
       });
       expect(result).toEqual(mockSaved);
     });
 
     it('should filter by collection when specified', async () => {
-      await service.getSavedContent('user1', 'Watch Later');
+      await service.getSavedContent('user1', 'collection-watch-later');
 
       expect(mockPrisma.savedContent.findMany).toHaveBeenCalledWith({
-        where: { userId: 'user1', collection: 'Watch Later' },
-        include: { content: true },
+        where: { userId: 'user1', collectionId: 'collection-watch-later' },
+        include: { content: true, collection: true },
         orderBy: { savedAt: 'desc' },
       });
     });

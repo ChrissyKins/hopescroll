@@ -34,6 +34,7 @@ describe('Filter System Integration Tests', () => {
         create: vi.fn(),
         delete: vi.fn(),
         findMany: vi.fn(),
+        findFirst: vi.fn(),
       },
       userPreferences: {
         findUnique: vi.fn(),
@@ -56,7 +57,7 @@ describe('Filter System Integration Tests', () => {
       debug: vi.fn(),
     } as unknown as Logger;
 
-    filterService = new FilterService(mockDb, mockCache, mockLogger);
+    filterService = new FilterService(mockDb);
   });
 
   // Test content pool
@@ -174,8 +175,6 @@ describe('Filter System Integration Tests', () => {
           isWildcard: false,
         },
       });
-
-      expect(mockCache.delete).toHaveBeenCalledWith(`feed:${testUserId}`);
     });
 
     it('should add a wildcard keyword filter', async () => {
@@ -222,18 +221,21 @@ describe('Filter System Integration Tests', () => {
         createdAt: new Date(),
       };
 
+      vi.mocked(mockDb.filterKeyword.findFirst).mockResolvedValue(mockFilter);
       vi.mocked(mockDb.filterKeyword.delete).mockResolvedValue(mockFilter);
 
       await filterService.removeKeyword(testUserId, 'filter-1');
 
-      expect(mockDb.filterKeyword.delete).toHaveBeenCalledWith({
+      expect(mockDb.filterKeyword.findFirst).toHaveBeenCalledWith({
         where: {
           id: 'filter-1',
           userId: testUserId,
         },
       });
 
-      expect(mockCache.delete).toHaveBeenCalledWith(`feed:${testUserId}`);
+      expect(mockDb.filterKeyword.delete).toHaveBeenCalledWith({
+        where: { id: 'filter-1' },
+      });
     });
 
     it('should list all keyword filters for user', async () => {
@@ -296,8 +298,6 @@ describe('Filter System Integration Tests', () => {
           maxDuration: 1800,
         },
       });
-
-      expect(mockCache.delete).toHaveBeenCalledWith(`feed:${testUserId}`);
     });
 
     it('should allow null for unlimited duration', async () => {
@@ -611,51 +611,4 @@ describe('Filter System Integration Tests', () => {
     });
   });
 
-  describe('Cache Invalidation', () => {
-    it('should invalidate cache when adding keyword', async () => {
-      vi.mocked(mockDb.filterKeyword.create).mockResolvedValue({
-        id: 'f1',
-        userId: testUserId,
-        keyword: 'test',
-        isWildcard: false,
-        createdAt: new Date(),
-      });
-
-      await filterService.addKeyword(testUserId, 'test', false);
-
-      expect(mockCache.delete).toHaveBeenCalledWith(`feed:${testUserId}`);
-    });
-
-    it('should invalidate cache when removing keyword', async () => {
-      vi.mocked(mockDb.filterKeyword.delete).mockResolvedValue({
-        id: 'f1',
-        userId: testUserId,
-        keyword: 'test',
-        isWildcard: false,
-        createdAt: new Date(),
-      });
-
-      await filterService.removeKeyword(testUserId, 'f1');
-
-      expect(mockCache.delete).toHaveBeenCalledWith(`feed:${testUserId}`);
-    });
-
-    it('should invalidate cache when updating duration filter', async () => {
-      vi.mocked(mockDb.userPreferences.upsert).mockResolvedValue({
-        userId: testUserId,
-        minDuration: 600,
-        maxDuration: 1800,
-        backlogRatio: 0.3,
-        diversityLimit: 3,
-        theme: 'dark',
-        density: 'cozy',
-        autoPlay: false,
-        updatedAt: new Date(),
-      });
-
-      await filterService.updateDurationFilter(testUserId, 600, 1800);
-
-      expect(mockCache.delete).toHaveBeenCalledWith(`feed:${testUserId}`);
-    });
-  });
 });

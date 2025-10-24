@@ -29,6 +29,14 @@ describe('Feed Flow Integration Tests', () => {
 
   // Test data
   const testUserId = 'test-user-integration';
+
+  // Helper to create dates relative to now
+  const daysAgo = (days: number) => {
+    const date = new Date();
+    date.setDate(date.getDate() - days);
+    return date;
+  };
+
   const mockYouTubeContent: ContentItem[] = [
     {
       id: 'content-1',
@@ -40,7 +48,7 @@ describe('Feed Flow Integration Tests', () => {
       thumbnailUrl: 'https://example.com/thumb1.jpg',
       url: 'https://youtube.com/watch?v=video-1',
       duration: 600, // 10 minutes
-      publishedAt: new Date('2025-10-01'), // Older than 7 days
+      publishedAt: daysAgo(10), // Older than 7 days - backlog
       fetchedAt: new Date(),
       lastSeenInFeed: new Date(),
     },
@@ -54,7 +62,7 @@ describe('Feed Flow Integration Tests', () => {
       thumbnailUrl: 'https://example.com/thumb2.jpg',
       url: 'https://youtube.com/watch?v=video-2',
       duration: 900, // 15 minutes
-      publishedAt: new Date('2025-10-02'), // Older than 7 days
+      publishedAt: daysAgo(9), // Older than 7 days - backlog
       fetchedAt: new Date(),
       lastSeenInFeed: new Date(),
     },
@@ -68,7 +76,7 @@ describe('Feed Flow Integration Tests', () => {
       thumbnailUrl: 'https://example.com/thumb3.jpg',
       url: 'https://youtube.com/watch?v=video-3',
       duration: 1200, // 20 minutes
-      publishedAt: new Date('2025-10-03'), // Older than 7 days
+      publishedAt: daysAgo(8), // Older than 7 days - backlog
       fetchedAt: new Date(),
       lastSeenInFeed: new Date(),
     },
@@ -82,7 +90,7 @@ describe('Feed Flow Integration Tests', () => {
       thumbnailUrl: 'https://example.com/thumb4.jpg',
       url: 'https://youtube.com/watch?v=video-4',
       duration: 300, // 5 minutes
-      publishedAt: new Date('2025-10-13'),
+      publishedAt: daysAgo(3), // Recent (within 7 days)
       fetchedAt: new Date(),
       lastSeenInFeed: new Date(),
     },
@@ -96,7 +104,7 @@ describe('Feed Flow Integration Tests', () => {
       thumbnailUrl: 'https://example.com/thumb5.jpg',
       url: 'https://youtube.com/watch?v=video-5',
       duration: 3600, // 60 minutes
-      publishedAt: new Date('2025-10-14'),
+      publishedAt: daysAgo(2), // Recent (within 7 days)
       fetchedAt: new Date(),
       lastSeenInFeed: new Date(),
     },
@@ -110,7 +118,7 @@ describe('Feed Flow Integration Tests', () => {
       thumbnailUrl: 'https://example.com/thumb6.jpg',
       url: 'https://youtube.com/watch?v=video-6',
       duration: 900, // 15 minutes
-      publishedAt: new Date('2025-10-14'),
+      publishedAt: daysAgo(1), // Recent (within 7 days)
       fetchedAt: new Date(),
       lastSeenInFeed: new Date(),
     },
@@ -271,8 +279,8 @@ describe('Feed Flow Integration Tests', () => {
       const mixer = new BacklogMixer();
 
       // Separate into recent (last 7 days) and backlog
-      const recent = [mockYouTubeContent[3], mockYouTubeContent[4], mockYouTubeContent[5]]; // Oct 13-14 (recent)
-      const backlog = [mockYouTubeContent[0], mockYouTubeContent[1], mockYouTubeContent[2]]; // Oct 1-3 (backlog)
+      const recent = [mockYouTubeContent[3], mockYouTubeContent[4], mockYouTubeContent[5]]; // 1-3 days ago (recent)
+      const backlog = [mockYouTubeContent[0], mockYouTubeContent[1], mockYouTubeContent[2]]; // 8-10 days ago (backlog)
 
       // Mix with 40% backlog ratio
       const mixed = mixer.mix(recent, backlog, 0.4);
