@@ -375,7 +375,7 @@ describe('POST /api/filters', () => {
       expect(data.error).toBeDefined();
     });
 
-    it('should require isWildcard field', async () => {
+    it('should default isWildcard to false when not provided', async () => {
       const request = createMockRequest({
         keyword: 'test',
       });
@@ -383,8 +383,9 @@ describe('POST /api/filters', () => {
       const response = await POST(request);
       const data = await response.json();
 
-      expect(response.status).toBe(400);
-      expect(data.success).toBe(false);
+      expect(response.status).toBe(201);
+      expect(data.success).toBe(true);
+      expect(data.data.isWildcard).toBe(false);
     });
 
     it('should reject empty keyword', async () => {
