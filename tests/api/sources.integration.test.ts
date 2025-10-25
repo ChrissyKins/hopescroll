@@ -4,16 +4,12 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { GET, POST } from '@/app/api/sources/route';
-import { DELETE as DELETE_SOURCE } from '@/app/api/sources/[id]/route';
-import { db } from '@/lib/db';
-import { NextRequest } from 'next/server';
 
-// Mock YouTube client to simulate API responses - declare mocks first
-const mockYouTubeClient = {
-  getChannelInfo: vi.fn(),
-  resolveChannelId: vi.fn(),
-};
+// Mock YouTube client to simulate API responses - use vi.hoisted() for proper initialization
+const { mockGetChannelInfo, mockResolveChannelId } = vi.hoisted(() => ({
+  mockGetChannelInfo: vi.fn(),
+  mockResolveChannelId: vi.fn(),
+}));
 
 // Mock auth to return a test user
 vi.mock('@/lib/auth', () => ({
@@ -23,8 +19,16 @@ vi.mock('@/lib/auth', () => ({
 }));
 
 vi.mock('@/adapters/content/youtube/youtube-client', () => ({
-  YouTubeClient: vi.fn().mockImplementation(() => mockYouTubeClient),
+  YouTubeClient: vi.fn().mockImplementation(() => ({
+    getChannelInfo: mockGetChannelInfo,
+    resolveChannelId: mockResolveChannelId,
+  })),
 }));
+
+import { GET, POST } from '@/app/api/sources/route';
+import { DELETE as DELETE_SOURCE } from '@/app/api/sources/[id]/route';
+import { db } from '@/lib/db';
+import { NextRequest } from 'next/server';
 
 describe('GET /api/sources', () => {
   const testUserId = 'sources-test-user';
@@ -319,8 +323,8 @@ describe('POST /api/sources', () => {
 
   describe('Success Cases', () => {
     it('should create a new YouTube source', async () => {
-      mockYouTubeClient.resolveChannelId.mockResolvedValue('UC_test-channel');
-      mockYouTubeClient.getChannelInfo.mockResolvedValue({
+      mockResolveChannelId.mockResolvedValue('UC_test-channel');
+      mockGetChannelInfo.mockResolvedValue({
         id: 'UC_test-channel',
         snippet: {
           title: 'Test Channel',
@@ -358,8 +362,8 @@ describe('POST /api/sources', () => {
     });
 
     it('should accept optional displayName override', async () => {
-      mockYouTubeClient.resolveChannelId.mockResolvedValue('UC_test-channel');
-      mockYouTubeClient.getChannelInfo.mockResolvedValue({
+      mockResolveChannelId.mockResolvedValue('UC_test-channel');
+      mockGetChannelInfo.mockResolvedValue({
         id: 'UC_test-channel',
         snippet: {
           title: 'Original Name',
@@ -437,7 +441,7 @@ describe('POST /api/sources', () => {
         },
       });
 
-      mockYouTubeClient.resolveChannelId.mockResolvedValue('test-source-duplicate');
+      mockResolveChannelId.mockResolvedValue('test-source-duplicate');
 
       const request = createMockRequest({
         type: 'YOUTUBE',
@@ -455,7 +459,7 @@ describe('POST /api/sources', () => {
 
   describe('External API Errors', () => {
     it('should handle YouTube API failures gracefully', async () => {
-      mockYouTubeClient.resolveChannelId.mockRejectedValue(new Error('YouTube API error'));
+      mockResolveChannelId.mockRejectedValue(new Error('YouTube API error'));
 
       const request = createMockRequest({
         type: 'YOUTUBE',
@@ -470,7 +474,7 @@ describe('POST /api/sources', () => {
     });
 
     it('should handle invalid channel IDs', async () => {
-      mockYouTubeClient.resolveChannelId.mockResolvedValue(null);
+      mockResolveChannelId.mockResolvedValue(null);
 
       const request = createMockRequest({
         type: 'YOUTUBE',
@@ -510,8 +514,8 @@ describe('POST /api/sources', () => {
 
   describe('Response Format', () => {
     it('should return consistent success response format', async () => {
-      mockYouTubeClient.resolveChannelId.mockResolvedValue('UC_test-channel');
-      mockYouTubeClient.getChannelInfo.mockResolvedValue({
+      mockResolveChannelId.mockResolvedValue('UC_test-channel');
+      mockGetChannelInfo.mockResolvedValue({
         id: 'UC_test-channel',
         snippet: {
           title: 'Test Channel',
