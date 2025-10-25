@@ -2,6 +2,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { createLogger } from '@/lib/logger';
+import { NotFoundError, ValidationError } from '@/lib/errors';
 
 const log = createLogger('collection-service');
 
@@ -40,6 +41,7 @@ export class CollectionService {
 
     return collections.map((collection) => ({
       id: collection.id,
+      userId: collection.userId,
       name: collection.name,
       description: collection.description,
       color: collection.color,
@@ -68,11 +70,12 @@ export class CollectionService {
     });
 
     if (!collection) {
-      throw new Error('Collection not found');
+      throw new NotFoundError('Collection');
     }
 
     return {
       id: collection.id,
+      userId: collection.userId,
       name: collection.name,
       description: collection.description,
       color: collection.color,
@@ -97,7 +100,7 @@ export class CollectionService {
     });
 
     if (existing) {
-      throw new Error('A collection with this name already exists');
+      throw new ValidationError('A collection with this name already exists');
     }
 
     const collection = await this.db.collection.create({
@@ -116,6 +119,7 @@ export class CollectionService {
 
     return {
       id: collection.id,
+      userId: collection.userId,
       name: collection.name,
       description: collection.description,
       color: collection.color,
@@ -144,7 +148,7 @@ export class CollectionService {
     });
 
     if (!existing) {
-      throw new Error('Collection not found');
+      throw new NotFoundError('Collection');
     }
 
     // If changing name, check for duplicates
@@ -158,7 +162,7 @@ export class CollectionService {
       });
 
       if (duplicate) {
-        throw new Error('A collection with this name already exists');
+        throw new ValidationError('A collection with this name already exists');
       }
     }
 
@@ -174,6 +178,7 @@ export class CollectionService {
 
     return {
       id: collection.id,
+      userId: collection.userId,
       name: collection.name,
       description: collection.description,
       color: collection.color,
@@ -199,7 +204,7 @@ export class CollectionService {
     });
 
     if (!existing) {
-      throw new Error('Collection not found');
+      throw new NotFoundError('Collection');
     }
 
     await this.db.collection.delete({
@@ -231,7 +236,7 @@ export class CollectionService {
     });
 
     if (!savedItem) {
-      throw new Error('Saved item not found');
+      throw new NotFoundError('Saved item');
     }
 
     // If setting a collection, verify it belongs to the user
@@ -244,7 +249,7 @@ export class CollectionService {
       });
 
       if (!collection) {
-        throw new Error('Collection not found');
+        throw new NotFoundError('Collection');
       }
     }
 
