@@ -1,6 +1,6 @@
 # HopeScroll - Project Status
 
-**Last Updated:** 2025-10-25 (Session 19 - Content Interactions Test Fix)
+**Last Updated:** 2025-10-25 (Session 20 - Test Infrastructure Fix: Redis Cache Timeout)
 **Current Phase:** Phase 1 (MVP Video Feed) → **Test Coverage A+ Progress** → Phase 2A (Article/RSS Support READY)
 
 ---
@@ -244,7 +244,40 @@
 
 ## 📋 Recent Changes (Last Session)
 
-**Content Interactions Integration Test Fix (2025-10-25 - Session 19)**
+**Test Infrastructure Fix: Redis Cache Timeout (2025-10-25 - Session 20)**
+- ✅ **RESOLVED: Test timeout/hanging issue** - Integration tests no longer hang!
+  - **Root cause:** Redis (Upstash) cache connection attempts hanging in test environment
+  - Tests call `cache.delete()` in beforeEach hooks, Redis connection was timing out
+  - All integration tests with cache operations would hang indefinitely (90+ seconds)
+- ✅ **Mocked Redis cache in integration tests**
+  - Added `vi.mock('@/lib/cache')` to content-interactions tests
+  - Prevents real Redis connection attempts during testing
+  - Tests now complete in ~3.5 seconds (was timing out)
+- ✅ **Improved test infrastructure**
+  - Added `disconnectDb()` in afterAll() hook for proper Prisma cleanup
+  - Increased test/hook timeouts to 30s (from 5s default)
+  - Limited maxConcurrency to 1 to prevent database connection pool exhaustion
+  - Added thread pool limits (maxThreads: 2) for resource control
+- ✅ **Fixed user ID collisions**
+  - Changed from shared 'interaction-test-user' to unique IDs per describe block
+  - Each endpoint has dedicated test user (watch, save, dismiss, notnow)
+  - Prevents database race conditions in parallel test execution
+- ✅ **Added sequential test execution**
+  - Used `describe.sequential()` for top-level describe blocks
+  - Prevents parallel execution causing database deadlocks
+- 📊 **Test Results**:
+  - Before: Tests hung indefinitely (90+ seconds, then timeout)
+  - After: content-interactions completes in ~3.5s
+  - Status: 18 tests run (8 passing, 10 failing with real assertion errors)
+- 💾 **Commits**:
+  - `ea07c88` - fix: resolve test timeout issues by mocking Redis cache
+- 🎯 **Next Steps**:
+  - Fix remaining 10 test failures in content-interactions (legitimate bugs, not infrastructure)
+  - Apply cache mocking to feed.integration.test.ts if it also hangs
+  - Investigate why some interactions return null/500 errors
+- 📈 **Grade**: Test infrastructure significantly improved (no more hangs!)
+
+**Previous Session: Content Interactions Integration Test Fix (2025-10-25 - Session 19)**
 - ✅ **Fixed Content-Interactions Integration Tests** - 21/21 tests now passing (was 14/21 failing)
   - Added default mock for `contentItem.findUnique` in beforeEach to return test content
   - Fixes "Content not found" errors caused by InteractionService.validateContentExists()
