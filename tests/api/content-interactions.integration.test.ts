@@ -14,12 +14,14 @@ import { db } from '@/lib/db';
 import { cache } from '@/lib/cache';
 import { NextRequest } from 'next/server';
 
-// Mock auth to return a test user
+// Mock auth - we'll configure it dynamically in each test suite's beforeEach
 vi.mock('@/lib/auth', () => ({
-  auth: vi.fn().mockResolvedValue({
-    user: { id: 'interaction-test-user', email: 'interaction-test@example.com' }
-  })
+  auth: vi.fn()
 }));
+
+// Import the mocked auth so we can configure it
+import { auth } from '@/lib/auth';
+const mockAuth = vi.mocked(auth);
 
 // Mock cache to avoid Redis connection issues in tests
 vi.mock('@/lib/cache', () => ({
@@ -44,6 +46,11 @@ describe.sequential('POST /api/content/[id]/watch', () => {
   }
 
   beforeEach(async () => {
+    // Configure mock auth to return this test suite's user
+    mockAuth.mockResolvedValue({
+      user: { id: testUserId, email: testEmail }
+    });
+
     // Clean up existing test data
     await cache.delete(`feed:${testUserId}`);
     await db.contentInteraction.deleteMany({ where: { userId: testUserId } });
@@ -222,8 +229,8 @@ describe.sequential('POST /api/content/[id]/watch', () => {
 
   describe('Authentication', () => {
     it('should require authentication', async () => {
-      const authModule = await import('@/lib/auth');
-      vi.mocked(authModule.auth).mockResolvedValueOnce(null as any);
+      // Temporarily mock auth to return null
+      mockAuth.mockResolvedValueOnce(null as any);
 
       const request = createMockRequest(testContentId);
       const response = await WATCH_POST(request, { params: { id: testContentId } });
@@ -232,10 +239,7 @@ describe.sequential('POST /api/content/[id]/watch', () => {
       expect(response.status).toBe(500);
       expect(data.success).toBe(false);
 
-      // Restore mock
-      vi.mocked(authModule.auth).mockResolvedValue({
-        user: { id: testUserId, email: testEmail }
-      } as any);
+      // mockResolvedValueOnce only affects one call, so it will auto-restore
     });
   });
 });
@@ -254,6 +258,11 @@ describe.sequential('POST /api/content/[id]/save', () => {
   }
 
   beforeEach(async () => {
+    // Configure mock auth to return this test suite's user
+    mockAuth.mockResolvedValue({
+      user: { id: testUserId, email: testEmail }
+    });
+
     await cache.delete(`feed:${testUserId}`);
     await db.contentInteraction.deleteMany({ where: { userId: testUserId } });
     await db.savedContent.deleteMany({ where: { userId: testUserId } });
@@ -415,8 +424,8 @@ describe.sequential('POST /api/content/[id]/save', () => {
 
   describe('Authentication', () => {
     it('should require authentication', async () => {
-      const authModule = await import('@/lib/auth');
-      vi.mocked(authModule.auth).mockResolvedValueOnce(null as any);
+      // Temporarily mock auth to return null
+      mockAuth.mockResolvedValueOnce(null as any);
 
       const request = createMockRequest(testContentId);
       const response = await SAVE_POST(request, { params: { id: testContentId } });
@@ -425,10 +434,7 @@ describe.sequential('POST /api/content/[id]/save', () => {
       expect(response.status).toBe(500);
       expect(data.success).toBe(false);
 
-      // Restore mock
-      vi.mocked(authModule.auth).mockResolvedValue({
-        user: { id: testUserId, email: testEmail }
-      } as any);
+      // mockResolvedValueOnce only affects one call, so it will auto-restore
     });
   });
 });
@@ -446,6 +452,11 @@ describe.sequential('POST /api/content/[id]/dismiss', () => {
   }
 
   beforeEach(async () => {
+    // Configure mock auth to return this test suite's user
+    mockAuth.mockResolvedValue({
+      user: { id: testUserId, email: testEmail }
+    });
+
     await cache.delete(`feed:${testUserId}`);
     await db.contentInteraction.deleteMany({ where: { userId: testUserId } });
     await db.savedContent.deleteMany({ where: { userId: testUserId } });
@@ -575,8 +586,8 @@ describe.sequential('POST /api/content/[id]/dismiss', () => {
 
   describe('Authentication', () => {
     it('should require authentication', async () => {
-      const authModule = await import('@/lib/auth');
-      vi.mocked(authModule.auth).mockResolvedValueOnce(null as any);
+      // Temporarily mock auth to return null
+      mockAuth.mockResolvedValueOnce(null as any);
 
       const request = createMockRequest(testContentId);
       const response = await DISMISS_POST(request, { params: { id: testContentId } });
@@ -585,10 +596,7 @@ describe.sequential('POST /api/content/[id]/dismiss', () => {
       expect(response.status).toBe(500);
       expect(data.success).toBe(false);
 
-      // Restore mock
-      vi.mocked(authModule.auth).mockResolvedValue({
-        user: { id: testUserId, email: testEmail }
-      } as any);
+      // mockResolvedValueOnce only affects one call, so it will auto-restore
     });
   });
 });
@@ -606,6 +614,11 @@ describe.sequential('POST /api/content/[id]/not-now', () => {
   }
 
   beforeEach(async () => {
+    // Configure mock auth to return this test suite's user
+    mockAuth.mockResolvedValue({
+      user: { id: testUserId, email: testEmail }
+    });
+
     await cache.delete(`feed:${testUserId}`);
     await db.contentInteraction.deleteMany({ where: { userId: testUserId } });
     await db.savedContent.deleteMany({ where: { userId: testUserId } });
@@ -716,8 +729,8 @@ describe.sequential('POST /api/content/[id]/not-now', () => {
 
   describe('Authentication', () => {
     it('should require authentication', async () => {
-      const authModule = await import('@/lib/auth');
-      vi.mocked(authModule.auth).mockResolvedValueOnce(null as any);
+      // Temporarily mock auth to return null
+      mockAuth.mockResolvedValueOnce(null as any);
 
       const request = createMockRequest(testContentId);
       const response = await NOT_NOW_POST(request, { params: { id: testContentId } });
@@ -726,10 +739,7 @@ describe.sequential('POST /api/content/[id]/not-now', () => {
       expect(response.status).toBe(500);
       expect(data.success).toBe(false);
 
-      // Restore mock
-      vi.mocked(authModule.auth).mockResolvedValue({
-        user: { id: testUserId, email: testEmail }
-      } as any);
+      // mockResolvedValueOnce only affects one call, so it will auto-restore
     });
   });
 });

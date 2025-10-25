@@ -1,6 +1,6 @@
 # HopeScroll - Project Status
 
-**Last Updated:** 2025-10-25 (Session 20 - Test Infrastructure Fix: Redis Cache Timeout)
+**Last Updated:** 2025-10-25 (Session 21 - Fix: Content Interactions Integration Tests)
 **Current Phase:** Phase 1 (MVP Video Feed) → **Test Coverage A+ Progress** → Phase 2A (Article/RSS Support READY)
 
 ---
@@ -244,7 +244,38 @@
 
 ## 📋 Recent Changes (Last Session)
 
-**Test Infrastructure Fix: Redis Cache Timeout (2025-10-25 - Session 20)**
+**Auth Mock Fix: Content Interactions Integration Tests (2025-10-25 - Session 21)**
+- ✅ **RESOLVED: All 10 failing content-interactions tests** - All 18/18 tests now passing!
+  - **Root cause:** Auth mock was returning wrong user ID for each test suite
+  - Each test suite creates unique users (`interaction-watch-user`, `interaction-save-user`, etc.)
+  - But global auth mock was hardcoded to return `interaction-test-user` for ALL suites
+  - Result: Database foreign key violations (user doesn't exist in User table)
+- ✅ **Fixed auth mock configuration**
+  - Changed from hardcoded `user: { id: 'interaction-test-user' }` to dynamic mock
+  - Each test suite's `beforeEach` now configures auth mock to return its specific user
+  - Authentication tests use `mockResolvedValueOnce` for single-call null overrides
+  - Pattern: `mockAuth.mockResolvedValue({ user: { id: testUserId, email: testEmail } })`
+- ✅ **Test Results**:
+  - Before: 10/18 tests failing with "Foreign key constraint violated: ContentInteraction_userId_fkey"
+  - After: 18/18 tests passing ✅
+  - Watch interactions: 8/8 passing
+  - Save interactions: 4/4 passing
+  - Dismiss interactions: 3/3 passing
+  - Not-now interactions: 3/3 passing
+  - Test duration: ~2.5-3.5 seconds (fast!)
+- ✅ **Verification**:
+  - All tests passing: `npx vitest run tests/api/content-interactions.integration.test.ts`
+  - Lint clean: `npm run lint` ✅
+  - Build successful: `npm run build` ✅
+  - Full test suite verified (all other tests unaffected)
+- 💾 **Commits**: (pending) Fix auth mock to use correct user IDs per test suite
+- 🎯 **Next Steps**:
+  - All content-interactions tests now working! ✅
+  - Continue Testing Roadmap Phase 2 (Design System & Components)
+  - OR begin RSS/Article Support (Epic 2A.1)
+- 📈 **Grade**: Test coverage improving - all critical interaction tests passing
+
+**Previous Session: Test Infrastructure Fix: Redis Cache Timeout (2025-10-25 - Session 20)**
 - ✅ **RESOLVED: Test timeout/hanging issue** - Integration tests no longer hang!
   - **Root cause:** Redis (Upstash) cache connection attempts hanging in test environment
   - Tests call `cache.delete()` in beforeEach hooks, Redis connection was timing out
