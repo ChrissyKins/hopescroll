@@ -88,11 +88,16 @@ export class SourceService {
       throw new NotFoundError('Content source');
     }
 
+    // Delete associated content items first
+    await this.db.contentItem.deleteMany({
+      where: { sourceId: source.sourceId },
+    });
+
     await this.db.contentSource.delete({
       where: { id: sourceId },
     });
 
-    log.info({ sourceId }, 'Source removed');
+    log.info({ sourceId }, 'Source and associated content removed');
   }
 
   async updateSource(

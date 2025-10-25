@@ -61,7 +61,7 @@ export async function DELETE(
     const sourceService = new SourceService(db, adapters);
     await sourceService.removeSource(userId, params.id);
 
-    return successResponse({ message: 'Source removed' });
+    return successResponse({ message: 'Source deleted' });
   } catch (error) {
     return errorResponse(error);
   }

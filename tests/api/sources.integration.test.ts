@@ -684,7 +684,7 @@ describe('DELETE /api/sources/[id]', () => {
 
       expect(response.status).toBe(404);
       expect(data.success).toBe(false);
-      expect(data.error).toContain('not found');
+      expect(data.error.message).toContain('not found');
     });
 
     it('should prevent deleting other users sources', async () => {

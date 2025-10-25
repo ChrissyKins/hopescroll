@@ -70,6 +70,7 @@ describe('CollectionService', () => {
       expect(result).toEqual([
         {
           id: 'col1',
+          userId: 'user1',
           name: 'Watch Later',
           description: 'Videos to watch',
           color: '#ff0000',
@@ -79,6 +80,7 @@ describe('CollectionService', () => {
         },
         {
           id: 'col2',
+          userId: 'user1',
           name: 'Favorites',
           description: null,
           color: '#00ff00',
@@ -141,6 +143,7 @@ describe('CollectionService', () => {
 
       expect(result).toEqual({
         id: 'col1',
+        userId: 'user1',
         name: 'Watch Later',
         description: 'Videos to watch',
         color: '#ff0000',
@@ -212,6 +215,7 @@ describe('CollectionService', () => {
 
       expect(result).toEqual({
         id: 'col1',
+        userId: 'user1',
         name: 'Watch Later',
         description: 'Videos to watch',
         color: '#ff0000',

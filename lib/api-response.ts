@@ -43,6 +43,12 @@ export function errorResponse(error: unknown, status?: number): NextResponse<Api
     message = error.message;
     statusCode = error.statusCode;
     details = error.details;
+  } else if ((error as any)?.name === 'ZodError') {
+    // Handle Zod validation errors
+    code = 'VALIDATION_ERROR';
+    message = 'Validation failed';
+    statusCode = 400;
+    details = (error as any).errors;
   } else if (error instanceof Error) {
     message = error.message;
   }

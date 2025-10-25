@@ -2,7 +2,7 @@
 
 import { PrismaClient } from '@prisma/client';
 import { createLogger } from '@/lib/logger';
-import { NotFoundError } from '@/lib/errors';
+import { NotFoundError, ValidationError } from '@/lib/errors';
 import { FilterConfiguration } from '@/domain/content/content-item';
 
 const log = createLogger('filter-service');
@@ -14,19 +14,35 @@ export class FilterService {
     userId: string,
     keyword: string,
     isWildcard: boolean = false
-  ): Promise<{ id: string }> {
+  ): Promise<{ id: string; keyword: string; isWildcard: boolean }> {
     log.info({ userId, keyword, isWildcard }, 'Adding filter keyword');
+
+    // Check for duplicate keyword
+    const existing = await this.db.filterKeyword.findFirst({
+      where: {
+        userId,
+        keyword: keyword.trim().toLowerCase(),
+      },
+    });
+
+    if (existing) {
+      throw new ValidationError('Filter keyword already exists');
+    }
 
     const filter = await this.db.filterKeyword.create({
       data: {
         userId,
-        keyword: keyword.trim(),
+        keyword: keyword.trim().toLowerCase(),
         isWildcard,
       },
     });
 
     log.info({ filterId: filter.id }, 'Filter keyword added');
-    return { id: filter.id };
+    return {
+      id: filter.id,
+      keyword: filter.keyword,
+      isWildcard: filter.isWildcard,
+    };
   }
 
   async removeKeyword(userId: string, filterId: string): Promise<void> {

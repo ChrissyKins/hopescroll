@@ -14,7 +14,11 @@ export const updateSourceSchema = z.object({
 
 // Filter validation
 export const addFilterSchema = z.object({
-  keyword: z.string().min(1, 'Keyword cannot be empty'),
+  keyword: z.string()
+    .min(1, 'Keyword cannot be empty')
+    .refine((val) => val.trim().length > 0, {
+      message: 'Keyword cannot be only whitespace',
+    }),
   isWildcard: z.boolean().default(false),
 });
 

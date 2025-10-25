@@ -446,7 +446,7 @@ describe('POST /api/filters', () => {
 
       expect(response.status).toBe(400);
       expect(data.success).toBe(false);
-      expect(data.error).toContain('already exists');
+      expect(data.error.message).toContain('already exists');
     });
 
     it('should allow same keyword for different users', async () => {
@@ -628,7 +628,7 @@ describe('DELETE /api/filters/[id]', () => {
 
       expect(response.status).toBe(404);
       expect(data.success).toBe(false);
-      expect(data.error).toContain('not found');
+      expect(data.error.message).toContain('not found');
     });
 
     it('should prevent deleting other users filters', async () => {
