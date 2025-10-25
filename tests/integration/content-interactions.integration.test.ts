@@ -64,6 +64,26 @@ describe('Content Interaction Integration Tests', () => {
       debug: vi.fn(),
     } as unknown as Logger;
 
+    // Mock contentItem.findUnique to return content (validates content exists)
+    vi.mocked(mockDb.contentItem.findUnique).mockResolvedValue({
+      id: testContentId,
+      title: 'Test Video',
+      description: 'Test Description',
+      sourceId: 'source-1',
+      sourceType: 'YOUTUBE',
+      originalId: 'yt-123',
+      thumbnailUrl: 'https://example.com/thumb.jpg',
+      url: 'https://youtube.com/watch?v=123',
+      duration: 600,
+      publishedAt: new Date(),
+      fetchedAt: new Date(),
+      lastSeenInFeed: new Date(),
+    });
+
+    // Mock contentInteraction.findFirst to return null (no existing interaction)
+    // Individual tests can override this if needed
+    vi.mocked(mockDb.contentInteraction.findFirst).mockResolvedValue(null);
+
     interactionService = new InteractionService(mockDb, mockCache, mockLogger);
   });
 
