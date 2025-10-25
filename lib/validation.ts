@@ -5,6 +5,7 @@ import { z } from 'zod';
 export const addSourceSchema = z.object({
   type: z.enum(['YOUTUBE', 'TWITCH', 'RSS', 'PODCAST']),
   sourceId: z.string().min(1, 'Source ID is required'),
+  displayName: z.string().optional(), // Optional override for display name
 });
 
 export const updateSourceSchema = z.object({

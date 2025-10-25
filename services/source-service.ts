@@ -17,7 +17,8 @@ export class SourceService {
   async addSource(
     userId: string,
     type: SourceType,
-    sourceId: string
+    sourceId: string,
+    displayNameOverride?: string
   ): Promise<{ id: string; displayName: string }> {
     log.info({ userId, type, sourceId }, 'Adding content source');
 
@@ -58,7 +59,7 @@ export class SourceService {
         userId,
         type,
         sourceId: finalSourceId,
-        displayName: validation.displayName || finalSourceId,
+        displayName: displayNameOverride || validation.displayName || finalSourceId,
         avatarUrl: validation.avatarUrl,
         isMuted: false,
         alwaysSafe: false,
@@ -161,6 +162,8 @@ export class SourceService {
 
         return {
           ...source,
+          createdAt: source.addedAt,
+          contentCount: totalVideos,
           videoStats: {
             totalFetched: totalVideos,
             unwatched: unwatchedVideos,

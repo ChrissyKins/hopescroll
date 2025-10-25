@@ -36,7 +36,8 @@ export async function POST(request: NextRequest) {
     const source = await sourceService.addSource(
       userId,
       validated.type,
-      validated.sourceId
+      validated.sourceId,
+      validated.displayName
     );
 
     // Automatically fetch content from the newly added source

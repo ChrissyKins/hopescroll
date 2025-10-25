@@ -29,7 +29,7 @@ describe('GET /api/filters', () => {
   beforeEach(async () => {
     // Clean up existing test data
     await db.filterKeyword.deleteMany({ where: { userId: testUserId } });
-    await db.filterKeyword.deleteMany({ where: { userId: 'other-user' } });
+    await db.filterKeyword.deleteMany({ where: { userId: { in: ['other-filters-user', 'other-filters-user-2'] } } });
     await db.userPreferences.deleteMany({ where: { userId: testUserId } });
 
     const existingUser = await db.user.findUnique({
@@ -41,11 +41,11 @@ describe('GET /api/filters', () => {
       });
     }
 
-    // Clean up other-user if it exists
+    // Clean up other users if they exist
     try {
-      await db.user.delete({ where: { id: 'other-user' } });
+      await db.user.deleteMany({ where: { id: { in: ['other-filters-user', 'other-filters-user-2'] } } });
     } catch {
-      // User might not exist
+      // Users might not exist
     }
 
     // Create test user
@@ -63,7 +63,7 @@ describe('GET /api/filters', () => {
   afterEach(async () => {
     // Clean up test data
     await db.filterKeyword.deleteMany({ where: { userId: testUserId } });
-    await db.filterKeyword.deleteMany({ where: { userId: 'other-user' } });
+    await db.filterKeyword.deleteMany({ where: { userId: { in: ['other-filters-user', 'other-filters-user-2'] } } });
     await db.userPreferences.deleteMany({ where: { userId: testUserId } });
 
     try {
@@ -74,11 +74,11 @@ describe('GET /api/filters', () => {
       // User might not exist
     }
 
-    // Clean up other-user if it exists
+    // Clean up other users if they exist
     try {
-      await db.user.delete({ where: { id: 'other-user' } });
+      await db.user.deleteMany({ where: { id: { in: ['other-filters-user', 'other-filters-user-2'] } } });
     } catch {
-      // User might not exist
+      // Users might not exist
     }
   });
 
@@ -198,15 +198,15 @@ describe('GET /api/filters', () => {
       // Create filter for different user
       const otherUser = await db.user.create({
         data: {
-          id: 'other-user',
-          email: 'other@example.com',
+          id: 'other-filters-user',
+          email: 'other-filters@example.com',
           password: 'hashed-password',
         },
       });
 
       await db.filterKeyword.create({
         data: {
-          userId: 'other-user',
+          userId: 'other-filters-user',
           keyword: 'other-filter',
           isWildcard: false,
         },
@@ -221,8 +221,8 @@ describe('GET /api/filters', () => {
       expect(data.data.keywords[0].keyword).toBe('my-filter');
 
       // Cleanup
-      await db.filterKeyword.deleteMany({ where: { userId: 'other-user' } });
-      await db.user.delete({ where: { id: 'other-user' } });
+      await db.filterKeyword.deleteMany({ where: { userId: 'other-filters-user' } });
+      await db.user.delete({ where: { id: 'other-filters-user' } });
     });
   });
 
@@ -470,15 +470,15 @@ describe('POST /api/filters', () => {
       // Create filter for different user
       const otherUser = await db.user.create({
         data: {
-          id: 'other-user',
-          email: 'other@example.com',
+          id: 'other-filters-user-2',
+          email: 'other-filters-2@example.com',
           password: 'hashed-password',
         },
       });
 
       await db.filterKeyword.create({
         data: {
-          userId: 'other-user',
+          userId: 'other-filters-user-2',
           keyword: 'shared',
           isWildcard: false,
         },
@@ -497,8 +497,8 @@ describe('POST /api/filters', () => {
       expect(data.success).toBe(true);
 
       // Cleanup
-      await db.filterKeyword.deleteMany({ where: { userId: 'other-user' } });
-      await db.user.delete({ where: { id: 'other-user' } });
+      await db.filterKeyword.deleteMany({ where: { userId: 'other-filters-user-2' } });
+      await db.user.delete({ where: { id: 'other-filters-user-2' } });
     });
   });
 

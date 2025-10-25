@@ -6,9 +6,11 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
 // Mock YouTube client to simulate API responses - use vi.hoisted() for proper initialization
-const { mockGetChannelInfo, mockResolveChannelId } = vi.hoisted(() => ({
-  mockGetChannelInfo: vi.fn(),
+const { mockGetChannel, mockResolveChannelId, mockSearchChannelVideos, mockGetVideos } = vi.hoisted(() => ({
+  mockGetChannel: vi.fn(),
   mockResolveChannelId: vi.fn(),
+  mockSearchChannelVideos: vi.fn(),
+  mockGetVideos: vi.fn(),
 }));
 
 // Mock auth to return a test user
@@ -20,8 +22,10 @@ vi.mock('@/lib/auth', () => ({
 
 vi.mock('@/adapters/content/youtube/youtube-client', () => ({
   YouTubeClient: vi.fn().mockImplementation(() => ({
-    getChannelInfo: mockGetChannelInfo,
+    getChannel: mockGetChannel,
     resolveChannelId: mockResolveChannelId,
+    searchChannelVideos: mockSearchChannelVideos,
+    getVideos: mockGetVideos,
   })),
 }));
 
@@ -48,7 +52,7 @@ describe('GET /api/sources', () => {
       }
     });
     await db.contentSource.deleteMany({ where: { userId: testUserId } });
-    await db.contentSource.deleteMany({ where: { userId: 'other-user' } });
+    await db.contentSource.deleteMany({ where: { userId: 'other-sources-user' } });
 
     const existingUser = await db.user.findUnique({
       where: { email: testEmail },
@@ -59,9 +63,9 @@ describe('GET /api/sources', () => {
       });
     }
 
-    // Clean up other-user if it exists
+    // Clean up other-sources-user if it exists
     try {
-      await db.user.delete({ where: { id: 'other-user' } });
+      await db.user.delete({ where: { id: 'other-sources-user' } });
     } catch {
       // User might not exist
     }
@@ -87,7 +91,7 @@ describe('GET /api/sources', () => {
       }
     });
     await db.contentSource.deleteMany({ where: { userId: testUserId } });
-    await db.contentSource.deleteMany({ where: { userId: 'other-user' } });
+    await db.contentSource.deleteMany({ where: { userId: 'other-sources-user' } });
 
     try {
       await db.user.delete({
@@ -97,9 +101,9 @@ describe('GET /api/sources', () => {
       // User might not exist if test failed
     }
 
-    // Clean up other-user if it exists
+    // Clean up other-sources-user if it exists
     try {
-      await db.user.delete({ where: { id: 'other-user' } });
+      await db.user.delete({ where: { id: 'other-sources-user' } });
     } catch {
       // User might not exist
     }
@@ -217,15 +221,15 @@ describe('GET /api/sources', () => {
       // Create source for different user
       const otherUser = await db.user.create({
         data: {
-          id: 'other-user',
-          email: 'other@example.com',
+          id: 'other-sources-user',
+          email: 'other-sources@example.com',
           password: 'hashed-password',
         },
       });
 
       await db.contentSource.create({
         data: {
-          userId: 'other-user',
+          userId: 'other-sources-user',
           type: 'YOUTUBE',
           sourceId: 'test-source-2',
           displayName: 'Other Channel',
@@ -242,8 +246,8 @@ describe('GET /api/sources', () => {
       expect(data.data[0].sourceId).toBe('test-source-1');
 
       // Cleanup other user
-      await db.contentSource.deleteMany({ where: { userId: 'other-user' } });
-      await db.user.delete({ where: { id: 'other-user' } });
+      await db.contentSource.deleteMany({ where: { userId: 'other-sources-user' } });
+      await db.user.delete({ where: { id: 'other-sources-user' } });
     });
   });
 
@@ -340,16 +344,21 @@ describe('POST /api/sources', () => {
   describe('Success Cases', () => {
     it('should create a new YouTube source', async () => {
       mockResolveChannelId.mockResolvedValue('UC_test-channel');
-      mockGetChannelInfo.mockResolvedValue({
-        id: 'UC_test-channel',
-        snippet: {
-          title: 'Test Channel',
-          description: 'Test Description',
-          thumbnails: {
-            default: { url: 'https://example.com/thumb.jpg' },
+      mockGetChannel.mockResolvedValue({
+        items: [{
+          id: 'UC_test-channel',
+          snippet: {
+            title: 'Test Channel',
+            description: 'Test Description',
+            thumbnails: {
+              high: { url: 'https://example.com/thumb.jpg' },
+            },
           },
-        },
+        }],
       });
+      // Mock for fetchSource call
+      mockSearchChannelVideos.mockResolvedValue({ items: [] });
+      mockGetVideos.mockResolvedValue({ items: [] });
 
       const request = createMockRequest({
         type: 'YOUTUBE',
@@ -359,12 +368,10 @@ describe('POST /api/sources', () => {
       const response = await POST(request);
       const data = await response.json();
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(201);
       expect(data.success).toBe(true);
       expect(data.data).toHaveProperty('id');
       expect(data.data.displayName).toBe('Test Channel');
-      expect(data.data.sourceId).toBe('UC_test-channel');
-      expect(data.data.type).toBe('YOUTUBE');
 
       // Verify it was saved to database
       const savedSource = await db.contentSource.findFirst({
@@ -379,16 +386,20 @@ describe('POST /api/sources', () => {
 
     it('should accept optional displayName override', async () => {
       mockResolveChannelId.mockResolvedValue('UC_test-channel');
-      mockGetChannelInfo.mockResolvedValue({
-        id: 'UC_test-channel',
-        snippet: {
-          title: 'Original Name',
-          description: 'Test Description',
-          thumbnails: {
-            default: { url: 'https://example.com/thumb.jpg' },
+      mockGetChannel.mockResolvedValue({
+        items: [{
+          id: 'UC_test-channel',
+          snippet: {
+            title: 'Original Name',
+            description: 'Test Description',
+            thumbnails: {
+              high: { url: 'https://example.com/thumb.jpg' },
+            },
           },
-        },
+        }],
       });
+      mockSearchChannelVideos.mockResolvedValue({ items: [] });
+      mockGetVideos.mockResolvedValue({ items: [] });
 
       const request = createMockRequest({
         type: 'YOUTUBE',
@@ -399,7 +410,7 @@ describe('POST /api/sources', () => {
       const response = await POST(request);
       const data = await response.json();
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(201);
       expect(data.success).toBe(true);
       expect(data.data.displayName).toBe('Custom Name');
     });
@@ -469,7 +480,7 @@ describe('POST /api/sources', () => {
 
       expect(response.status).toBe(400);
       expect(data.success).toBe(false);
-      expect(data.error).toContain('already exists');
+      expect(data.error.message).toContain('already added');
     });
   });
 
@@ -485,8 +496,10 @@ describe('POST /api/sources', () => {
       const response = await POST(request);
       const data = await response.json();
 
-      expect(response.status).toBe(500);
+      // Adapter catches errors and returns validation failure (400, not 500)
+      expect(response.status).toBe(400);
       expect(data.success).toBe(false);
+      expect(data.error.message).toContain('YouTube API error');
     });
 
     it('should handle invalid channel IDs', async () => {
@@ -531,16 +544,20 @@ describe('POST /api/sources', () => {
   describe('Response Format', () => {
     it('should return consistent success response format', async () => {
       mockResolveChannelId.mockResolvedValue('UC_test-channel');
-      mockGetChannelInfo.mockResolvedValue({
-        id: 'UC_test-channel',
-        snippet: {
-          title: 'Test Channel',
-          description: 'Test Description',
-          thumbnails: {
-            default: { url: 'https://example.com/thumb.jpg' },
+      mockGetChannel.mockResolvedValue({
+        items: [{
+          id: 'UC_test-channel',
+          snippet: {
+            title: 'Test Channel',
+            description: 'Test Description',
+            thumbnails: {
+              high: { url: 'https://example.com/thumb.jpg' },
+            },
           },
-        },
+        }],
       });
+      mockSearchChannelVideos.mockResolvedValue({ items: [] });
+      mockGetVideos.mockResolvedValue({ items: [] });
 
       const request = createMockRequest({
         type: 'YOUTUBE',
