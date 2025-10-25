@@ -5,12 +5,12 @@
  * NOTE: Tests run sequentially to avoid database race conditions
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest';
 import { POST as WATCH_POST } from '@/app/api/content/[id]/watch/route';
 import { POST as SAVE_POST } from '@/app/api/content/[id]/save/route';
 import { POST as DISMISS_POST } from '@/app/api/content/[id]/dismiss/route';
 import { POST as NOT_NOW_POST } from '@/app/api/content/[id]/not-now/route';
-import { db } from '@/lib/db';
+import { db, disconnectDb } from '@/lib/db';
 import { cache } from '@/lib/cache';
 import { NextRequest } from 'next/server';
 
@@ -32,6 +32,12 @@ vi.mock('@/lib/cache', () => ({
     deletePattern: vi.fn().mockResolvedValue(undefined),
   }
 }));
+
+// Global cleanup after all tests in this file complete
+afterAll(async () => {
+  // Disconnect from database to prevent hanging
+  await disconnectDb();
+});
 
 describe.sequential('POST /api/content/[id]/watch', () => {
   const testUserId = 'interaction-watch-user';

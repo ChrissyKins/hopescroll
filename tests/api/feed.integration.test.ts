@@ -3,9 +3,9 @@
  * Tests actual HTTP request/response behavior with real database
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, afterAll, vi } from 'vitest';
 import { GET, POST } from '@/app/api/feed/route';
-import { db } from '@/lib/db';
+import { db, disconnectDb } from '@/lib/db';
 import { cache } from '@/lib/cache';
 import { NextRequest } from 'next/server';
 
@@ -14,6 +14,16 @@ vi.mock('@/lib/auth', () => ({
   auth: vi.fn().mockResolvedValue({
     user: { id: 'feed-test-user', email: 'feed-test@example.com' }
   })
+}));
+
+// Mock cache to avoid Redis connection issues in tests
+vi.mock('@/lib/cache', () => ({
+  cache: {
+    get: vi.fn().mockResolvedValue(null),
+    set: vi.fn().mockResolvedValue(undefined),
+    delete: vi.fn().mockResolvedValue(undefined),
+    deletePattern: vi.fn().mockResolvedValue(undefined),
+  }
 }));
 
 describe('GET /api/feed', () => {
@@ -83,6 +93,11 @@ describe('GET /api/feed', () => {
     } catch {
       // User might not exist if test failed
     }
+  });
+
+  afterAll(async () => {
+    // Disconnect from database to prevent hanging
+    await disconnectDb();
   });
 
   describe('Success Cases', () => {
