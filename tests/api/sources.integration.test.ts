@@ -48,6 +48,7 @@ describe('GET /api/sources', () => {
       }
     });
     await db.contentSource.deleteMany({ where: { userId: testUserId } });
+    await db.contentSource.deleteMany({ where: { userId: 'other-user' } });
 
     const existingUser = await db.user.findUnique({
       where: { email: testEmail },
@@ -56,6 +57,13 @@ describe('GET /api/sources', () => {
       await db.user.delete({
         where: { email: testEmail },
       });
+    }
+
+    // Clean up other-user if it exists
+    try {
+      await db.user.delete({ where: { id: 'other-user' } });
+    } catch {
+      // User might not exist
     }
 
     // Create test user
@@ -79,6 +87,7 @@ describe('GET /api/sources', () => {
       }
     });
     await db.contentSource.deleteMany({ where: { userId: testUserId } });
+    await db.contentSource.deleteMany({ where: { userId: 'other-user' } });
 
     try {
       await db.user.delete({
@@ -86,6 +95,13 @@ describe('GET /api/sources', () => {
       });
     } catch {
       // User might not exist if test failed
+    }
+
+    // Clean up other-user if it exists
+    try {
+      await db.user.delete({ where: { id: 'other-user' } });
+    } catch {
+      // User might not exist
     }
   });
 

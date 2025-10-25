@@ -29,6 +29,7 @@ describe('GET /api/filters', () => {
   beforeEach(async () => {
     // Clean up existing test data
     await db.filterKeyword.deleteMany({ where: { userId: testUserId } });
+    await db.filterKeyword.deleteMany({ where: { userId: 'other-user' } });
     await db.userPreferences.deleteMany({ where: { userId: testUserId } });
 
     const existingUser = await db.user.findUnique({
@@ -38,6 +39,13 @@ describe('GET /api/filters', () => {
       await db.user.delete({
         where: { email: testEmail },
       });
+    }
+
+    // Clean up other-user if it exists
+    try {
+      await db.user.delete({ where: { id: 'other-user' } });
+    } catch {
+      // User might not exist
     }
 
     // Create test user
@@ -55,12 +63,20 @@ describe('GET /api/filters', () => {
   afterEach(async () => {
     // Clean up test data
     await db.filterKeyword.deleteMany({ where: { userId: testUserId } });
+    await db.filterKeyword.deleteMany({ where: { userId: 'other-user' } });
     await db.userPreferences.deleteMany({ where: { userId: testUserId } });
 
     try {
       await db.user.delete({
         where: { email: testEmail },
       });
+    } catch {
+      // User might not exist
+    }
+
+    // Clean up other-user if it exists
+    try {
+      await db.user.delete({ where: { id: 'other-user' } });
     } catch {
       // User might not exist
     }

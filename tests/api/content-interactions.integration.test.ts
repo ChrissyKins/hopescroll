@@ -547,7 +547,7 @@ describe('POST /api/content/[id]/dismiss', () => {
           type: 'DISMISSED',
         },
       });
-      expect(interaction?.metadata).toHaveProperty('reason', 'Not interested');
+      expect(interaction?.dismissReason).toBe('Not interested');
     });
 
     it('should clear feed cache after dismiss', async () => {

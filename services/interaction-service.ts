@@ -3,6 +3,7 @@
 import { PrismaClient } from '@prisma/client';
 import { CacheClient } from '@/lib/cache';
 import { createLogger } from '@/lib/logger';
+import { NotFoundError } from '@/lib/errors';
 
 const log = createLogger('interaction-service');
 
@@ -11,6 +12,20 @@ export class InteractionService {
     private db: PrismaClient,
     private cache: CacheClient
   ) {}
+
+  /**
+   * Validate that content exists before performing operations on it
+   */
+  private async validateContentExists(contentId: string): Promise<void> {
+    const content = await this.db.contentItem.findUnique({
+      where: { id: contentId },
+      select: { id: true },
+    });
+
+    if (!content) {
+      throw new NotFoundError('Content not found');
+    }
+  }
 
   /**
    * Record that a user watched a piece of content
@@ -23,15 +38,40 @@ export class InteractionService {
   ): Promise<void> {
     log.info({ userId, contentId }, 'Recording watch interaction');
 
-    await this.db.contentInteraction.create({
-      data: {
+    // Validate content exists
+    await this.validateContentExists(contentId);
+
+    // Check if a watch interaction already exists
+    const existing = await this.db.contentInteraction.findFirst({
+      where: {
         userId,
         contentId,
         type: 'WATCHED',
-        watchDuration,
-        completionRate,
       },
     });
+
+    if (existing) {
+      // Update existing watch interaction
+      await this.db.contentInteraction.update({
+        where: { id: existing.id },
+        data: {
+          watchDuration,
+          completionRate,
+          timestamp: new Date(),
+        },
+      });
+    } else {
+      // Create new watch interaction
+      await this.db.contentInteraction.create({
+        data: {
+          userId,
+          contentId,
+          type: 'WATCHED',
+          watchDuration,
+          completionRate,
+        },
+      });
+    }
 
     // Invalidate feed cache since interaction state has changed
     await this.invalidateUserCache(userId);
@@ -47,6 +87,9 @@ export class InteractionService {
     notes?: string
   ): Promise<void> {
     log.info({ userId, contentId, collectionId }, 'Saving content');
+
+    // Validate content exists
+    await this.validateContentExists(contentId);
 
     // Check if already saved
     const existing = await this.db.savedContent.findUnique({
@@ -99,6 +142,9 @@ export class InteractionService {
   ): Promise<void> {
     log.info({ userId, contentId, reason }, 'Dismissing content');
 
+    // Validate content exists
+    await this.validateContentExists(contentId);
+
     await this.db.contentInteraction.create({
       data: {
         userId,
@@ -116,6 +162,9 @@ export class InteractionService {
    */
   async notNowContent(userId: string, contentId: string): Promise<void> {
     log.info({ userId, contentId }, 'Marking content as "not now"');
+
+    // Validate content exists
+    await this.validateContentExists(contentId);
 
     await this.db.contentInteraction.create({
       data: {
@@ -137,6 +186,9 @@ export class InteractionService {
     extractKeywords: boolean = false
   ): Promise<string[]> {
     log.info({ userId, contentId, extractKeywords }, 'Blocking content');
+
+    // Validate content exists
+    await this.validateContentExists(contentId);
 
     await this.db.contentInteraction.create({
       data: {
