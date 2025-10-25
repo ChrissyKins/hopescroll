@@ -1,7 +1,7 @@
 # HopeScroll - Project Status
 
-**Last Updated:** 2025-10-25 (Session 17 - Integration Test Fixes Part 2)
-**Current Phase:** Phase 1 (MVP Video Feed) → **Test Coverage A (97.6%)** → Phase 2A (Article/RSS Support READY)
+**Last Updated:** 2025-10-25 (Session 18 - Integration Test Fixes Part 3)
+**Current Phase:** Phase 1 (MVP Video Feed) → **Test Coverage A+ Progress** → Phase 2A (Article/RSS Support READY)
 
 ---
 
@@ -808,3 +808,86 @@ Before ending your session, complete this checklist:
 **Version:** 1.0
 **Status:** Living Document (update frequently!)
 **Next Review:** After completing Epic 2A.1 (RSS support)
+
+---
+
+## 📝 Session 18 Notes (2025-10-25)
+
+**Focus:** Integration Test Fixes - Sources, Filters, YouTube Adapter
+
+### ✅ What Was Accomplished
+
+**Major Test Fixes (10-12 failures resolved):**
+1. **Fixed user ID collisions in parallel tests**
+   - Changed `'other-user'` to `'other-filters-user'` in filters.integration.test.ts
+   - Changed `'other-user'` to `'other-sources-user'` in sources.integration.test.ts
+   - Issue: Multiple test files creating/deleting same user ID caused unique constraint violations and database locks
+
+2. **Fixed YouTube adapter mocking in sources tests**
+   - Corrected mock methods: `getChannel` (not `getChannelInfo`)
+   - Added missing mocks: `mockSearchChannelVideos`, `mockGetVideos`
+   - Fixed response structure: `items` array, `thumbnails.high` (not `default`)
+   - All YouTube validation calls now properly mocked
+
+3. **Added displayName override feature**
+   - Updated `addSourceSchema` to accept optional `displayName`
+   - Modified `SourceService.addSource()` to accept `displayNameOverride`
+   - Updated API route to pass through displayName
+   - Users can now customize source display names during creation
+
+4. **Added missing fields to GET /api/sources response**
+   - Added `createdAt` field (mapped from `addedAt`)
+   - Added `contentCount` field (total fetched content)
+   - Tests now pass for metadata expectations
+
+5. **Fixed test expectations**
+   - Changed status code expectations: 201 (not 200) for POST success
+   - Fixed error message assertions: "already added" (not "already exists")
+   - Fixed API error handling: YouTube errors return 400 (validation), not 500
+
+### 📊 Test Results
+- **Sources tests:** ✅ 21/21 passing (was 13/21)
+- **Filters tests:** ✅ 26/26 passing (was 24/26)
+- **Content-interactions:** ❌ 18/18 timing out (hook timeout issues)
+- **Feed tests:** ❌ 16/16 timing out (hook timeout issues)
+
+### 🔧 Remaining Issues
+
+**Critical - Test Infrastructure:**
+- Content-interactions and feed tests timing out in hooks (10s timeout)
+- Likely cause: Database setup/cleanup taking too long or deadlocking
+- All 34 tests in these files fail with "Hook timed out in 10000ms"
+- Need to investigate test setup efficiency and potential database locks
+
+### 📁 Files Changed
+- `tests/api/filters.integration.test.ts` - Fixed user ID collisions
+- `tests/api/sources.integration.test.ts` - Fixed YouTube mocks and user IDs
+- `lib/validation.ts` - Added displayName to addSourceSchema
+- `services/source-service.ts` - Added displayName override and metadata fields
+- `app/api/sources/route.ts` - Pass displayName to service
+
+### 🎯 Next Session Priorities
+
+1. **Fix test timeout issues** (HIGH PRIORITY)
+   - Increase hook timeout in vitest config or beforeEach
+   - Optimize test data cleanup (may be too slow)
+   - Consider using transactions for test isolation
+   - Check for database connection leaks
+
+2. **Verify all tests pass**
+   - Once timeouts fixed, verify content-interactions tests
+   - Verify feed tests
+   - Run full test suite
+
+3. **Reach Test Coverage A+**
+   - Fix remaining ~34 test failures
+   - Document test infrastructure improvements
+   - Update FEATURE_ROADMAP.md
+
+### 💡 Key Learnings
+
+- **Parallel test isolation is critical** - Using same user IDs across test files causes race conditions
+- **Mock the actual methods called** - YouTube adapter calls `getChannel`, not `getChannelInfo`
+- **Test response structure matters** - API response shapes must match exactly (items arrays, nested fields)
+- **Hook timeouts indicate infrastructure issues** - Not test logic problems, but setup/teardown efficiency
+
