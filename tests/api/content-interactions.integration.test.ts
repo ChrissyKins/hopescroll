@@ -1,6 +1,8 @@
 /**
  * Integration tests for /app/api/content/[id]/* interaction endpoints
  * Tests actual HTTP request/response behavior with real database
+ *
+ * NOTE: Tests run sequentially to avoid database race conditions
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -19,9 +21,19 @@ vi.mock('@/lib/auth', () => ({
   })
 }));
 
-describe('POST /api/content/[id]/watch', () => {
-  const testUserId = 'interaction-test-user';
-  const testEmail = 'interaction-test@example.com';
+// Mock cache to avoid Redis connection issues in tests
+vi.mock('@/lib/cache', () => ({
+  cache: {
+    get: vi.fn().mockResolvedValue(null),
+    set: vi.fn().mockResolvedValue(undefined),
+    delete: vi.fn().mockResolvedValue(undefined),
+    deletePattern: vi.fn().mockResolvedValue(undefined),
+  }
+}));
+
+describe.sequential('POST /api/content/[id]/watch', () => {
+  const testUserId = 'interaction-watch-user';
+  const testEmail = 'interaction-watch@example.com';
   let testContentId: string;
 
   function createMockRequest(contentId: string, body: any = {}): NextRequest {
@@ -228,9 +240,9 @@ describe('POST /api/content/[id]/watch', () => {
   });
 });
 
-describe('POST /api/content/[id]/save', () => {
-  const testUserId = 'interaction-test-user';
-  const testEmail = 'interaction-test@example.com';
+describe.sequential('POST /api/content/[id]/save', () => {
+  const testUserId = 'interaction-save-user';
+  const testEmail = 'interaction-save@example.com';
   let testContentId: string;
   let testCollectionId: string;
 
@@ -421,9 +433,9 @@ describe('POST /api/content/[id]/save', () => {
   });
 });
 
-describe('POST /api/content/[id]/dismiss', () => {
-  const testUserId = 'interaction-test-user';
-  const testEmail = 'interaction-test@example.com';
+describe.sequential('POST /api/content/[id]/dismiss', () => {
+  const testUserId = 'interaction-dismiss-user';
+  const testEmail = 'interaction-dismiss@example.com';
   let testContentId: string;
 
   function createMockRequest(contentId: string, body: any = {}): NextRequest {
@@ -581,9 +593,9 @@ describe('POST /api/content/[id]/dismiss', () => {
   });
 });
 
-describe('POST /api/content/[id]/not-now', () => {
-  const testUserId = 'interaction-test-user';
-  const testEmail = 'interaction-test@example.com';
+describe.sequential('POST /api/content/[id]/not-now', () => {
+  const testUserId = 'interaction-notnow-user';
+  const testEmail = 'interaction-notnow@example.com';
   let testContentId: string;
 
   function createMockRequest(contentId: string): NextRequest {
