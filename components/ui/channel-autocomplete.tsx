@@ -135,6 +135,7 @@ export function ChannelAutocomplete({
     onSelect(channel);
     setShowDropdown(false);
     setHighlightedIndex(-1);
+    setResults([]); // Clear results to prevent reopening
   };
 
   const formatSubscriberCount = (count?: number): string => {
@@ -153,7 +154,7 @@ export function ChannelAutocomplete({
       <div className="relative">
         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
           <svg
-            className="w-5 h-5 text-gray-400"
+            className="w-5 h-5 text-gray-400 dark:text-gray-400"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -182,13 +183,13 @@ export function ChannelAutocomplete({
           disabled={disabled}
           className="
             w-full
-            bg-gray-800
-            border border-gray-700
+            bg-white dark:bg-gray-800
+            border border-gray-300 dark:border-gray-700
             rounded-lg
             pl-10
             pr-10
             py-2.5
-            text-white
+            text-gray-900 dark:text-white
             placeholder-gray-500
             focus:outline-none
             focus:ring-2
@@ -216,8 +217,8 @@ export function ChannelAutocomplete({
             z-50
             w-full
             mt-2
-            bg-gray-800
-            border border-gray-700
+            bg-white dark:bg-gray-800
+            border border-gray-300 dark:border-gray-700
             rounded-lg
             shadow-xl
             max-h-96
@@ -225,11 +226,11 @@ export function ChannelAutocomplete({
           "
         >
           {error ? (
-            <div className="p-4 text-center text-red-400">
+            <div className="p-4 text-center text-red-600 dark:text-red-400">
               <p className="text-sm">{error}</p>
             </div>
           ) : (
-            <ul className="divide-y divide-gray-700">
+            <ul className="divide-y divide-gray-200 dark:divide-gray-700">
               {results.map((channel, index) => (
                 <li key={channel.channelId}>
                   <button
@@ -241,10 +242,10 @@ export function ChannelAutocomplete({
                       flex
                       items-start
                       gap-3
-                      hover:bg-gray-700
+                      hover:bg-gray-100 dark:hover:bg-gray-700
                       transition-colors
                       text-left
-                      ${highlightedIndex === index ? 'bg-gray-700' : ''}
+                      ${highlightedIndex === index ? 'bg-gray-100 dark:bg-gray-700' : ''}
                     `}
                   >
                     {/* Avatar */}
@@ -260,14 +261,14 @@ export function ChannelAutocomplete({
 
                     {/* Channel info */}
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-white font-medium truncate">
+                      <h3 className="text-gray-900 dark:text-white font-medium truncate">
                         {channel.displayName}
                       </h3>
-                      <p className="text-sm text-gray-400 truncate">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 truncate">
                         {formatSubscriberCount(channel.subscriberCount)}
                       </p>
                       {channel.description && (
-                        <p className="text-sm text-gray-500 line-clamp-2 mt-1">
+                        <p className="text-sm text-gray-500 dark:text-gray-500 line-clamp-2 mt-1">
                           {channel.description}
                         </p>
                       )}
@@ -282,7 +283,7 @@ export function ChannelAutocomplete({
 
       {/* Helper text */}
       {!showDropdown && value.trim().length > 0 && value.trim().length < 2 && (
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
           Type at least 2 characters to search
         </p>
       )}
