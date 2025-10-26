@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { Navigation } from '@/components/navigation';
 import {
   useToast,
@@ -26,6 +26,7 @@ import { useSearch } from '@/hooks/use-search';
 import { useFilterSort } from '@/hooks/use-filter-sort';
 import { useLocalStorage } from '@/hooks/use-local-storage';
 import { useUrlState } from '@/hooks/use-url-state';
+import { useCachedFetch } from '@/hooks/use-cached-fetch';
 
 interface Collection {
   id: string;
@@ -59,11 +60,7 @@ interface SavedItem {
 }
 
 function SavedPageContent() {
-  const [saved, setSaved] = useState<SavedItem[]>([]);
-  const [collections, setCollections] = useState<Collection[]>([]);
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   // Bulk operations state
   const [selectionMode, setSelectionMode] = useState(false);
@@ -72,6 +69,39 @@ function SavedPageContent() {
 
   const toast = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
+
+  // Fetch collections with caching
+  const { data: collections, refetch: refetchCollections } = useCachedFetch<Collection[]>({
+    cacheKey: 'collections',
+    fetcher: async () => {
+      const response = await fetch('/api/collections');
+      if (!response.ok) {
+        throw new Error('Failed to fetch collections');
+      }
+      const data = await response.json();
+      return data.data;
+    },
+    ttl: 30000, // 30 seconds
+  });
+
+  // Fetch saved items with caching
+  const { data: saved, isLoading, error, refetch: refetchSaved } = useCachedFetch<SavedItem[]>({
+    cacheKey: `saved-${selectedCollectionId || 'all'}`,
+    fetcher: async () => {
+      const url = selectedCollectionId
+        ? `/api/saved?collectionId=${selectedCollectionId}`
+        : '/api/saved';
+
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error('Failed to fetch saved content');
+      }
+      const data = await response.json();
+      return data.data;
+    },
+    ttl: 30000, // 30 seconds
+    deps: [selectedCollectionId],
+  });
 
   // Initialize filter, sort, and view state with defaults
   const initialFilters: FilterState = {
@@ -102,7 +132,7 @@ function SavedPageContent() {
 
   // Search functionality
   const { query, setQuery, clearSearch, filteredItems: searchFilteredItems, resultCount, totalCount } = useSearch(
-    saved,
+    saved || [],
     (item) => [
       item.content?.title || '',
       item.notes || '',
@@ -120,6 +150,7 @@ function SavedPageContent() {
 
   // Get unique sources for filter dropdown
   const uniqueSources = useMemo(() => {
+    if (!saved) return [];
     const sources = new Set<string>();
     saved.forEach((item) => {
       if (item.content?.sourceDisplayName) {
@@ -129,49 +160,10 @@ function SavedPageContent() {
     return Array.from(sources).sort();
   }, [saved]);
 
-  const fetchCollections = useCallback(async () => {
-    try {
-      const response = await fetch('/api/collections');
-      if (!response.ok) {
-        throw new Error('Failed to fetch collections');
-      }
-      const data = await response.json();
-      setCollections(data.data);
-    } catch (err) {
-      console.error('Failed to load collections:', err);
-    }
-  }, []);
-
-  const fetchSaved = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
-      const url = selectedCollectionId
-        ? `/api/saved?collectionId=${selectedCollectionId}`
-        : '/api/saved';
-
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Failed to fetch saved content');
-      }
-      const data = await response.json();
-      setSaved(data.data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load saved content');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [selectedCollectionId]);
-
-  useEffect(() => {
-    fetchCollections();
-    fetchSaved();
-  }, [fetchCollections, fetchSaved]);
-
-  useEffect(() => {
-    fetchSaved();
-  }, [selectedCollectionId, fetchSaved]);
+  // Helper to refetch both collections and saved items
+  const refetchAll = async () => {
+    await Promise.all([refetchCollections(), refetchSaved()]);
+  };
 
   const handleUnsave = async (contentId: string) => {
     try {
@@ -184,7 +176,7 @@ function SavedPageContent() {
       }
 
       toast.success('Removed from saved content');
-      await Promise.all([fetchSaved(), fetchCollections()]);
+      await refetchAll();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to remove from saved');
     }
@@ -203,7 +195,7 @@ function SavedPageContent() {
       }
 
       toast.success('Collection updated');
-      await Promise.all([fetchSaved(), fetchCollections()]);
+      await refetchAll();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update collection');
     }
@@ -222,7 +214,7 @@ function SavedPageContent() {
       }
 
       toast.success('Notes updated');
-      await fetchSaved();
+      await refetchSaved();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update notes');
     }
@@ -243,8 +235,7 @@ function SavedPageContent() {
   };
 
   const handleCollectionsChange = () => {
-    fetchCollections();
-    fetchSaved();
+    refetchAll();
   };
 
   const handleSelectCollection = (collectionId: string | null) => {
@@ -295,7 +286,7 @@ function SavedPageContent() {
 
     try {
       const promises = Array.from(selectedItems).map(async (itemId) => {
-        const item = saved.find((s) => s.id === itemId);
+        const item = (saved || []).find((s) => s.id === itemId);
         if (!item) return false;
 
         try {
@@ -324,7 +315,7 @@ function SavedPageContent() {
         toast.error(`Failed to remove ${failCount} item${failCount > 1 ? 's' : ''}`);
       }
 
-      await Promise.all([fetchSaved(), fetchCollections()]);
+      await refetchAll();
       setSelectedItems(new Set());
     } finally {
       setIsBulkOperationInProgress(false);
@@ -360,7 +351,7 @@ function SavedPageContent() {
       await Promise.all(promises);
 
       const collectionName = collectionId
-        ? collections.find((c) => c.id === collectionId)?.name || 'collection'
+        ? (collections || []).find((c) => c.id === collectionId)?.name || 'collection'
         : 'no collection';
 
       if (successCount > 0) {
@@ -370,7 +361,7 @@ function SavedPageContent() {
         toast.error(`Failed to move ${failCount} item${failCount > 1 ? 's' : ''}`);
       }
 
-      await Promise.all([fetchSaved(), fetchCollections()]);
+      await refetchAll();
       setSelectedItems(new Set());
     } finally {
       setIsBulkOperationInProgress(false);
@@ -393,7 +384,7 @@ function SavedPageContent() {
 
     try {
       const promises = Array.from(selectedItems).map(async (itemId) => {
-        const item = saved.find((s) => s.id === itemId);
+        const item = (saved || []).find((s) => s.id === itemId);
         if (!item) return false;
 
         try {
@@ -422,7 +413,7 @@ function SavedPageContent() {
         toast.error(`Failed to move ${failCount} item${failCount > 1 ? 's' : ''}`);
       }
 
-      await Promise.all([fetchSaved(), fetchCollections()]);
+      await refetchAll();
       setSelectedItems(new Set());
     } finally {
       setIsBulkOperationInProgress(false);
@@ -519,7 +510,7 @@ function SavedPageContent() {
               <div className="mt-4">
                 <Button
                   variant="danger"
-                  onClick={fetchSaved}
+                  onClick={() => refetchSaved()}
                 >
                   Try again
                 </Button>
@@ -531,7 +522,7 @@ function SavedPageContent() {
     );
   }
 
-  const totalSavedCount = collections.reduce((sum, c) => sum + c.itemCount, 0);
+  const totalSavedCount = collections?.reduce((sum, c) => sum + c.itemCount, 0) || 0;
 
   if (totalSavedCount === 0) {
     return (
@@ -577,7 +568,7 @@ function SavedPageContent() {
                 </Button>
               )}
               <span className="text-gray-600 dark:text-gray-400">
-                {saved.length} {saved.length === 1 ? 'item' : 'items'}
+                {saved?.length || 0} {(saved?.length || 0) === 1 ? 'item' : 'items'}
               </span>
             </div>
           </div>
@@ -590,7 +581,7 @@ function SavedPageContent() {
                   Collections
                 </h2>
                 <CollectionManager
-                  collections={collections}
+                  collections={collections || []}
                   selectedCollectionId={selectedCollectionId}
                   onSelectCollection={handleSelectCollection}
                   onCollectionsChange={handleCollectionsChange}
@@ -617,7 +608,7 @@ function SavedPageContent() {
                     onFiltersChange={setFilters}
                     sortBy={sortBy}
                     onSortChange={setSortBy}
-                    collections={collections.map(c => ({ id: c.id, name: c.name }))}
+                    collections={(collections || []).map(c => ({ id: c.id, name: c.name }))}
                     sources={uniqueSources}
                     activeFilterCount={activeFilterCount}
                   />
@@ -632,7 +623,7 @@ function SavedPageContent() {
                   <BulkActionToolbar
                     selectedCount={selectedItems.size}
                     totalCount={filteredAndSortedItems.length}
-                    collections={collections}
+                    collections={collections || []}
                     onSelectAll={handleSelectAll}
                     onDeselectAll={handleDeselectAll}
                     onBulkRemove={handleBulkRemove}
@@ -661,7 +652,7 @@ function SavedPageContent() {
                           savedAt={item.savedAt}
                           notes={item.notes}
                           collection={item.collection}
-                          collections={collections}
+                          collections={collections || []}
                           selectionMode={selectionMode}
                           isSelected={selectedItems.has(item.id)}
                           onToggleSelect={handleToggleSelect}
@@ -686,7 +677,7 @@ function SavedPageContent() {
                           savedAt={item.savedAt}
                           notes={item.notes}
                           collection={item.collection}
-                          collections={collections}
+                          collections={collections || []}
                           selectionMode={selectionMode}
                           isSelected={selectedItems.has(item.id)}
                           onToggleSelect={handleToggleSelect}

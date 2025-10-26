@@ -1,6 +1,6 @@
 # HopeScroll - Project Status
 
-**Last Updated:** 2025-10-26 (Session 26 - Rebrand to feed.enda.cat)
+**Last Updated:** 2025-10-26 (Session 27 - Seamless Tab Navigation)
 **Current Phase:** Phase 1 (MVP Video Feed) → **Test Coverage A+ Complete** → Phase 2A (Article/RSS Support READY)
 
 ---
@@ -101,6 +101,16 @@
 - Loading skeleton components
 - Empty state patterns
 - Toast notification system (basic)
+
+#### Performance Optimizations
+- **Client-side data caching** (30s TTL)
+  - Filters, Sources, Saved, History pages cache data
+  - Instant tab switching on cached data
+  - No loading flicker on repeat visits
+- **React transitions** for smooth navigation
+  - Non-blocking page changes
+  - Instant nav bar updates
+  - Loading spinner during transitions
 
 ---
 

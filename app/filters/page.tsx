@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Navigation } from '@/components/navigation';
 import { useToast, useConfirmDialog, Search, EmptyState, ShieldIcon, DurationSlider, KeywordListSkeleton, Button } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
+import { useCachedFetch } from '@/hooks/use-cached-fetch';
 
 interface FilterKeyword {
   id: string;
@@ -18,13 +19,6 @@ interface UserPreferences {
 }
 
 export default function FiltersPage() {
-  const [keywords, setKeywords] = useState<FilterKeyword[]>([]);
-  const [preferences, setPreferences] = useState<UserPreferences>({
-    minDuration: null,
-    maxDuration: null,
-  });
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [newKeyword, setNewKeyword] = useState('');
   const [isWildcard, setIsWildcard] = useState(false);
   const [isAdding, setIsAdding] = useState(false);
@@ -32,36 +26,47 @@ export default function FiltersPage() {
   const toast = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
 
-  // Search functionality for keywords
-  const { query, setQuery, clearSearch, filteredItems, resultCount, totalCount } = useSearch(
-    keywords,
-    (keyword) => [keyword.keyword]
-  );
-
-  useEffect(() => {
-    fetchFilters();
-  }, []);
-
-  const fetchFilters = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  // Fetch filters with caching
+  const { data: filtersData, isLoading, error, refetch } = useCachedFetch<{
+    keywords: FilterKeyword[];
+    preferences: UserPreferences;
+  }>({
+    cacheKey: 'filters',
+    fetcher: async () => {
       const response = await fetch('/api/filters');
       if (!response.ok) {
         throw new Error('Failed to fetch filters');
       }
       const data = await response.json();
-      setKeywords(data.data.keywords);
-      setPreferences({
-        minDuration: data.data.preferences?.minDuration || null,
-        maxDuration: data.data.preferences?.maxDuration || null,
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load filters');
-    } finally {
-      setIsLoading(false);
+      return {
+        keywords: data.data.keywords,
+        preferences: {
+          minDuration: data.data.preferences?.minDuration || null,
+          maxDuration: data.data.preferences?.maxDuration || null,
+        },
+      };
+    },
+    ttl: 30000, // 30 seconds
+  });
+
+  const keywords = filtersData?.keywords || [];
+  const [preferences, setPreferences] = useState<UserPreferences>({
+    minDuration: null,
+    maxDuration: null,
+  });
+
+  // Update preferences when data loads
+  useEffect(() => {
+    if (filtersData?.preferences) {
+      setPreferences(filtersData.preferences);
     }
-  };
+  }, [filtersData]);
+
+  // Search functionality for keywords
+  const { query, setQuery, clearSearch, filteredItems, resultCount, totalCount } = useSearch(
+    keywords,
+    (keyword) => [keyword.keyword]
+  );
 
   const handleAddKeyword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +89,7 @@ export default function FiltersPage() {
 
       toast.success('Keyword filter added successfully');
       // Refresh filters list
-      await fetchFilters();
+      await refetch();
       setNewKeyword('');
       setIsWildcard(false);
     } catch (err) {
@@ -115,7 +120,7 @@ export default function FiltersPage() {
 
       toast.success('Keyword filter removed successfully');
       // Refresh filters list
-      await fetchFilters();
+      await refetch();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to delete keyword');
     }
@@ -201,7 +206,7 @@ export default function FiltersPage() {
               <div className="mt-4">
                 <Button
                   variant="danger"
-                  onClick={fetchFilters}
+                  onClick={() => refetch()}
                 >
                   Try again
                 </Button>

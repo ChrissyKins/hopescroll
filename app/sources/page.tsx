@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Navigation } from '@/components/navigation';
 import { useToast, useConfirmDialog, Search, EmptyState, VideoIcon, UnwatchedIcon, SourceIcon, SourceListSkeleton, Button, Badge, Spinner } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
+import { useCachedFetch } from '@/hooks/use-cached-fetch';
 
 interface ContentSource {
   id: string;
@@ -23,9 +24,6 @@ interface ContentSource {
 type SortOption = 'name-asc' | 'name-desc' | 'recent' | 'unwatched' | 'status';
 
 export default function SourcesPage() {
-  const [sources, setSources] = useState<ContentSource[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [newSourceId, setNewSourceId] = useState('');
   const [sourceType, setSourceType] = useState('YOUTUBE');
   const [isAdding, setIsAdding] = useState(false);
@@ -36,9 +34,23 @@ export default function SourcesPage() {
   const toast = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
 
+  // Fetch sources with caching
+  const { data: sources, isLoading, error, refetch } = useCachedFetch<ContentSource[]>({
+    cacheKey: 'sources',
+    fetcher: async () => {
+      const response = await fetch('/api/sources');
+      if (!response.ok) {
+        throw new Error('Failed to fetch sources');
+      }
+      const data = await response.json();
+      return data.data;
+    },
+    ttl: 30000, // 30 seconds
+  });
+
   // Search functionality
   const { query, setQuery, clearSearch, filteredItems, resultCount, totalCount } = useSearch(
-    sources,
+    sources || [],
     (source) => [source.displayName, source.sourceId, source.type]
   );
 
@@ -75,27 +87,6 @@ export default function SourcesPage() {
         return items;
     }
   }, [filteredItems, sortBy]);
-
-  useEffect(() => {
-    fetchSources();
-  }, []);
-
-  const fetchSources = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await fetch('/api/sources');
-      if (!response.ok) {
-        throw new Error('Failed to fetch sources');
-      }
-      const data = await response.json();
-      setSources(data.data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load sources');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   const handleAddSource = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -134,7 +125,7 @@ export default function SourcesPage() {
       }
 
       // Refresh sources list
-      await fetchSources();
+      await refetch();
       setNewSourceId('');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to add source');
@@ -164,7 +155,7 @@ export default function SourcesPage() {
 
       toast.success('Source removed successfully');
       // Refresh sources list
-      await fetchSources();
+      await refetch();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to delete source');
     }
@@ -186,14 +177,14 @@ export default function SourcesPage() {
 
       toast.success(`Source ${source.isMuted ? 'unmuted' : 'muted'} successfully`);
       // Refresh sources list
-      await fetchSources();
+      await refetch();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to update source');
     }
   };
 
   const handleRefreshContent = async () => {
-    if (sources.length === 0) {
+    if (!sources || sources.length === 0) {
       setFetchMessage({ type: 'error', text: 'Add sources first before fetching content' });
       return;
     }
@@ -219,7 +210,7 @@ export default function SourcesPage() {
       });
 
       // Refresh sources list to show updated status
-      await fetchSources();
+      await refetch();
     } catch (err) {
       setFetchMessage({
         type: 'error',
@@ -275,7 +266,7 @@ export default function SourcesPage() {
               <div className="mt-4">
                 <Button
                   variant="danger"
-                  onClick={fetchSources}
+                  onClick={() => refetch()}
                 >
                   Try again
                 </Button>
@@ -352,12 +343,12 @@ export default function SourcesPage() {
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
-                  Your Sources ({sources.length})
+                  Your Sources ({sources?.length || 0})
                 </h2>
                 <Button
                   onClick={handleRefreshContent}
                   variant="success"
-                  disabled={isFetching || sources.length === 0}
+                  disabled={isFetching || !sources || sources.length === 0}
                   loading={isFetching}
                 >
                   {isFetching ? (
@@ -384,7 +375,7 @@ export default function SourcesPage() {
               )}
 
               {/* Search and Sort */}
-              {sources.length > 0 && (
+              {sources && sources.length > 0 && (
                 <div className="mb-4 space-y-4">
                   <Search
                     value={query}
@@ -415,7 +406,7 @@ export default function SourcesPage() {
                 </div>
               )}
 
-              {sources.length === 0 ? (
+              {!sources || sources.length === 0 ? (
                 <EmptyState
                   icon={<SourceIcon className="w-16 h-16 text-gray-400" />}
                   heading="No content sources yet"

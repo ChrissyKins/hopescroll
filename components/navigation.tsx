@@ -2,10 +2,13 @@
 
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useTransition } from 'react';
 
 export function Navigation() {
   const pathname = usePathname();
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
 
   const mainNavItems = [
     { href: '/watch', label: 'Watch' },
@@ -25,6 +28,13 @@ export function Navigation() {
 
   const isDarkMode = pathname === '/watch';
 
+  const handleNavClick = (href: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    startTransition(() => {
+      router.push(href);
+    });
+  };
+
   return (
     <nav className={`border-b ${isDarkMode ? 'bg-gray-900 border-gray-800' : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -43,6 +53,7 @@ export function Navigation() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={(e) => handleNavClick(item.href, e)}
                   className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-bold ${
                     pathname === item.href
                       ? `border-blue-500 ${isDarkMode ? 'text-white' : 'text-gray-900 dark:text-white'}`
@@ -61,6 +72,7 @@ export function Navigation() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={(e) => handleNavClick(item.href, e)}
                   className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
                     pathname === item.href
                       ? `border-blue-500 ${isDarkMode ? 'text-white' : 'text-gray-900 dark:text-white'}`
@@ -72,7 +84,15 @@ export function Navigation() {
               ))}
             </div>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
+            {isPending && (
+              <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+            )}
             <button
               onClick={handleSignOut}
               className={`text-sm ${isDarkMode ? 'text-gray-300 hover:text-white' : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'}`}

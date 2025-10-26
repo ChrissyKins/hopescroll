@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Navigation } from '@/components/navigation';
 import { Search, EmptyState, HistoryIcon, WatchedIcon, StarIcon, DismissedIcon, NotNowIcon, BlockedIcon, HistoryListSkeleton, Button, Badge } from '@/components/ui';
 import { useSearch } from '@/hooks/use-search';
+import { useCachedFetch } from '@/hooks/use-cached-fetch';
 
 interface HistoryItem {
   id: string;
@@ -15,30 +16,12 @@ interface HistoryItem {
 }
 
 export default function HistoryPage() {
-  const [history, setHistory] = useState<HistoryItem[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [filterType, setFilterType] = useState<string>('all');
 
-  // Search functionality
-  const { query, setQuery, clearSearch, filteredItems, resultCount, totalCount } = useSearch(
-    history,
-    (item) => [
-      item.content?.title || '',
-      item.content?.sourceId || '',
-      item.type
-    ]
-  );
-
-  useEffect(() => {
-    fetchHistory();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filterType]);
-
-  const fetchHistory = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
+  // Fetch history with caching
+  const { data: history, isLoading, error, refetch } = useCachedFetch<HistoryItem[]>({
+    cacheKey: `history-${filterType}`,
+    fetcher: async () => {
       const url =
         filterType === 'all'
           ? '/api/history'
@@ -48,13 +31,21 @@ export default function HistoryPage() {
         throw new Error('Failed to fetch history');
       }
       const data = await response.json();
-      setHistory(data.data);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load history');
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      return data.data;
+    },
+    ttl: 30000, // 30 seconds
+    deps: [filterType],
+  });
+
+  // Search functionality
+  const { query, setQuery, clearSearch, filteredItems, resultCount, totalCount } = useSearch(
+    history || [],
+    (item) => [
+      item.content?.title || '',
+      item.content?.sourceId || '',
+      item.type
+    ]
+  );
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -140,7 +131,7 @@ export default function HistoryPage() {
               <div className="mt-4">
                 <Button
                   variant="danger"
-                  onClick={fetchHistory}
+                  onClick={() => refetch()}
                 >
                   Try again
                 </Button>
@@ -179,7 +170,7 @@ export default function HistoryPage() {
           </div>
 
           {/* Search */}
-          {history.length > 0 && (
+          {history && history.length > 0 && (
             <div className="mb-6">
               <Search
                 value={query}
@@ -192,7 +183,7 @@ export default function HistoryPage() {
             </div>
           )}
 
-          {history.length === 0 ? (
+          {!history || history.length === 0 ? (
             <EmptyState
               icon={<HistoryIcon className="w-16 h-16 text-gray-400" />}
               heading="No interaction history"
