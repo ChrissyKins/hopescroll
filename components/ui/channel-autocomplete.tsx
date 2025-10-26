@@ -32,6 +32,7 @@ export function ChannelAutocomplete({
   const [showDropdown, setShowDropdown] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [highlightedIndex, setHighlightedIndex] = useState(-1);
+  const [isSelected, setIsSelected] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const debounceRef = useRef<NodeJS.Timeout>();
@@ -41,6 +42,11 @@ export function ChannelAutocomplete({
     // Clear previous timeout
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
+    }
+
+    // Don't search if a channel was just selected
+    if (isSelected) {
+      return;
     }
 
     // Don't search if query is too short
@@ -83,7 +89,7 @@ export function ChannelAutocomplete({
         clearTimeout(debounceRef.current);
       }
     };
-  }, [value]);
+  }, [value, isSelected]);
 
   // Click outside to close
   useEffect(() => {
@@ -132,6 +138,7 @@ export function ChannelAutocomplete({
   };
 
   const handleSelect = (channel: ChannelResult) => {
+    setIsSelected(true); // Mark as selected to prevent search trigger
     onSelect(channel);
     setShowDropdown(false);
     setHighlightedIndex(-1);
@@ -172,10 +179,13 @@ export function ChannelAutocomplete({
           ref={inputRef}
           type="text"
           value={value}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => {
+            setIsSelected(false); // Clear selected flag when user types
+            onChange(e.target.value);
+          }}
           onKeyDown={handleKeyDown}
           onFocus={() => {
-            if (results.length > 0) {
+            if (results.length > 0 && !isSelected) {
               setShowDropdown(true);
             }
           }}
