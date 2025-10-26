@@ -14,6 +14,7 @@ export interface YouTubeSearchItem {
   id: {
     kind: string;
     videoId?: string;
+    channelId?: string;
   };
   snippet: YouTubeSnippet & {
     resourceId?: {

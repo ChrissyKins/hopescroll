@@ -164,6 +164,60 @@ export class YouTubeAdapter implements ContentAdapter {
     }
   }
 
+  async searchChannels(query: string): Promise<{
+    channelId: string;
+    displayName: string;
+    description: string;
+    avatarUrl: string;
+    subscriberCount?: number;
+  }[]> {
+    log.debug({ query }, 'Searching YouTube channels');
+
+    const searchResponse = await this.client.searchChannels({
+      query,
+      maxResults: 10,
+    });
+
+    if (!searchResponse || !searchResponse.items || searchResponse.items.length === 0) {
+      return [];
+    }
+
+    // Get full channel details for subscriber counts
+    const channelIds = searchResponse.items
+      .map((item) => item.id.channelId)
+      .filter((id): id is string => id !== undefined);
+
+    if (channelIds.length === 0) {
+      return [];
+    }
+
+    // Fetch detailed info for all channels
+    const channelsPromises = channelIds.map(async (channelId) => {
+      try {
+        const channelResponse = await this.client.getChannel(channelId);
+        if (!channelResponse || !channelResponse.items || channelResponse.items.length === 0) {
+          return null;
+        }
+        const channel = channelResponse.items[0];
+        return {
+          channelId,
+          displayName: channel.snippet.title,
+          description: channel.snippet.description,
+          avatarUrl: channel.snippet.thumbnails.high?.url || channel.snippet.thumbnails.default.url,
+          subscriberCount: channel.statistics
+            ? parseInt(channel.statistics.subscriberCount, 10)
+            : undefined,
+        };
+      } catch (error) {
+        log.warn({ channelId, error }, 'Failed to get channel details');
+        return null;
+      }
+    });
+
+    const channels = await Promise.all(channelsPromises);
+    return channels.filter((c): c is NonNullable<typeof c> => c !== null);
+  }
+
   async getSourceMetadata(channelId: string): Promise<SourceMetadata> {
     log.debug({ channelId }, 'Getting YouTube channel metadata');
 

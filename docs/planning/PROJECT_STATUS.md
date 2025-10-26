@@ -1,6 +1,6 @@
 # HopeScroll - Project Status
 
-**Last Updated:** 2025-10-26 (Session 27 - Seamless Tab Navigation)
+**Last Updated:** 2025-10-26 (Session 28 - YouTube Channel Autocomplete)
 **Current Phase:** Phase 1 (MVP Video Feed) → **Test Coverage A+ Complete** → Phase 2A (Article/RSS Support READY)
 
 ---
@@ -30,7 +30,13 @@
   - Infinite scroll (loads more as you scroll)
 
 #### Source Management (`/sources`)
-- Add YouTube channels by channel ID
+- **YouTube Channel Autocomplete** (NEW - Session 28)
+  - Real-time search for YouTube channels
+  - Dropdown with channel thumbnails and subscriber counts
+  - Keyboard navigation (arrows, Enter, Escape)
+  - Channel preview before adding
+  - Supports @handles, channel IDs, and search queries
+- Add YouTube channels by channel ID, @handle, or search
 - Display channel avatar and name
 - Search sources by name
 - Sort sources (by name, date added, content count)

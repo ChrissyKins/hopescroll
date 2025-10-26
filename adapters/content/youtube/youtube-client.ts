@@ -144,6 +144,24 @@ export class YouTubeClient {
     return null;
   }
 
+  async searchChannels(params: {
+    query: string;
+    maxResults?: number;
+  }): Promise<YouTubeSearchResponse> {
+    const searchParams = new URLSearchParams({
+      part: 'snippet',
+      type: 'channel',
+      maxResults: (params.maxResults || 10).toString(),
+      order: 'relevance',
+      q: params.query,
+      key: this.apiKey,
+    });
+
+    return this.request<YouTubeSearchResponse>(
+      `/search?${searchParams.toString()}`
+    );
+  }
+
   async searchVideos(params: {
     query?: string;
     relatedToVideoId?: string;

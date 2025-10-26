@@ -1,8 +1,10 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Image from 'next/image';
 import { Navigation } from '@/components/navigation';
 import { useToast, useConfirmDialog, Search, EmptyState, VideoIcon, UnwatchedIcon, SourceIcon, SourceListSkeleton, Button, Badge, Spinner } from '@/components/ui';
+import { ChannelAutocomplete, ChannelResult } from '@/components/ui/channel-autocomplete';
 import { useSearch } from '@/hooks/use-search';
 import { useCachedFetch } from '@/hooks/use-cached-fetch';
 
@@ -30,6 +32,8 @@ export default function SourcesPage() {
   const [isFetching, setIsFetching] = useState(false);
   const [fetchMessage, setFetchMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('name-asc');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedChannel, setSelectedChannel] = useState<ChannelResult | null>(null);
 
   const toast = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
@@ -88,9 +92,21 @@ export default function SourcesPage() {
     }
   }, [filteredItems, sortBy]);
 
+  const handleChannelSelect = (channel: ChannelResult) => {
+    setSelectedChannel(channel);
+    setSearchQuery(channel.displayName);
+    setNewSourceId(channel.channelId);
+  };
+
   const handleAddSource = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSourceId.trim()) return;
+
+    // For YouTube, use selected channel or manual input
+    const sourceIdToUse = sourceType === 'YOUTUBE' && selectedChannel
+      ? selectedChannel.channelId
+      : newSourceId.trim();
+
+    if (!sourceIdToUse) return;
 
     try {
       setIsAdding(true);
@@ -99,7 +115,8 @@ export default function SourcesPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           type: sourceType,
-          sourceId: newSourceId.trim(),
+          sourceId: sourceIdToUse,
+          displayName: selectedChannel?.displayName,
         }),
       });
 
@@ -127,6 +144,8 @@ export default function SourcesPage() {
       // Refresh sources list
       await refetch();
       setNewSourceId('');
+      setSearchQuery('');
+      setSelectedChannel(null);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to add source');
     } finally {
@@ -310,27 +329,78 @@ export default function SourcesPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  {sourceType === 'YOUTUBE' && 'Channel ID (e.g., UCHnyfMqiRRG1u-2MsSQLbXA)'}
+                  {sourceType === 'YOUTUBE' && 'Search for Channel'}
                   {sourceType === 'RSS' && 'Feed URL'}
                   {sourceType === 'PODCAST' && 'Podcast Feed URL'}
                 </label>
-                <input
-                  type="text"
-                  value={newSourceId}
-                  onChange={(e) => setNewSourceId(e.target.value)}
-                  placeholder={
-                    sourceType === 'YOUTUBE'
-                      ? 'Enter YouTube channel ID'
-                      : 'Enter feed URL'
-                  }
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  required
-                />
+                {sourceType === 'YOUTUBE' ? (
+                  <ChannelAutocomplete
+                    value={searchQuery}
+                    onChange={(val) => {
+                      setSearchQuery(val);
+                      // Clear selection if user starts typing
+                      if (selectedChannel && val !== selectedChannel.displayName) {
+                        setSelectedChannel(null);
+                        setNewSourceId('');
+                      }
+                    }}
+                    onSelect={handleChannelSelect}
+                    placeholder="Type to search for a YouTube channel..."
+                    disabled={isAdding}
+                  />
+                ) : (
+                  <input
+                    type="text"
+                    value={newSourceId}
+                    onChange={(e) => setNewSourceId(e.target.value)}
+                    placeholder={
+                      sourceType === 'RSS'
+                        ? 'Enter feed URL'
+                        : 'Enter podcast feed URL'
+                    }
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    required
+                  />
+                )}
               </div>
+
+              {/* Channel Preview */}
+              {selectedChannel && sourceType === 'YOUTUBE' && (
+                <div className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 border border-gray-200 dark:border-gray-600">
+                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+                    Selected Channel
+                  </h3>
+                  <div className="flex items-start gap-3">
+                    <Image
+                      src={selectedChannel.avatarUrl}
+                      alt={selectedChannel.displayName}
+                      width={64}
+                      height={64}
+                      className="rounded-full"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-white font-medium">
+                        {selectedChannel.displayName}
+                      </h4>
+                      <p className="text-sm text-gray-400">
+                        {selectedChannel.subscriberCount
+                          ? `${(selectedChannel.subscriberCount / 1000000).toFixed(1)}M subscribers`
+                          : 'No subscriber data'}
+                      </p>
+                      {selectedChannel.description && (
+                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                          {selectedChannel.description}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               <Button
                 type="submit"
                 variant="primary"
-                disabled={isAdding}
+                disabled={isAdding || (sourceType === 'YOUTUBE' && !selectedChannel && !newSourceId.trim())}
                 loading={isAdding}
               >
                 {isAdding ? 'Adding...' : 'Add Source'}
