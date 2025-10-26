@@ -31,8 +31,10 @@ export function Navigation() {
         <div className="flex justify-between h-12">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <h1 className={`text-lg font-bold ${isDarkMode ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
-                Forest Cabin
+              <h1 className={`text-lg font-mono ${isDarkMode ? 'text-white' : 'text-gray-900 dark:text-white'}`}>
+                <span className="font-normal text-blue-500">feed</span>
+                <span className="text-gray-400">.</span>
+                <span className="font-semibold">enda.cat</span>
               </h1>
             </div>
             <div className="hidden sm:ml-6 sm:flex sm:space-x-6">

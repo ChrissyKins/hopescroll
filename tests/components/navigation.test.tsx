@@ -22,7 +22,10 @@ describe('Navigation', () => {
 
   it('renders the app title', () => {
     render(<Navigation />);
-    expect(screen.getByText('Forest Cabin')).toBeInTheDocument();
+    // Text is split across multiple spans, so check for the h1 element
+    expect(screen.getByRole('heading', { level: 1 })).toBeInTheDocument();
+    expect(screen.getByText('feed')).toBeInTheDocument();
+    expect(screen.getByText('enda.cat')).toBeInTheDocument();
   });
 
   it('renders all navigation links', () => {
@@ -174,7 +177,14 @@ describe('Navigation', () => {
   it('renders title with correct styling', () => {
     render(<Navigation />);
 
-    const title = screen.getByText('Forest Cabin');
-    expect(title).toHaveClass('text-lg', 'font-bold');
+    const title = screen.getByRole('heading', { level: 1 });
+    expect(title).toHaveClass('text-lg', 'font-mono');
+
+    // Check individual parts have correct styling
+    const feedPart = screen.getByText('feed');
+    expect(feedPart).toHaveClass('font-normal', 'text-blue-500');
+
+    const domainPart = screen.getByText('enda.cat');
+    expect(domainPart).toHaveClass('font-semibold');
   });
 });

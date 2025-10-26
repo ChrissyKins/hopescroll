@@ -1,4 +1,4 @@
-// Forest Cabin - Database Schema
+// feed.enda.cat - Database Schema
 // Based on architecture_design.md
 
 generator client {

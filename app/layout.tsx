@@ -18,7 +18,7 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 export const metadata: Metadata = {
-  title: "Forest Cabin - Your Curated Content Feed",
+  title: "feed.enda.cat - Your Curated Content Feed",
   description: "Intentional digital consumption without algorithmic chaos",
 };
 
