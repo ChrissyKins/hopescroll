@@ -33,6 +33,7 @@ import { GET, POST } from '@/app/api/sources/route';
 import { DELETE as DELETE_SOURCE } from '@/app/api/sources/[id]/route';
 import { db } from '@/lib/db';
 import { NextRequest } from 'next/server';
+import { cleanupAllUserData, cleanupTestContent } from '../../helpers/test-cleanup';
 
 describe('GET /api/sources', () => {
   const testUserId = 'sources-test-user';
@@ -45,30 +46,10 @@ describe('GET /api/sources', () => {
   }
 
   beforeEach(async () => {
-    // Clean up any existing test data
-    await db.contentItem.deleteMany({
-      where: {
-        sourceId: { startsWith: 'test-source-' }
-      }
-    });
-    await db.contentSource.deleteMany({ where: { userId: testUserId } });
-    await db.contentSource.deleteMany({ where: { userId: 'other-sources-user' } });
-
-    const existingUser = await db.user.findUnique({
-      where: { email: testEmail },
-    });
-    if (existingUser) {
-      await db.user.delete({
-        where: { email: testEmail },
-      });
-    }
-
-    // Clean up other-sources-user if it exists
-    try {
-      await db.user.delete({ where: { id: 'other-sources-user' } });
-    } catch {
-      // User might not exist
-    }
+    // Clean up test data using helpers (no "Record not found" errors)
+    await cleanupTestContent('test-source-');
+    await cleanupAllUserData(testUserId);
+    await cleanupAllUserData('other-sources-user');
 
     // Create test user
     await db.user.create({
@@ -84,29 +65,10 @@ describe('GET /api/sources', () => {
   });
 
   afterEach(async () => {
-    // Clean up test data
-    await db.contentItem.deleteMany({
-      where: {
-        sourceId: { startsWith: 'test-source-' }
-      }
-    });
-    await db.contentSource.deleteMany({ where: { userId: testUserId } });
-    await db.contentSource.deleteMany({ where: { userId: 'other-sources-user' } });
-
-    try {
-      await db.user.delete({
-        where: { email: testEmail },
-      });
-    } catch {
-      // User might not exist if test failed
-    }
-
-    // Clean up other-sources-user if it exists
-    try {
-      await db.user.delete({ where: { id: 'other-sources-user' } });
-    } catch {
-      // User might not exist
-    }
+    // Clean up test data using helpers (no "Record not found" errors)
+    await cleanupTestContent('test-source-');
+    await cleanupAllUserData(testUserId);
+    await cleanupAllUserData('other-sources-user');
   });
 
   describe('Success Cases', () => {
