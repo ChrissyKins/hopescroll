@@ -379,16 +379,16 @@ export default function SourcesPage() {
                       className="rounded-full"
                     />
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-white font-medium">
+                      <h4 className="text-gray-900 dark:text-white font-medium">
                         {selectedChannel.displayName}
                       </h4>
-                      <p className="text-sm text-gray-400">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
                         {selectedChannel.subscriberCount
                           ? `${(selectedChannel.subscriberCount / 1000000).toFixed(1)}M subscribers`
                           : 'No subscriber data'}
                       </p>
                       {selectedChannel.description && (
-                        <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                        <p className="text-sm text-gray-500 dark:text-gray-500 mt-1 line-clamp-2">
                           {selectedChannel.description}
                         </p>
                       )}
