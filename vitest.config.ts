@@ -12,10 +12,15 @@ export default defineConfig({
     teardownTimeout: 10000, // 10 seconds for cleanup
     // Limit parallelism to avoid database connection pool exhaustion
     maxConcurrency: 1, // Run tests sequentially within each file
+    fileParallelism: false, // Run test FILES sequentially (not in parallel)
     poolOptions: {
       threads: {
-        maxThreads: 2, // Limit number of worker threads
+        maxThreads: 1, // Only 1 worker thread - forces sequential file execution
         minThreads: 1,
+      },
+      forks: {
+        maxForks: 1, // Only 1 fork - forces sequential file execution
+        minForks: 1,
       },
     },
     // Force exit after tests complete to prevent hanging
