@@ -18,6 +18,7 @@ const mockPrisma = {
   },
   contentItem: {
     count: vi.fn().mockResolvedValue(0),
+    deleteMany: vi.fn(),
   },
 } as unknown as PrismaClient;
 
@@ -267,10 +268,20 @@ describe('SourceService', () => {
         where: { userId: 'user1' },
         orderBy: { addedAt: 'desc' },
       });
-      // Service now adds videoStats to each source
+      // Service now adds videoStats, createdAt, and contentCount to each source
       expect(result).toEqual([
-        { ...mockSources[0], videoStats: { totalFetched: 0, unwatched: 0 } },
-        { ...mockSources[1], videoStats: { totalFetched: 0, unwatched: 0 } },
+        {
+          ...mockSources[0],
+          createdAt: mockSources[0].addedAt,
+          contentCount: 0,
+          videoStats: { totalFetched: 0, unwatched: 0 }
+        },
+        {
+          ...mockSources[1],
+          createdAt: mockSources[1].addedAt,
+          contentCount: 0,
+          videoStats: { totalFetched: 0, unwatched: 0 }
+        },
       ]);
     });
 

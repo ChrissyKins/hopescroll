@@ -162,6 +162,8 @@ describe('Filter System Integration Tests', () => {
 
       expect(result).toEqual({
         id: 'filter-1',
+        keyword: 'election',
+        isWildcard: false,
       });
 
       expect(mockDb.filterKeyword.create).toHaveBeenCalledWith({
@@ -186,6 +188,8 @@ describe('Filter System Integration Tests', () => {
 
       expect(result).toEqual({
         id: 'filter-2',
+        keyword: '*politic*',
+        isWildcard: true,
       });
       expect(mockDb.filterKeyword.create).toHaveBeenCalledWith({
         data: {

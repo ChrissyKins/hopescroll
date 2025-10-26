@@ -8,7 +8,9 @@ import type { CacheClient } from '@/lib/cache';
 const mockPrisma = {
   contentInteraction: {
     create: vi.fn(),
+    findFirst: vi.fn(),
     findMany: vi.fn(),
+    update: vi.fn(),
   },
   savedContent: {
     findUnique: vi.fn(),
@@ -36,6 +38,13 @@ describe('InteractionService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+
+    // Default mock: content exists
+    mockPrisma.contentItem.findUnique = vi.fn().mockResolvedValue({ id: 'content1' });
+
+    // Default mock: no existing interaction
+    mockPrisma.contentInteraction.findFirst = vi.fn().mockResolvedValue(null);
+
     service = new InteractionService(mockPrisma, mockCache);
   });
 
@@ -212,7 +221,12 @@ describe('InteractionService', () => {
     it('should not extract keywords when not requested', async () => {
       await service.blockContent('user1', 'content1', false);
 
-      expect(mockPrisma.contentItem.findUnique).not.toHaveBeenCalled();
+      // Content validation is still called once, but keyword extraction is not
+      expect(mockPrisma.contentItem.findUnique).toHaveBeenCalledTimes(1);
+      expect(mockPrisma.contentItem.findUnique).toHaveBeenCalledWith({
+        where: { id: 'content1' },
+        select: { id: true },
+      });
       expect(mockPrisma.filterKeyword.create).not.toHaveBeenCalled();
     });
   });

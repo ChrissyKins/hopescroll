@@ -40,6 +40,7 @@ describe('Source Management Integration Tests', () => {
       },
       contentItem: {
         count: vi.fn().mockResolvedValue(0),
+        deleteMany: vi.fn().mockResolvedValue({ count: 0 }),
       },
     } as unknown as PrismaClient;
 
