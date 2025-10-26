@@ -1,0 +1,45 @@
+services:
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: hopescroll-test-db
+    environment:
+      POSTGRES_USER: hopescroll_test
+      POSTGRES_PASSWORD: test_password_local_only
+      POSTGRES_DB: hopescroll_test
+      # Performance optimizations for testing
+      POSTGRES_INITDB_ARGS: "-c fsync=off -c synchronous_commit=off -c full_page_writes=off"
+    ports:
+      - "5433:5432"  # Use 5433 to avoid conflicts with local postgres
+    volumes:
+      # Use tmpfs for maximum speed (data stored in RAM)
+      - type: tmpfs
+        target: /var/lib/postgresql/data
+        tmpfs:
+          size: 1073741824  # 1GB RAM disk
+    # Additional performance tuning
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "max_connections=100"
+      - "-c"
+      - "fsync=off"
+      - "-c"
+      - "synchronous_commit=off"
+      - "-c"
+      - "full_page_writes=off"
+      - "-c"
+      - "bgwriter_lru_maxpages=0"
+      - "-c"
+      - "checkpoint_timeout=1d"
+      - "-c"
+      - "log_statement=none"
+      - "-c"
+      - "log_duration=off"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U hopescroll_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped

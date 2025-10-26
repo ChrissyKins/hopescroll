@@ -26,6 +26,9 @@ yarn-error.log*
 .env
 .env*.local
 
+# Exception: .env.test contains only local test credentials (safe to commit)
+!.env.test
+
 # Vercel
 .vercel
 

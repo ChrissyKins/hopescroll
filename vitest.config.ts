@@ -1,11 +1,19 @@
 import { defineConfig } from 'vitest/config';
 import path from 'path';
+import dotenv from 'dotenv';
+
+// Load test environment variables
+dotenv.config({ path: '.env.test' });
 
 export default defineConfig({
   test: {
     globals: true,
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],
+    // Load .env.test for all tests
+    env: {
+      ...process.env,
+    },
     // Increase timeouts for integration tests with database
     testTimeout: 30000, // 30 seconds per test
     hookTimeout: 30000, // 30 seconds for beforeEach/afterEach hooks
