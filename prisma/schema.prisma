@@ -60,8 +60,15 @@ model ContentSource {
   lastFetchStatus String    @default("pending") // success, error, pending
   errorMessage    String?
 
+  // Backlog fetching (incremental)
+  backlogPageToken    String?   // Next page to fetch for backlog
+  backlogFetchedAt    DateTime? // Last time backlog was fetched
+  backlogComplete     Boolean   @default(false) // All backlog fetched
+  backlogVideoCount   Int       @default(0) // Total videos fetched in backlog
+
   @@unique([userId, type, sourceId])
   @@index([userId])
+  @@index([backlogComplete, backlogFetchedAt]) // For cron job queries
 }
 
 model ContentItem {

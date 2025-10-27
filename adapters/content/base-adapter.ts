@@ -9,12 +9,12 @@ export interface ContentAdapter {
   // Fetch recent content (last N days)
   fetchRecent(sourceId: string, days: number): Promise<ContentItem[]>;
 
-  // Fetch older backlog content
+  // Fetch older backlog content (incremental with pagination)
   fetchBacklog(
     sourceId: string,
     limit: number,
-    offset: number
-  ): Promise<ContentItem[]>;
+    pageToken?: string
+  ): Promise<{ items: ContentItem[]; nextPageToken?: string; hasMore: boolean }>;
 
   // Validate source exists and is accessible
   validateSource(sourceId: string): Promise<SourceValidation>;

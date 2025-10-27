@@ -1,9 +1,9 @@
 # YouTube API Quota Management
 
-**Version:** 1.0
+**Version:** 1.1
 **Last Updated:** 2025-10-27
 
-This guide explains how HopeScroll manages YouTube API quota usage and implements caching to avoid hitting daily limits.
+This guide explains how HopeScroll manages YouTube API quota usage through caching and incremental backlog fetching to avoid hitting daily limits.
 
 ---
 
@@ -197,13 +197,104 @@ If cache is too aggressive:
 
 ---
 
+## Incremental Backlog Fetching
+
+To avoid exhausting quota when adding channels with thousands of videos, HopeScroll uses **incremental backlog fetching**.
+
+### How It Works
+
+1. **Initial add**: Fetch recent videos (last 7 days) + first 200 backlog videos
+2. **Daily cron job**: Fetch 100 more videos per channel per day
+3. **Track progress**: Store page token and completion status
+4. **Continue from last position**: Resume where left off each day
+
+### Database Fields
+
+```typescript
+backlogPageToken    // Next page to fetch
+backlogFetchedAt    // Last backlog fetch time
+backlogComplete     // All videos fetched?
+backlogVideoCount   // Total backlog videos fetched
+```
+
+### Configuration
+
+```typescript
+// lib/config.ts
+content: {
+  dailyBacklogLimit: 100,  // Videos per channel per day
+  backlogBatchSize: 200,   // Initial fetch on source add
+}
+```
+
+### Cron Job Setup
+
+**Manual trigger** (for testing):
+```bash
+curl -H "Authorization: Bearer YOUR_CRON_SECRET" \
+  https://your-domain.com/api/cron/fetch-backlog
+```
+
+**Vercel Cron** (in `vercel.json`):
+```json
+{
+  "crons": [{
+    "path": "/api/cron/fetch-backlog",
+    "schedule": "0 2 * * *"
+  }]
+}
+```
+
+**Response example**:
+```json
+{
+  "success": true,
+  "processed": 4,
+  "totalFetched": 380,
+  "completed": 0,
+  "results": [
+    {
+      "sourceId": "UC...",
+      "displayName": "Channel Name",
+      "fetched": 100,
+      "total": 300,
+      "complete": false
+    }
+  ]
+}
+```
+
+### Timeline Example
+
+**Channel with 1,500 videos:**
+
+| Day | Videos Fetched | Total | Quota Used |
+|-----|----------------|-------|------------|
+| 1 | 200 (initial) | 200 | ~4 units |
+| 2 | 100 (cron) | 300 | ~2 units |
+| 3 | 100 (cron) | 400 | ~2 units |
+| ... | 100 per day | ... | ~2 units/day |
+| 15 | 100 (final) | 1,500 | ~2 units |
+
+**Total: ~34 units over 15 days** vs. **~30 units in one day** (old approach)
+
+### Benefits
+
+- **Spreads quota usage** over weeks instead of hours
+- **Handles large channels** (1,000+ videos) without quota issues
+- **Automatic and transparent** - no user intervention needed
+- **Resilient** - resumes from last position if interrupted
+
+---
+
 ## Best Practices
 
 1. **Background fetching**: Fetch content in background jobs, not during user requests
-2. **Batch operations**: Fetch multiple items at once when possible
-3. **Graceful degradation**: Handle quota errors gracefully, don't block user actions
-4. **Monitor usage**: Set up alerts for approaching quota limits
-5. **Cache warmup**: Pre-populate cache during low-traffic periods
+2. **Incremental backlog**: Let the cron job handle large channel histories
+3. **Batch operations**: Fetch multiple items at once when possible (50 per page)
+4. **Graceful degradation**: Handle quota errors gracefully, don't block user actions
+5. **Monitor usage**: Set up alerts for approaching quota limits
+6. **Cache warmup**: Pre-populate cache during low-traffic periods
 
 ---
 

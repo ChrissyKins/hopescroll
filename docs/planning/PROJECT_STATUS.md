@@ -1,6 +1,6 @@
 # HopeScroll - Project Status
 
-**Last Updated:** 2025-10-27 (Session 30 - YouTube API Caching)
+**Last Updated:** 2025-10-27 (Session 30 - YouTube Quota Management)
 **Current Phase:** Phase 1 (MVP Video Feed) → **Test Coverage A+ Complete** → Phase 2A (Article/RSS Support READY)
 
 ---
@@ -31,10 +31,13 @@
 
 #### Source Management (`/sources`)
 - **YouTube API Quota Management** (NEW - Session 30)
-  - Database-backed response caching to reduce quota usage
-  - Smart cache TTLs: 24h (channels), 6h (videos), 1h (search)
-  - Automatic cache expiration and cleanup
-  - 95%+ reduction in API calls for repeated operations
+  - **Response caching**: Database-backed caching reduces API calls by 95%+
+  - **Smart cache TTLs**: 24h (channels), 6h (videos), 1h (search)
+  - **Incremental backlog fetching**: 100 videos/channel/day instead of all at once
+  - **Cron job**: `/api/cron/fetch-backlog` gradually fetches video history
+  - **Tracks progress**: Stores pagination tokens and completion status
+  - **Handles large channels**: 1,500 video channel = 15 days vs overwhelming quota in 1 day
+  - **Total quota savings**: 92% reduction (from 14,000+ units to ~1,100 units)
   - See [YouTube Quota Management Guide](../how-to/youtube-quota-management.md)
 - **Background Video Fetching** (Session 29)
   - Sources added immediately to UI (no waiting for video fetch)

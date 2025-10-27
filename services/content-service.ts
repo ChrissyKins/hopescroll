@@ -117,14 +117,27 @@ export class ContentService {
       const shouldFetchBacklog = forceBacklog || this.shouldFetchBacklog(source);
 
       if (shouldFetchBacklog) {
-        log.info({ sourceId }, 'Fetching backlog content');
-        backlogItems = await adapter.fetchBacklog(
+        log.info({ sourceId }, 'Fetching initial backlog content');
+        const backlogResult = await adapter.fetchBacklog(
           source.sourceId,
           CONFIG.content.backlogBatchSize,
-          0
+          source.backlogPageToken || undefined
         );
+        backlogItems = backlogResult.items;
+
+        // Update source with backlog progress
+        await this.db.contentSource.update({
+          where: { id: sourceId },
+          data: {
+            backlogPageToken: backlogResult.nextPageToken,
+            backlogFetchedAt: new Date(),
+            backlogComplete: !backlogResult.hasMore,
+            backlogVideoCount: (source.backlogVideoCount || 0) + backlogResult.items.length,
+          },
+        });
+
         log.info(
-          { sourceId, backlogCount: backlogItems.length },
+          { sourceId, backlogCount: backlogItems.length, hasMore: backlogResult.hasMore },
           'Fetched backlog items from adapter'
         );
       }

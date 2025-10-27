@@ -54,40 +54,42 @@ export class YouTubeAdapter implements ContentAdapter {
   async fetchBacklog(
     channelId: string,
     limit: number,
-    offset: number
-  ): Promise<ContentItem[]> {
-    log.info({ channelId, limit, offset }, 'Fetching YouTube backlog');
+    pageToken?: string
+  ): Promise<{ items: ContentItem[]; nextPageToken?: string; hasMore: boolean }> {
+    log.info({ channelId, limit, pageToken }, 'Fetching YouTube backlog incrementally');
 
     // Get the channel's uploads playlist ID
     const channelResponse = await this.client.getChannel(channelId);
     if (!channelResponse || !channelResponse.items || channelResponse.items.length === 0) {
       log.warn({ channelId }, 'Channel not found for backlog fetch');
-      return [];
+      return { items: [], hasMore: false };
     }
 
     const uploadsPlaylistId = channelResponse.items[0].contentDetails?.relatedPlaylists?.uploads;
     if (!uploadsPlaylistId) {
       log.warn({ channelId }, 'No uploads playlist found for channel');
-      return [];
+      return { items: [], hasMore: false };
     }
 
-    log.info({ channelId, uploadsPlaylistId }, 'Using uploads playlist for backlog');
+    log.info({ channelId, uploadsPlaylistId, limit }, 'Fetching backlog page from uploads playlist');
 
-    // YouTube API uses page tokens instead of offset
-    // We'll fetch ALL pages from the uploads playlist to get complete channel history
+    // Fetch videos in batches of 50 until we hit the limit
     const allItems: ContentItem[] = [];
-    let pageToken: string | undefined = undefined;
+    let currentPageToken = pageToken;
+    let videosRemaining = limit;
 
-    // Keep fetching until we run out of pages (no artificial limit)
-    while (true) {
+    while (videosRemaining > 0) {
+      const batchSize = Math.min(50, videosRemaining);
+
       const playlistResponse = await this.client.getPlaylistItems({
         playlistId: uploadsPlaylistId,
-        maxResults: 50, // Always request max to get as much as possible
-        pageToken,
+        maxResults: batchSize,
+        pageToken: currentPageToken,
       });
 
       if (!playlistResponse || !playlistResponse.items || playlistResponse.items.length === 0) {
-        break; // No more results
+        // No more results
+        return { items: allItems, hasMore: false };
       }
 
       const videoIds = playlistResponse.items
@@ -107,18 +109,33 @@ export class YouTubeAdapter implements ContentAdapter {
         allItems.push(...items);
       }
 
+      videosRemaining -= videoIds.length;
+
       // Check if there are more pages
       if (!playlistResponse.nextPageToken) {
-        break; // No more pages
+        // No more pages available
+        return { items: allItems, hasMore: false };
       }
 
-      pageToken = playlistResponse.nextPageToken;
+      currentPageToken = playlistResponse.nextPageToken;
+
+      // If we've fetched enough, return with the next page token
+      if (videosRemaining <= 0) {
+        return {
+          items: allItems,
+          nextPageToken: currentPageToken,
+          hasMore: true
+        };
+      }
     }
 
-    log.info({ channelId, fetchedCount: allItems.length }, 'Fetched all backlog items from uploads playlist');
+    log.info({ channelId, fetchedCount: allItems.length }, 'Fetched backlog batch');
 
-    // Return all items (no artificial limit)
-    return allItems;
+    return {
+      items: allItems,
+      nextPageToken: currentPageToken,
+      hasMore: !!currentPageToken
+    };
   }
 
   async validateSource(channelIdOrHandle: string): Promise<SourceValidation> {
