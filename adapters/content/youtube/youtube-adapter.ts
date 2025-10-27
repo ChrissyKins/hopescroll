@@ -208,31 +208,25 @@ export class YouTubeAdapter implements ContentAdapter {
       return [];
     }
 
-    // Fetch detailed info for all channels
-    const channelsPromises = channelIds.map(async (channelId) => {
-      try {
-        const channelResponse = await this.client.getChannel(channelId);
-        if (!channelResponse || !channelResponse.items || channelResponse.items.length === 0) {
-          return null;
-        }
-        const channel = channelResponse.items[0];
-        return {
-          channelId,
-          displayName: channel.snippet.title,
-          description: channel.snippet.description,
-          avatarUrl: channel.snippet.thumbnails.high?.url || channel.snippet.thumbnails.default.url,
-          subscriberCount: channel.statistics
-            ? parseInt(channel.statistics.subscriberCount, 10)
-            : undefined,
-        };
-      } catch (error) {
-        log.warn({ channelId, error }, 'Failed to get channel details');
-        return null;
-      }
-    });
+    // Batch fetch all channels in one API request (much more efficient!)
+    log.debug({ channelIds, count: channelIds.length }, 'Batch fetching channel details');
+    const channelsResponse = await this.client.getChannels(channelIds);
 
-    const channels = await Promise.all(channelsPromises);
-    return channels.filter((c): c is NonNullable<typeof c> => c !== null);
+    if (!channelsResponse || !channelsResponse.items || channelsResponse.items.length === 0) {
+      log.warn({ channelIds }, 'No channel details returned from batch request');
+      return [];
+    }
+
+    // Map the results
+    return channelsResponse.items.map((channel) => ({
+      channelId: channel.id,
+      displayName: channel.snippet.title,
+      description: channel.snippet.description,
+      avatarUrl: channel.snippet.thumbnails.high?.url || channel.snippet.thumbnails.default.url,
+      subscriberCount: channel.statistics
+        ? parseInt(channel.statistics.subscriberCount, 10)
+        : undefined,
+    }));
   }
 
   async getSourceMetadata(channelId: string): Promise<SourceMetadata> {

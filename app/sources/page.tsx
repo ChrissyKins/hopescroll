@@ -505,11 +505,12 @@ export default function SourcesPage() {
                     >
                       <div className="flex items-center space-x-4 flex-1">
                         {source.avatarUrl && (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
+                          <Image
                             src={source.avatarUrl}
                             alt={source.displayName}
-                            className="w-12 h-12 rounded-full"
+                            width={48}
+                            height={48}
+                            className="rounded-full"
                           />
                         )}
                         <div className="flex-1">

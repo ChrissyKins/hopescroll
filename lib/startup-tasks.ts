@@ -5,6 +5,7 @@ import { db } from './db';
 import { getAdapters } from './adapters';
 import { CONFIG } from './config';
 import { createLogger } from './logger';
+import { ContentItem } from '@/domain/content/content-item';
 
 const log = createLogger('startup-tasks');
 
@@ -12,11 +13,99 @@ let isRunning = false;
 let lastRunTime = 0;
 
 /**
+ * Save content items using batch operations (optimized for performance)
+ * Based on the efficient implementation in content-service.ts
+ */
+async function saveContentBatch(items: ContentItem[]): Promise<number> {
+  if (items.length === 0) return 0;
+
+  // Batch fetch all existing items in one query
+  const existingItems = await db.contentItem.findMany({
+    where: {
+      OR: items.map(item => ({
+        sourceType: item.sourceType,
+        originalId: item.originalId,
+      })),
+    },
+    select: {
+      id: true,
+      sourceType: true,
+      originalId: true,
+    },
+  });
+
+  // Create a map for quick lookup
+  const existingMap = new Map(
+    existingItems.map(item => [
+      `${item.sourceType}:${item.originalId}`,
+      item.id
+    ])
+  );
+
+  // Separate new items from existing items
+  const newItems: ContentItem[] = [];
+  const existingIds: string[] = [];
+
+  for (const item of items) {
+    const key = `${item.sourceType}:${item.originalId}`;
+    const existingId = existingMap.get(key);
+
+    if (existingId) {
+      existingIds.push(existingId);
+    } else {
+      newItems.push(item);
+    }
+  }
+
+  // Batch insert new items
+  let newCount = 0;
+  if (newItems.length > 0) {
+    try {
+      await db.contentItem.createMany({
+        data: newItems.map(item => ({
+          sourceType: item.sourceType,
+          sourceId: item.sourceId,
+          originalId: item.originalId,
+          title: item.title,
+          description: item.description,
+          thumbnailUrl: item.thumbnailUrl,
+          url: item.url,
+          duration: item.duration,
+          publishedAt: item.publishedAt,
+          fetchedAt: new Date(),
+          lastSeenInFeed: new Date(),
+        })),
+        skipDuplicates: true,
+      });
+      newCount = newItems.length;
+      log.debug({ newCount }, 'Batch inserted new content items');
+    } catch (error) {
+      log.error({ error, count: newItems.length }, 'Failed to batch insert content items');
+    }
+  }
+
+  // Batch update existing items
+  if (existingIds.length > 0) {
+    try {
+      await db.contentItem.updateMany({
+        where: { id: { in: existingIds } },
+        data: { lastSeenInFeed: new Date() },
+      });
+      log.debug({ updatedCount: existingIds.length }, 'Batch updated existing content items');
+    } catch (error) {
+      log.error({ error, count: existingIds.length }, 'Failed to batch update content items');
+    }
+  }
+
+  return newCount;
+}
+
+/**
  * Check if it's been long enough since last run (debounce multiple calls)
  */
 function shouldRun(): boolean {
   const now = Date.now();
-  const minInterval = 60 * 1000; // Don't run more than once per minute
+  const minInterval = 24 * 60 * 60 * 1000; // Don't run more than once per 24 hours
 
   if (now - lastRunTime < minInterval) {
     return false;
@@ -61,7 +150,7 @@ async function fetchDailyBacklog() {
         { backlogVideoCount: 'asc' },
         { addedAt: 'desc' },
       ],
-      take: 20, // Limit to prevent overwhelming on startup
+      take: 3, // Limit to 3 sources per run to conserve quota
     });
 
     if (sourcesToFetch.length === 0) {
@@ -120,39 +209,8 @@ async function processBacklogFetches(sources: any[], adapters: Map<string, any>)
         continue;
       }
 
-      // Save videos
-      let savedCount = 0;
-      for (const item of result.items) {
-        try {
-          await db.contentItem.upsert({
-            where: {
-              sourceType_originalId: {
-                sourceType: item.sourceType,
-                originalId: item.originalId,
-              },
-            },
-            create: {
-              sourceType: item.sourceType,
-              sourceId: item.sourceId,
-              originalId: item.originalId,
-              title: item.title,
-              description: item.description,
-              thumbnailUrl: item.thumbnailUrl,
-              url: item.url,
-              duration: item.duration,
-              publishedAt: item.publishedAt,
-              fetchedAt: new Date(),
-              lastSeenInFeed: new Date(),
-            },
-            update: {
-              lastSeenInFeed: new Date(),
-            },
-          });
-          savedCount++;
-        } catch (error) {
-          log.error({ error, videoId: item.originalId }, 'Failed to save video');
-        }
-      }
+      // Save videos using batch operations (much faster!)
+      const savedCount = await saveContentBatch(result.items);
 
       // Update progress
       await db.contentSource.update({

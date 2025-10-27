@@ -79,8 +79,8 @@ export class ContentService {
     }
 
     log.info(
-      { sourceId, type: source.type, displayName: source.displayName },
-      'Fetching content from source'
+      { sourceId, type: source.type, displayName: source.displayName, forceBacklog },
+      '🔄 Starting content fetch for source'
     );
 
     const adapter = this.adapters.get(source.type);
@@ -158,8 +158,15 @@ export class ContentService {
       });
 
       log.info(
-        { sourceId, newItemsCount },
-        'Successfully fetched and saved content'
+        {
+          sourceId,
+          displayName: source.displayName,
+          recentCount: recentItems.length,
+          backlogCount: backlogItems.length,
+          newItemsCount,
+          totalFetched: allItems.length,
+        },
+        '✓ Successfully fetched and saved content'
       );
 
       return newItemsCount;

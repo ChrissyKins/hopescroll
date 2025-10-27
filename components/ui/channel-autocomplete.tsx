@@ -138,11 +138,17 @@ export function ChannelAutocomplete({
   };
 
   const handleSelect = (channel: ChannelResult) => {
+    // Batch state updates to prevent race conditions
     setIsSelected(true); // Mark as selected to prevent search trigger
-    onSelect(channel);
     setShowDropdown(false);
     setHighlightedIndex(-1);
-    setResults([]); // Clear results to prevent reopening
+
+    // Call onSelect after state is set
+    requestAnimationFrame(() => {
+      onSelect(channel);
+      // Clear results after selection is complete
+      setResults([]);
+    });
   };
 
   const formatSubscriberCount = (count?: number): string => {
@@ -180,8 +186,12 @@ export function ChannelAutocomplete({
           type="text"
           value={value}
           onChange={(e) => {
-            setIsSelected(false); // Clear selected flag when user types
-            onChange(e.target.value);
+            const newValue = e.target.value;
+            // Batch state updates
+            if (isSelected) {
+              setIsSelected(false);
+            }
+            onChange(newValue);
           }}
           onKeyDown={handleKeyDown}
           onFocus={() => {

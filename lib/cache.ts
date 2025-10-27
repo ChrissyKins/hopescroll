@@ -66,7 +66,10 @@ export class CacheClient {
   }
 
   async delete(key: string): Promise<void> {
-    if (!this.redis) return;
+    if (!this.redis) {
+      log.debug({ key }, 'Cache delete skipped (Redis not configured)');
+      return;
+    }
 
     try {
       await this.redis.del(key);
