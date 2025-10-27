@@ -1,9 +1,16 @@
 import { auth } from '@/lib/auth';
 import { NextResponse } from 'next/server';
+import { runStartupTasks } from '@/lib/startup-tasks';
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
   const isAuthenticated = !!req.auth;
+
+  // Run startup tasks in background (debounced internally)
+  // This checks for daily backlog fetches on app startup/wake
+  if (isAuthenticated) {
+    runStartupTasks();
+  }
 
   // Public routes
   const publicRoutes = ['/login', '/register', '/forgot-password', '/reset-password'];

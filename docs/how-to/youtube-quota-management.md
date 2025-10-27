@@ -227,22 +227,37 @@ content: {
 }
 ```
 
-### Cron Job Setup
+### How Backlog Fetching Runs
 
-**Manual trigger** (for testing):
-```bash
-curl -H "Authorization: Bearer YOUR_CRON_SECRET" \
-  https://your-domain.com/api/cron/fetch-backlog
-```
+**Automatic (Local Development & Production):**
+The app automatically checks for daily backlog fetches on startup via middleware:
+- Runs when you start your dev server (`npm run dev`)
+- Runs on every authenticated request (debounced to max once per minute)
+- Fetches 100 videos per channel if it's been 24+ hours since last fetch
+- Runs in background - doesn't block page loads
 
-**Vercel Cron** (in `vercel.json`):
+**Production Cron (Optional):**
+For production deployments, you can also set up a Vercel Cron job:
+
 ```json
+// vercel.json
 {
   "crons": [{
     "path": "/api/cron/fetch-backlog",
     "schedule": "0 2 * * *"
   }]
 }
+```
+
+**Manual Trigger (For Testing):**
+```bash
+# Cron endpoint (requires secret)
+curl -H "Authorization: Bearer YOUR_CRON_SECRET" \
+  https://your-domain.com/api/cron/fetch-backlog
+
+# Admin endpoint (requires login)
+curl -H "Cookie: your-session-cookie" \
+  https://your-domain.com/api/admin/fetch-backlog
 ```
 
 **Response example**:
