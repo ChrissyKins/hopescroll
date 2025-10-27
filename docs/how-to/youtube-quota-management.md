@@ -32,6 +32,7 @@ HopeScroll implements database-backed caching for all YouTube API responses to d
 | **Videos** | 1 year | Video metadata (duration, URL) never changes after upload |
 | **Search results** | 7 days | Channel search results are stable; channels don't disappear |
 | **Playlists** | 6 hours | Needs frequent refresh to detect new video uploads |
+| **Video search** | 6 hours | Video recommendations and related videos change moderately |
 
 ### How It Works
 
@@ -85,6 +86,12 @@ With caching enabled, here's the expected quota usage:
 - Channel details for results: **0 units** (served from cache for 24 hours)
 
 **With caching, you can support unlimited searches per day at near-zero quota cost for repeated queries.**
+
+### Discover/Recommended Videos (Warm Cache)
+- Video search (Discover button): **100 units** first click, **0 units** subsequent clicks (6-hour cache)
+- Related videos: **0 units** (served from cache for 6 hours if same base video)
+
+**Impact:** Users can click "Discover" multiple times per day without exhausting quota. First click per 6-hour window costs 100 units, rest are free.
 
 ### Video Cache Benefits (1-year TTL)
 

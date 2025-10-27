@@ -13,6 +13,7 @@ const CACHE_TTL = {
   videos: 365 * 24 * 60 * 60,   // 1 year - video metadata (duration, etc.) never changes
   search: 7 * 24 * 60 * 60,     // 7 days - channel search results are stable
   playlist: 6 * 60 * 60,        // 6 hours - playlists updated to detect new uploads
+  videoSearch: 6 * 60 * 60,     // 6 hours - video search/recommendations change moderately
 } as const;
 
 type CacheType = keyof typeof CACHE_TTL;

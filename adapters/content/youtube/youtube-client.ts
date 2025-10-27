@@ -125,6 +125,33 @@ export class YouTubeClient {
     return response;
   }
 
+  /**
+   * Get multiple channels in a single batch request
+   * More efficient than calling getChannel multiple times
+   * @param channelIds - Array of channel IDs (max 50)
+   */
+  async getChannels(channelIds: string[]): Promise<YouTubeChannelResponse> {
+    if (!channelIds || channelIds.length === 0) {
+      return { items: [] };
+    }
+
+    // YouTube API supports up to 50 IDs per request
+    if (channelIds.length > 50) {
+      log.warn({ count: channelIds.length }, 'getChannels called with >50 IDs, truncating to 50');
+      channelIds = channelIds.slice(0, 50);
+    }
+
+    const searchParams = new URLSearchParams({
+      part: 'snippet,statistics,contentDetails',
+      id: channelIds.join(','), // Batch request with comma-separated IDs
+      key: this.apiKey,
+    });
+
+    return this.request<YouTubeChannelResponse>(
+      `/channels?${searchParams.toString()}`
+    );
+  }
+
   async getPlaylistItems(params: {
     playlistId: string;
     maxResults?: number;
@@ -251,6 +278,20 @@ export class YouTubeClient {
     maxResults?: number;
     order?: 'date' | 'relevance' | 'viewCount' | 'rating';
   }): Promise<YouTubeSearchResponse> {
+    // Try cache first
+    if (this.cache) {
+      const cacheParams = {
+        query: params.query,
+        relatedToVideoId: params.relatedToVideoId,
+        maxResults: params.maxResults || 25,
+        order: params.order || 'relevance',
+      };
+      const cached = await this.cache.get<YouTubeSearchResponse>('videoSearch', cacheParams);
+      if (cached) {
+        return cached;
+      }
+    }
+
     const searchParams = new URLSearchParams({
       part: 'snippet',
       type: 'video',
@@ -267,25 +308,46 @@ export class YouTubeClient {
       searchParams.append('relatedToVideoId', params.relatedToVideoId);
     }
 
-    return this.request<YouTubeSearchResponse>(
+    const response = await this.request<YouTubeSearchResponse>(
       `/search?${searchParams.toString()}`
     );
+
+    // Cache the response
+    if (this.cache) {
+      const cacheParams = {
+        query: params.query,
+        relatedToVideoId: params.relatedToVideoId,
+        maxResults: params.maxResults || 25,
+        order: params.order || 'relevance',
+      };
+      await this.cache.set('videoSearch', cacheParams, response);
+    }
+
+    return response;
   }
 
   private async request<T>(path: string): Promise<T> {
     const url = `${this.baseUrl}${path}`;
 
+    // Extract API method from path for better logging
+    const apiMethod = path.split('?')[0].replace(/^\//, '');
+
     try {
-      log.debug({ url }, 'YouTube API request');
+      log.info({ url, method: apiMethod }, '→ YouTube API request');
 
       const response = await fetch(url);
 
       if (!response.ok) {
         if (response.status === 429) {
+          log.error({ method: apiMethod, status: 429 }, '✗ YouTube API rate limit exceeded');
           throw new RateLimitError('YouTube API rate limit exceeded');
         }
 
         const error = await response.json().catch(() => ({}));
+        log.error(
+          { method: apiMethod, status: response.status, error },
+          '✗ YouTube API request failed'
+        );
         throw new ExternalApiError(
           'YouTube',
           error.error?.message || response.statusText,
@@ -294,7 +356,10 @@ export class YouTubeClient {
       }
 
       const data = await response.json();
-      log.debug({ url, itemCount: data.items?.length }, 'YouTube API response');
+      log.info(
+        { method: apiMethod, itemCount: data.items?.length, pageInfo: data.pageInfo },
+        '✓ YouTube API response'
+      );
 
       return data as T;
     } catch (error) {
@@ -302,7 +367,7 @@ export class YouTubeClient {
         throw error;
       }
 
-      log.error({ error, url }, 'YouTube API request failed');
+      log.error({ error, method: apiMethod }, '✗ YouTube API request failed');
       throw new ExternalApiError(
         'YouTube',
         error instanceof Error ? error.message : 'Unknown error',
