@@ -57,7 +57,7 @@ export function useCachedFetch<T>({
     };
   }, []);
 
-  const fetchData = useCallback(async (force = false) => {
+  const fetchData = useCallback(async (force = false, silent = false) => {
     try {
       // Check cache first unless forcing a refresh
       if (!force) {
@@ -72,7 +72,7 @@ export function useCachedFetch<T>({
         }
       }
 
-      if (isMountedRef.current) {
+      if (isMountedRef.current && !silent) {
         setIsLoading(true);
         setError(null);
       }
@@ -87,7 +87,9 @@ export function useCachedFetch<T>({
 
       if (isMountedRef.current) {
         setData(result);
-        setIsLoading(false);
+        if (!silent) {
+          setIsLoading(false);
+        }
       }
 
       return result;
@@ -95,7 +97,9 @@ export function useCachedFetch<T>({
       const errorMessage = err instanceof Error ? err.message : 'Failed to fetch data';
       if (isMountedRef.current) {
         setError(errorMessage);
-        setIsLoading(false);
+        if (!silent) {
+          setIsLoading(false);
+        }
       }
       throw err;
     }
@@ -128,8 +132,8 @@ export function useCachedFetch<T>({
     cache.delete(cacheKey);
   }, [cacheKey]);
 
-  const refetch = useCallback(() => {
-    return fetchData(true);
+  const refetch = useCallback((silent = false) => {
+    return fetchData(true, silent);
   }, [fetchData]);
 
   return {

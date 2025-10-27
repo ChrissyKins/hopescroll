@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { Navigation } from '@/components/navigation';
 import { useToast, useConfirmDialog, Search, EmptyState, VideoIcon, UnwatchedIcon, SourceIcon, SourceListSkeleton, Button, Badge, Spinner } from '@/components/ui';
@@ -51,6 +51,21 @@ export default function SourcesPage() {
     },
     ttl: 30000, // 30 seconds
   });
+
+  // Auto-refresh while sources are being fetched (pending status)
+  useEffect(() => {
+    if (!sources) return;
+
+    const hasPending = sources.some(s => s.lastFetchStatus === 'pending');
+    if (!hasPending) return;
+
+    // Poll every 3 seconds while pending (silent = no loading spinner)
+    const interval = setInterval(() => {
+      refetch(true); // Silent refetch
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [sources, refetch]);
 
   // Search functionality
   const { query, setQuery, clearSearch, filteredItems, resultCount, totalCount } = useSearch(
@@ -125,23 +140,10 @@ export default function SourcesPage() {
         throw new Error(errorData.error?.message || 'Failed to add source');
       }
 
-      const result = await response.json();
-      const newItemsCount = result.data?.newItemsCount || 0;
+      // Show success message - fetching happens in background
+      toast.success('Source added! Fetching videos in the background...');
 
-      // Show success message with fetch results
-      if (newItemsCount > 0) {
-        setFetchMessage({
-          type: 'success',
-          text: `Source added successfully! Fetched ${newItemsCount} new items.`,
-        });
-      } else {
-        setFetchMessage({
-          type: 'success',
-          text: 'Source added successfully! No new content found (may be outside the 7-day window).',
-        });
-      }
-
-      // Refresh sources list
+      // Refresh sources list immediately to show the new source
       await refetch();
       setNewSourceId('');
       setSearchQuery('');
@@ -546,7 +548,13 @@ export default function SourcesPage() {
                             }
                             size="sm"
                           >
-                            {source.lastFetchStatus}
+                            {source.lastFetchStatus === 'pending' && (
+                              <span className="flex items-center gap-1">
+                                <Spinner size="sm" />
+                                Fetching...
+                              </span>
+                            )}
+                            {source.lastFetchStatus !== 'pending' && source.lastFetchStatus}
                           </Badge>
                           {source.isMuted && (
                             <Badge variant="warning" size="sm">

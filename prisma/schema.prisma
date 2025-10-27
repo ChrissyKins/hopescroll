@@ -194,3 +194,18 @@ enum InteractionType {
   NOT_NOW
   BLOCKED
 }
+
+// YouTube API Response Cache
+// Reduces quota usage by caching API responses
+model YouTubeCache {
+  id          String   @id @default(cuid())
+  cacheKey    String   @unique // Hash of request params
+  cacheType   String   // 'channel', 'videos', 'search', 'playlist'
+  response    String   @db.Text // JSON response from YouTube API
+
+  createdAt   DateTime @default(now())
+  expiresAt   DateTime // When cache expires
+
+  @@index([cacheKey, expiresAt])
+  @@index([expiresAt])
+}

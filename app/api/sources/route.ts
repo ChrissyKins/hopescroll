@@ -40,15 +40,15 @@ export async function POST(request: NextRequest) {
       validated.displayName
     );
 
-    // Automatically fetch content from the newly added source
+    // Start fetching content in the background (don't await)
     const contentService = new ContentService(db, adapters);
-    try {
-      const newItemsCount = await contentService.fetchSource(source.id);
-      return successResponse({ ...source, newItemsCount }, 201);
-    } catch (fetchError) {
-      // If fetch fails, still return the source but with error info
-      return successResponse({ ...source, newItemsCount: 0, fetchError: 'Failed to fetch initial content' }, 201);
-    }
+    contentService.fetchSource(source.id).catch((error) => {
+      // Error is already logged and saved to DB by fetchSource
+      console.error(`Background fetch failed for source ${source.id}:`, error);
+    });
+
+    // Return immediately with pending status
+    return successResponse({ ...source, newItemsCount: 0, fetchStatus: 'pending' }, 201);
   } catch (error) {
     return errorResponse(error);
   }

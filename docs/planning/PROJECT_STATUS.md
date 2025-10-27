@@ -1,6 +1,6 @@
 # HopeScroll - Project Status
 
-**Last Updated:** 2025-10-26 (Session 28 - YouTube Channel Autocomplete)
+**Last Updated:** 2025-10-27 (Session 30 - YouTube API Caching)
 **Current Phase:** Phase 1 (MVP Video Feed) → **Test Coverage A+ Complete** → Phase 2A (Article/RSS Support READY)
 
 ---
@@ -30,7 +30,20 @@
   - Infinite scroll (loads more as you scroll)
 
 #### Source Management (`/sources`)
-- **YouTube Channel Autocomplete** (NEW - Session 28)
+- **YouTube API Quota Management** (NEW - Session 30)
+  - Database-backed response caching to reduce quota usage
+  - Smart cache TTLs: 24h (channels), 6h (videos), 1h (search)
+  - Automatic cache expiration and cleanup
+  - 95%+ reduction in API calls for repeated operations
+  - See [YouTube Quota Management Guide](../how-to/youtube-quota-management.md)
+- **Background Video Fetching** (Session 29)
+  - Sources added immediately to UI (no waiting for video fetch)
+  - Video fetching happens in background asynchronously
+  - Real-time status updates with polling (every 3 seconds)
+  - "Fetching..." spinner badge shows progress
+  - Silent background updates (no page refreshes)
+  - Automatic polling cleanup when complete
+- **YouTube Channel Autocomplete** (Session 28)
   - Real-time search for YouTube channels
   - Dropdown with channel thumbnails and subscriber counts
   - Keyboard navigation (arrows, Enter, Escape)

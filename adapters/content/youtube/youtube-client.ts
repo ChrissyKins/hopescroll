@@ -9,15 +9,18 @@ import {
   YouTubeVideoResponse,
   YouTubeChannelResponse,
 } from './youtube-types';
+import { YouTubeCache } from './youtube-cache';
 
 const log = createLogger('youtube-client');
 
 export class YouTubeClient {
   private baseUrl = 'https://www.googleapis.com/youtube/v3';
   private apiKey: string;
+  private cache?: YouTubeCache;
 
-  constructor(apiKey?: string) {
+  constructor(apiKey?: string, cache?: YouTubeCache) {
     this.apiKey = apiKey || ENV.youtubeApiKey;
+    this.cache = cache;
     if (!this.apiKey) {
       log.warn('YouTube API key not configured');
     }
@@ -29,6 +32,19 @@ export class YouTubeClient {
     maxResults?: number;
     pageToken?: string;
   }): Promise<YouTubeSearchResponse> {
+    // Try cache first (only for recent fetches, not paginated)
+    if (this.cache && !params.pageToken) {
+      const cacheParams = {
+        channelId: params.channelId,
+        publishedAfter: params.publishedAfter?.toISOString(),
+        maxResults: params.maxResults || 50,
+      };
+      const cached = await this.cache.get<YouTubeSearchResponse>('videos', cacheParams);
+      if (cached) {
+        return cached;
+      }
+    }
+
     const searchParams = new URLSearchParams({
       part: 'snippet',
       channelId: params.channelId,
@@ -49,9 +65,21 @@ export class YouTubeClient {
       searchParams.append('pageToken', params.pageToken);
     }
 
-    return this.request<YouTubeSearchResponse>(
+    const response = await this.request<YouTubeSearchResponse>(
       `/search?${searchParams.toString()}`
     );
+
+    // Cache only non-paginated responses
+    if (this.cache && !params.pageToken) {
+      const cacheParams = {
+        channelId: params.channelId,
+        publishedAfter: params.publishedAfter?.toISOString(),
+        maxResults: params.maxResults || 50,
+      };
+      await this.cache.set('videos', cacheParams, response);
+    }
+
+    return response;
   }
 
   async getVideos(videoIds: string[]): Promise<YouTubeVideoResponse> {
@@ -71,15 +99,30 @@ export class YouTubeClient {
   }
 
   async getChannel(channelId: string): Promise<YouTubeChannelResponse> {
+    // Try cache first
+    if (this.cache) {
+      const cached = await this.cache.get<YouTubeChannelResponse>('channel', { channelId });
+      if (cached) {
+        return cached;
+      }
+    }
+
     const searchParams = new URLSearchParams({
       part: 'snippet,statistics,contentDetails',
       id: channelId,
       key: this.apiKey,
     });
 
-    return this.request<YouTubeChannelResponse>(
+    const response = await this.request<YouTubeChannelResponse>(
       `/channels?${searchParams.toString()}`
     );
+
+    // Cache the response
+    if (this.cache) {
+      await this.cache.set('channel', { channelId }, response);
+    }
+
+    return response;
   }
 
   async getPlaylistItems(params: {
@@ -87,6 +130,18 @@ export class YouTubeClient {
     maxResults?: number;
     pageToken?: string;
   }): Promise<YouTubeSearchResponse> {
+    // Try cache first (only for first page)
+    if (this.cache && !params.pageToken) {
+      const cacheParams = {
+        playlistId: params.playlistId,
+        maxResults: params.maxResults || 50,
+      };
+      const cached = await this.cache.get<YouTubeSearchResponse>('playlist', cacheParams);
+      if (cached) {
+        return cached;
+      }
+    }
+
     const searchParams = new URLSearchParams({
       part: 'snippet',
       playlistId: params.playlistId,
@@ -98,9 +153,20 @@ export class YouTubeClient {
       searchParams.append('pageToken', params.pageToken);
     }
 
-    return this.request<YouTubeSearchResponse>(
+    const response = await this.request<YouTubeSearchResponse>(
       `/playlistItems?${searchParams.toString()}`
     );
+
+    // Cache only first page
+    if (this.cache && !params.pageToken) {
+      const cacheParams = {
+        playlistId: params.playlistId,
+        maxResults: params.maxResults || 50,
+      };
+      await this.cache.set('playlist', cacheParams, response);
+    }
+
+    return response;
   }
 
   async getChannelByHandle(handle: string): Promise<YouTubeChannelResponse> {
@@ -148,6 +214,15 @@ export class YouTubeClient {
     query: string;
     maxResults?: number;
   }): Promise<YouTubeSearchResponse> {
+    // Try cache first
+    if (this.cache) {
+      const cacheParams = { query: params.query, maxResults: params.maxResults || 10, type: 'channel' };
+      const cached = await this.cache.get<YouTubeSearchResponse>('search', cacheParams);
+      if (cached) {
+        return cached;
+      }
+    }
+
     const searchParams = new URLSearchParams({
       part: 'snippet',
       type: 'channel',
@@ -157,9 +232,17 @@ export class YouTubeClient {
       key: this.apiKey,
     });
 
-    return this.request<YouTubeSearchResponse>(
+    const response = await this.request<YouTubeSearchResponse>(
       `/search?${searchParams.toString()}`
     );
+
+    // Cache the response
+    if (this.cache) {
+      const cacheParams = { query: params.query, maxResults: params.maxResults || 10, type: 'channel' };
+      await this.cache.set('search', cacheParams, response);
+    }
+
+    return response;
   }
 
   async searchVideos(params: {
