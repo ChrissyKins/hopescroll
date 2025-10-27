@@ -10,9 +10,9 @@ const log = createLogger('youtube-cache');
 // Cache TTLs (in seconds)
 const CACHE_TTL = {
   channel: 24 * 60 * 60,       // 24 hours - channel info changes rarely
-  videos: 6 * 60 * 60,          // 6 hours - new videos might appear
-  search: 1 * 60 * 60,          // 1 hour - search results can change
-  playlist: 6 * 60 * 60,        // 6 hours - playlists updated occasionally
+  videos: 365 * 24 * 60 * 60,   // 1 year - video metadata (duration, etc.) never changes
+  search: 7 * 24 * 60 * 60,     // 7 days - channel search results are stable
+  playlist: 6 * 60 * 60,        // 6 hours - playlists updated to detect new uploads
 } as const;
 
 type CacheType = keyof typeof CACHE_TTL;

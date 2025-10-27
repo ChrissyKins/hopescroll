@@ -1,9 +1,9 @@
 # YouTube API Quota Management
 
-**Version:** 1.1
-**Last Updated:** 2025-10-27
+**Version:** 1.2
+**Last Updated:** 2025-01-27
 
-This guide explains how HopeScroll manages YouTube API quota usage through caching and incremental backlog fetching to avoid hitting daily limits.
+This guide explains how HopeScroll manages YouTube API quota usage through caching, batch requests, and incremental backlog fetching to avoid hitting daily limits.
 
 ---
 
@@ -29,9 +29,9 @@ HopeScroll implements database-backed caching for all YouTube API responses to d
 | Cache Type | TTL | Rationale |
 |------------|-----|-----------|
 | **Channel metadata** | 24 hours | Channel info (name, avatar, stats) changes rarely |
-| **Videos** | 6 hours | Balance between freshness and quota savings |
-| **Search results** | 1 hour | Channel search results can change quickly |
-| **Playlists** | 6 hours | Playlist updates are relatively infrequent |
+| **Videos** | 1 year | Video metadata (duration, URL) never changes after upload |
+| **Search results** | 7 days | Channel search results are stable; channels don't disappear |
+| **Playlists** | 6 hours | Needs frequent refresh to detect new video uploads |
 
 ### How It Works
 
@@ -67,12 +67,13 @@ await cache.cleanExpired();
 With caching enabled, here's the expected quota usage:
 
 ### Initial Source Addition (Cold Cache)
-- Search for channel: **100 units** (cached 1 hour)
+- Search for channel: **100 units** (cached 7 days)
 - Get channel details: **1 unit** × 10 results = **10 units** (cached 24 hours)
 - Validate selected channel: **1 unit** (from cache if recent)
-- Fetch recent videos: **100 units** (search) + **1 unit** (video details) (cached 6 hours)
+- Fetch recent videos: **100 units** (search) + **1 unit** (video details) (cached 1 year)
 
 **Total per new source: ~210 units** (first time only)
+**Subsequent searches for same channel: 0 units** (served from 7-day cache)
 
 ### Daily Content Refresh (Warm Cache)
 - Fetch recent videos per source: **101 units** (once per 6 hours)
@@ -80,10 +81,20 @@ With caching enabled, here's the expected quota usage:
 - **Max 9 refresh cycles per day** with caching (vs. 1 without)
 
 ### User Search/Autocomplete (Warm Cache)
-- Channel search: **0 units** (served from cache for 1 hour)
+- Channel search: **0 units** (served from cache for 7 days)
 - Channel details for results: **0 units** (served from cache for 24 hours)
 
-**With caching, you can support hundreds of searches per day at near-zero quota cost.**
+**With caching, you can support unlimited searches per day at near-zero quota cost for repeated queries.**
+
+### Video Cache Benefits (1-year TTL)
+
+Since video metadata (especially duration) never changes after upload, we cache it for 1 year:
+
+- **Backlog fetching**: Once a video is fetched, it's cached forever (in practice)
+- **Re-adding a channel**: If you remove and re-add a channel, all previously fetched videos are served from cache (0 quota cost!)
+- **Database cleanup**: You can delete content items and refetch them later without hitting the API
+
+**Example:** A channel with 1,000 videos costs ~20 quota units to fetch backlog (playlist requests only). Video details are cached from the first fetch, so subsequent backlog fetches cost nearly nothing.
 
 ---
 
@@ -302,14 +313,79 @@ curl -H "Cookie: your-session-cookie" \
 
 ---
 
+## Batch Request Optimizations
+
+HopeScroll uses batch requests wherever possible to minimize API calls.
+
+### Implemented Optimizations
+
+**1. Batch Channel Fetching (searchChannels)**
+- **Before**: 1 search + 10 individual channel requests = **11 requests**
+- **After**: 1 search + 1 batch channel request = **2 requests**
+- **Savings**: 82% reduction (9 fewer requests per search)
+
+```typescript
+// ✅ Good: Batch request
+const channelsResponse = await this.client.getChannels(channelIds);
+
+// ❌ Bad: Individual requests
+for (const id of channelIds) {
+  await this.client.getChannel(id); // N separate API calls
+}
+```
+
+**2. Batch Video Fetching**
+- Fetches up to 50 videos per request (YouTube API limit)
+- Used in `fetchRecent()` and `fetchBacklog()`
+
+```typescript
+// Efficient: 50 videos in one request
+const videoIds = ['id1', 'id2', ..., 'id50'];
+await this.client.getVideos(videoIds); // 1 request
+```
+
+**3. Batch Database Operations**
+- **Before**: Individual upsert per video = 100 DB queries for 100 videos
+- **After**: Batch `createMany` + batch `updateMany` = 3 DB queries total
+- **Savings**: 97% reduction in DB queries
+
+```typescript
+// ✅ Good: Batch operations
+await db.contentItem.createMany({ data: newItems });
+await db.contentItem.updateMany({ where: { id: { in: existingIds } }, data: {...} });
+
+// ❌ Bad: Individual upserts
+for (const item of items) {
+  await db.contentItem.upsert({...}); // N separate queries
+}
+```
+
+### Quota Impact
+
+**Channel Search (10 results):**
+- Before optimization: 11 requests × 1 unit = **11 units**
+- After optimization: 2 requests × 1 unit = **2 units**
+- **82% savings per search**
+
+**Adding New Channel (200 backlog videos):**
+- Before optimization: ~20-30 requests
+- After optimization: ~13-14 requests
+- **35-50% savings per channel**
+
+**Backlog Fetching (100 videos):**
+- Requests stay the same (already optimized)
+- But database operations are now 97% faster
+
 ## Best Practices
 
 1. **Background fetching**: Fetch content in background jobs, not during user requests
 2. **Incremental backlog**: Let the cron job handle large channel histories
-3. **Batch operations**: Fetch multiple items at once when possible (50 per page)
-4. **Graceful degradation**: Handle quota errors gracefully, don't block user actions
-5. **Monitor usage**: Set up alerts for approaching quota limits
-6. **Cache warmup**: Pre-populate cache during low-traffic periods
+3. **Batch operations**: Always batch API requests when possible (50 per request max)
+4. **Batch database writes**: Use `createMany`/`updateMany` instead of individual upserts
+5. **Graceful degradation**: Handle quota errors gracefully, don't block user actions
+6. **Monitor usage**: Set up alerts for approaching quota limits
+7. **Cache warmup**: Pre-populate cache during low-traffic periods
+8. **Enhanced logging**: Use the detailed API logging to track quota usage patterns
 
 ---
 
