@@ -1,8 +1,7 @@
 import { NextRequest } from 'next/server';
 import { auth } from '@/lib/auth';
+import { getAdapters } from '@/lib/adapters';
 import { YouTubeAdapter } from '@/adapters/content/youtube/youtube-adapter';
-import { YouTubeClient } from '@/adapters/content/youtube/youtube-client';
-import { ENV } from '@/lib/config';
 
 export async function GET(request: NextRequest) {
   try {
@@ -40,10 +39,19 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Search for channels
-    const youtubeClient = new YouTubeClient(ENV.youtubeApiKey);
-    const youtubeAdapter = new YouTubeAdapter(youtubeClient);
+    // Get cached adapter from registry
+    const adapters = getAdapters();
+    const adapter = adapters.get('YOUTUBE');
 
+    if (!adapter) {
+      return Response.json(
+        { error: 'YouTube adapter not available' },
+        { status: 503 }
+      );
+    }
+
+    // Cast to YouTubeAdapter to access searchChannels method
+    const youtubeAdapter = adapter as YouTubeAdapter;
     const results = await youtubeAdapter.searchChannels(query.trim());
 
     return Response.json({

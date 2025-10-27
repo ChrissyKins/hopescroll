@@ -4,6 +4,8 @@ import { db } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/api-response';
 import { requireAuth } from '@/lib/get-user-session';
 import { YouTubeClient } from '@/adapters/content/youtube/youtube-client';
+import { YouTubeCache } from '@/adapters/content/youtube/youtube-cache';
+import { ENV } from '@/lib/config';
 import { createLogger } from '@/lib/logger';
 
 export const dynamic = 'force-dynamic';
@@ -33,7 +35,9 @@ export async function GET(request: NextRequest) {
     const recencyDays = searchParams.get('recencyDays') ? parseInt(searchParams.get('recencyDays')!) : null;
     const relatedToVideoId = searchParams.get('relatedTo'); // Optional: get recommendations related to a specific video
 
-    const youtubeClient = new YouTubeClient();
+    // Use cached YouTube client
+    const youtubeCache = new YouTubeCache(db);
+    const youtubeClient = new YouTubeClient(ENV.youtubeApiKey, youtubeCache);
 
     // Get user's existing sources to exclude
     const sources = await db.contentSource.findMany({

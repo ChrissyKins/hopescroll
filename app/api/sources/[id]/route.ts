@@ -8,13 +8,9 @@ import { db } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/api-response';
 import { requireAuth } from '@/lib/get-user-session';
 import { updateSourceSchema } from '@/lib/validation';
-import { YouTubeClient } from '@/adapters/content/youtube/youtube-client';
-import { YouTubeAdapter } from '@/adapters/content/youtube/youtube-adapter';
-import { ContentAdapter } from '@/adapters/content/base-adapter';
-import { SourceType } from '@/domain/content/content-item';
+import { getAdapters } from '@/lib/adapters';
 
-const adapters = new Map<SourceType, ContentAdapter>();
-adapters.set('YOUTUBE', new YouTubeAdapter(new YouTubeClient()));
+const adapters = getAdapters();
 
 export async function GET(
   request: NextRequest,
