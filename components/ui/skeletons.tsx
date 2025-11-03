@@ -52,7 +52,7 @@ export function SourceListSkeleton({ count = 5 }: { count?: number }) {
 
 export function SourceGridCardSkeleton() {
   return (
-    <div className="animate-pulse relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2 flex flex-col">
+    <div className="animate-pulse relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-1 py-2 flex flex-col">
       {/* Avatar */}
       <div className="w-12 h-12 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-1.5" />
 

@@ -25,3 +25,4 @@ See [CLAUDE-SESSION-GUIDE.md](./CLAUDE-SESSION-GUIDE.md) for detailed session wo
 - Update project_status.md with changes
 - commit after tests pass
 - prioritise responsive UI/UX patterns
+- When doing design work, take screenshots before and after

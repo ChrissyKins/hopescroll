@@ -507,7 +507,7 @@ export default function SourcesPage() {
                   {sortedItems.map((source) => (
                     <div
                       key={source.id}
-                      className={`relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2 hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 flex flex-col group ${
+                      className={`relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-1 py-2 hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 flex flex-col group ${
                         source.isMuted ? 'opacity-50 grayscale' : ''
                       }`}
                     >
@@ -534,7 +534,7 @@ export default function SourcesPage() {
                       </div>
 
                       {/* Display name */}
-                      <h3 className="font-medium text-gray-900 dark:text-white text-center mb-1 line-clamp-2 text-xs leading-tight px-1">
+                      <h3 className="font-medium text-gray-900 dark:text-white text-center mb-1 line-clamp-2 text-xs leading-tight">
                         {source.displayName}
                       </h3>
 
@@ -554,7 +554,7 @@ export default function SourcesPage() {
 
                       {/* Error message - compact */}
                       {source.errorMessage && (
-                        <p className="text-[10px] text-red-500 text-center mb-1 line-clamp-1 px-1">
+                        <p className="text-[10px] text-red-500 text-center mb-1 line-clamp-1">
                           {source.errorMessage}
                         </p>
                       )}
