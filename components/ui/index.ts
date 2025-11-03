@@ -43,6 +43,8 @@ export type { FilterState, ContentType, DateRange, SortOption } from './filter-s
 export { ViewToggle } from './view-toggle';
 export type { ViewMode } from './view-toggle';
 
+export { ToggleSwitch } from './toggle-switch';
+
 export { BulkActionToolbar } from './bulk-action-toolbar';
 
 export * from './skeletons';

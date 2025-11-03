@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { Navigation } from '@/components/navigation';
-import { useToast, useConfirmDialog, Search, EmptyState, VideoIcon, UnwatchedIcon, SourceIcon, SourceListSkeleton, Button, Badge, Spinner } from '@/components/ui';
+import { useToast, useConfirmDialog, Search, EmptyState, VideoIcon, UnwatchedIcon, SourceIcon, SourceGridSkeleton, Button, Badge, Spinner, ToggleSwitch, CheckIcon, TrashIcon } from '@/components/ui';
 import { ChannelAutocomplete, ChannelResult } from '@/components/ui/channel-autocomplete';
 import { useSearch } from '@/hooks/use-search';
 import { useCachedFetch } from '@/hooks/use-cached-fetch';
@@ -242,36 +242,7 @@ export default function SourcesPage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <>
-        <Navigation />
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-8">
-              Content Sources
-            </h1>
-
-            {/* Add Source Form Skeleton */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 mb-8">
-              <div className="animate-pulse space-y-4">
-                <div className="h-6 bg-gray-300 dark:bg-gray-600 rounded w-48 mb-4" />
-                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full" />
-                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full" />
-                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded w-full" />
-              </div>
-            </div>
-
-            {/* Sources List Skeleton */}
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-              <div className="animate-pulse h-6 bg-gray-300 dark:bg-gray-600 rounded w-48 mb-4" />
-              <SourceListSkeleton count={5} />
-            </div>
-          </div>
-        </div>
-      </>
-    );
-  }
+  // Removed blocking loading state - we'll show skeletons inline instead
 
   if (error) {
     return (
@@ -478,7 +449,10 @@ export default function SourcesPage() {
                 </div>
               )}
 
-              {!sources || sources.length === 0 ? (
+              {/* Show loading skeleton while data is loading */}
+              {isLoading ? (
+                <SourceGridSkeleton count={6} />
+              ) : !sources || sources.length === 0 ? (
                 <EmptyState
                   icon={<SourceIcon className="w-16 h-16 text-gray-400" />}
                   heading="No content sources yet"
@@ -497,88 +471,96 @@ export default function SourcesPage() {
                   No sources match your search.
                 </p>
               ) : (
-                <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {sortedItems.map((source) => (
                     <div
                       key={source.id}
-                      className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                      className="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-lg transition-all duration-200 flex flex-col aspect-square group"
                     >
-                      <div className="flex items-center space-x-4 flex-1">
+                      {/* Delete button - top right */}
+                      <button
+                        onClick={() => handleDeleteSource(source.id)}
+                        className="absolute top-2 right-2 p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
+                        aria-label="Remove source"
+                      >
+                        <TrashIcon className="w-4 h-4" />
+                      </button>
+
+                      {/* Avatar */}
+                      <div className="flex justify-center mb-3">
                         {source.avatarUrl && (
                           <Image
                             src={source.avatarUrl}
                             alt={source.displayName}
-                            width={48}
-                            height={48}
+                            width={64}
+                            height={64}
                             className="rounded-full"
                           />
                         )}
-                        <div className="flex-1">
-                          <h3 className="font-medium text-gray-900 dark:text-white">
-                            {source.displayName}
-                          </h3>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {source.type} • {source.sourceId}
-                          </p>
-                          {source.videoStats && (
-                            <div className="flex items-center gap-3 mt-1 text-sm">
-                              <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
-                                <VideoIcon className="w-4 h-4" />
-                                {source.videoStats.totalFetched} fetched
-                              </span>
-                              <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                                <UnwatchedIcon className="w-4 h-4" />
-                                {source.videoStats.unwatched} unwatched
-                              </span>
-                            </div>
-                          )}
-                          {source.errorMessage && (
-                            <p className="text-sm text-red-500 mt-1">
-                              Error: {source.errorMessage}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge
-                            variant={
-                              source.lastFetchStatus === 'success'
-                                ? 'success'
-                                : source.lastFetchStatus === 'error'
-                                ? 'error'
-                                : 'neutral'
-                            }
-                            size="sm"
-                          >
-                            {source.lastFetchStatus === 'pending' && (
-                              <span className="flex items-center gap-1">
-                                <Spinner size="sm" />
-                                Fetching...
-                              </span>
-                            )}
-                            {source.lastFetchStatus !== 'pending' && source.lastFetchStatus}
-                          </Badge>
-                          {source.isMuted && (
-                            <Badge variant="warning" size="sm">
-                              Muted
-                            </Badge>
-                          )}
-                        </div>
                       </div>
-                      <div className="flex items-center space-x-2 ml-4">
-                        <Button
-                          variant="neutral"
-                          size="sm"
-                          onClick={() => handleToggleMute(source)}
-                        >
-                          {source.isMuted ? 'Unmute' : 'Mute'}
-                        </Button>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() => handleDeleteSource(source.id)}
-                        >
-                          Remove
-                        </Button>
+
+                      {/* Display name */}
+                      <h3 className="font-medium text-gray-900 dark:text-white text-center mb-1 line-clamp-2 text-sm">
+                        {source.displayName}
+                      </h3>
+
+                      {/* Type badge - only show if success */}
+                      <div className="text-center mb-2">
+                        <span className="text-xs text-gray-500 dark:text-gray-400">
+                          {source.type}
+                        </span>
+                      </div>
+
+                      {/* Stats - centered */}
+                      {source.videoStats && (
+                        <div className="flex items-center justify-center gap-4 text-xs mb-3">
+                          <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                            <VideoIcon className="w-3.5 h-3.5" />
+                            {source.videoStats.totalFetched}
+                          </span>
+                          <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                            <UnwatchedIcon className="w-3.5 h-3.5" />
+                            {source.videoStats.unwatched}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Error message */}
+                      {source.errorMessage && (
+                        <p className="text-xs text-red-500 text-center mb-2 line-clamp-2">
+                          {source.errorMessage}
+                        </p>
+                      )}
+
+                      {/* Spacer to push controls to bottom */}
+                      <div className="flex-1" />
+
+                      {/* Bottom controls */}
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
+                        {/* Mute toggle */}
+                        <div className="flex items-center gap-2">
+                          <ToggleSwitch
+                            checked={!source.isMuted}
+                            onChange={() => handleToggleMute(source)}
+                            size="sm"
+                          />
+                          <span className="text-xs text-gray-600 dark:text-gray-400">
+                            Active
+                          </span>
+                        </div>
+
+                        {/* Status indicator */}
+                        <div className="flex items-center">
+                          {source.lastFetchStatus === 'pending' && (
+                            <Spinner size="sm" variant="primary" />
+                          )}
+                          {source.lastFetchStatus === 'success' && (
+                            <CheckIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
+                          )}
+                          {source.lastFetchStatus === 'error' && (
+                            <span className="text-xs text-red-500">Error</span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}

@@ -50,6 +50,39 @@ export function SourceListSkeleton({ count = 5 }: { count?: number }) {
   );
 }
 
+export function SourceGridCardSkeleton() {
+  return (
+    <div className="animate-pulse relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 aspect-square flex flex-col">
+      {/* Avatar */}
+      <div className="w-16 h-16 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-3" />
+
+      {/* Display name */}
+      <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mx-auto mb-2" />
+
+      {/* Stats */}
+      <div className="flex items-center justify-center gap-4 mt-auto mb-3">
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16" />
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20" />
+      </div>
+
+      {/* Toggle and badge */}
+      <div className="flex items-center justify-center gap-2 pb-2">
+        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-11" />
+      </div>
+    </div>
+  );
+}
+
+export function SourceGridSkeleton({ count = 6 }: { count?: number }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <SourceGridCardSkeleton key={i} />
+      ))}
+    </div>
+  );
+}
+
 export function KeywordCardSkeleton() {
   return (
     <div className="animate-pulse flex items-center justify-between p-3 border border-gray-200 dark:border-gray-700 rounded-lg">
