@@ -215,13 +215,16 @@ export default function SourcesPage() {
         throw new Error('Failed to update source');
       }
 
-      // Clear optimistic update and refetch to get confirmed data
-      setOptimisticUpdates(prev => {
-        const newUpdates = { ...prev };
-        delete newUpdates[source.id];
-        return newUpdates;
-      });
-      await refetch(true);
+      // Wait a bit before clearing optimistic update to prevent jitter
+      setTimeout(() => {
+        setOptimisticUpdates(prev => {
+          const newUpdates = { ...prev };
+          delete newUpdates[source.id];
+          return newUpdates;
+        });
+        // Silently refetch to get confirmed data
+        refetch(true);
+      }, 300);
     } catch (err) {
       // Rollback optimistic update on error
       setOptimisticUpdates(prev => {
@@ -505,7 +508,9 @@ export default function SourcesPage() {
                   {sortedItems.map((source) => (
                     <div
                       key={source.id}
-                      className="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 flex flex-col group"
+                      className={`relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 flex flex-col group ${
+                        source.isMuted ? 'opacity-50 grayscale' : ''
+                      }`}
                     >
                       {/* Delete button - top right */}
                       <button
