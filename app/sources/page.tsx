@@ -215,16 +215,15 @@ export default function SourcesPage() {
         throw new Error('Failed to update source');
       }
 
-      // Wait a bit before clearing optimistic update to prevent jitter
-      setTimeout(() => {
-        setOptimisticUpdates(prev => {
-          const newUpdates = { ...prev };
-          delete newUpdates[source.id];
-          return newUpdates;
-        });
-        // Silently refetch to get confirmed data
-        refetch(true);
-      }, 300);
+      // Silently refetch to get confirmed data, then clear optimistic update
+      await refetch(true);
+
+      // Clear optimistic update after refetch completes
+      setOptimisticUpdates(prev => {
+        const newUpdates = { ...prev };
+        delete newUpdates[source.id];
+        return newUpdates;
+      });
     } catch (err) {
       // Rollback optimistic update on error
       setOptimisticUpdates(prev => {
