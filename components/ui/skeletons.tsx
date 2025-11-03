@@ -91,10 +91,8 @@ export function KeywordCardSkeleton() {
       <div className="flex items-center space-x-2">
         {/* Keyword text */}
         <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-32" />
-        {/* Badge (sometimes) */}
-        {Math.random() > 0.5 && (
-          <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-16" />
-        )}
+        {/* Badge - always show for consistent SSR/client rendering */}
+        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-16" />
       </div>
       {/* Remove button */}
       <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-16" />
