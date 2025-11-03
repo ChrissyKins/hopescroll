@@ -34,6 +34,7 @@ export default function SourcesPage() {
   const [sortBy, setSortBy] = useState<SortOption>('name-asc');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChannel, setSelectedChannel] = useState<ChannelResult | null>(null);
+  const [optimisticUpdates, setOptimisticUpdates] = useState<Record<string, Partial<ContentSource>>>({});
 
   const toast = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
@@ -52,6 +53,15 @@ export default function SourcesPage() {
     ttl: 30000, // 30 seconds
   });
 
+  // Apply optimistic updates to sources
+  const sourcesWithOptimisticUpdates = useMemo(() => {
+    if (!sources) return null;
+    return sources.map(source => ({
+      ...source,
+      ...optimisticUpdates[source.id],
+    }));
+  }, [sources, optimisticUpdates]);
+
   // Auto-refresh while sources are being fetched (pending status)
   useEffect(() => {
     if (!sources) return;
@@ -69,7 +79,7 @@ export default function SourcesPage() {
 
   // Search functionality
   const { query, setQuery, clearSearch, filteredItems, resultCount, totalCount } = useSearch(
-    sources || [],
+    sourcesWithOptimisticUpdates || [],
     (source) => [source.displayName, source.sourceId, source.type]
   );
 
@@ -183,12 +193,21 @@ export default function SourcesPage() {
   };
 
   const handleToggleMute = async (source: ContentSource) => {
+    const newMutedState = !source.isMuted;
+
+    // Optimistic update - show the change immediately
+    setOptimisticUpdates(prev => ({
+      ...prev,
+      [source.id]: { isMuted: newMutedState },
+    }));
+
+    // Update the API in the background
     try {
       const response = await fetch(`/api/sources/${source.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          isMuted: !source.isMuted,
+          isMuted: newMutedState,
         }),
       });
 
@@ -196,11 +215,22 @@ export default function SourcesPage() {
         throw new Error('Failed to update source');
       }
 
-      toast.success(`Source ${source.isMuted ? 'unmuted' : 'muted'} successfully`);
-      // Refresh sources list
-      await refetch();
+      // Clear optimistic update and refetch to get confirmed data
+      setOptimisticUpdates(prev => {
+        const newUpdates = { ...prev };
+        delete newUpdates[source.id];
+        return newUpdates;
+      });
+      await refetch(true);
     } catch (err) {
+      // Rollback optimistic update on error
+      setOptimisticUpdates(prev => {
+        const newUpdates = { ...prev };
+        delete newUpdates[source.id];
+        return newUpdates;
+      });
       toast.error(err instanceof Error ? err.message : 'Failed to update source');
+      await refetch();
     }
   };
 
@@ -452,7 +482,7 @@ export default function SourcesPage() {
               {/* Show loading skeleton while data is loading */}
               {isLoading ? (
                 <SourceGridSkeleton count={6} />
-              ) : !sources || sources.length === 0 ? (
+              ) : !sourcesWithOptimisticUpdates || sourcesWithOptimisticUpdates.length === 0 ? (
                 <EmptyState
                   icon={<SourceIcon className="w-16 h-16 text-gray-400" />}
                   heading="No content sources yet"
@@ -471,83 +501,68 @@ export default function SourcesPage() {
                   No sources match your search.
                 </p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
                   {sortedItems.map((source) => (
                     <div
                       key={source.id}
-                      className="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 hover:shadow-lg transition-all duration-200 flex flex-col aspect-square group"
+                      className="relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 flex flex-col group"
                     >
                       {/* Delete button - top right */}
                       <button
                         onClick={() => handleDeleteSource(source.id)}
-                        className="absolute top-2 right-2 p-1.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100"
+                        className="absolute top-1.5 right-1.5 p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100 z-10"
                         aria-label="Remove source"
                       >
-                        <TrashIcon className="w-4 h-4" />
+                        <TrashIcon className="w-3.5 h-3.5" />
                       </button>
 
                       {/* Avatar */}
-                      <div className="flex justify-center mb-3">
+                      <div className="flex justify-center mb-2">
                         {source.avatarUrl && (
                           <Image
                             src={source.avatarUrl}
                             alt={source.displayName}
-                            width={64}
-                            height={64}
+                            width={56}
+                            height={56}
                             className="rounded-full"
                           />
                         )}
                       </div>
 
                       {/* Display name */}
-                      <h3 className="font-medium text-gray-900 dark:text-white text-center mb-1 line-clamp-2 text-sm">
+                      <h3 className="font-medium text-gray-900 dark:text-white text-center mb-1 line-clamp-2 text-xs leading-tight">
                         {source.displayName}
                       </h3>
 
-                      {/* Type badge - only show if success */}
-                      <div className="text-center mb-2">
-                        <span className="text-xs text-gray-500 dark:text-gray-400">
-                          {source.type}
-                        </span>
-                      </div>
-
-                      {/* Stats - centered */}
+                      {/* Stats - compact */}
                       {source.videoStats && (
-                        <div className="flex items-center justify-center gap-4 text-xs mb-3">
-                          <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
-                            <VideoIcon className="w-3.5 h-3.5" />
+                        <div className="flex items-center justify-center gap-3 text-xs mb-2">
+                          <span className="flex items-center gap-0.5 text-blue-600 dark:text-blue-400">
+                            <VideoIcon className="w-3 h-3" />
                             {source.videoStats.totalFetched}
                           </span>
-                          <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
-                            <UnwatchedIcon className="w-3.5 h-3.5" />
+                          <span className="flex items-center gap-0.5 text-green-600 dark:text-green-400">
+                            <UnwatchedIcon className="w-3 h-3" />
                             {source.videoStats.unwatched}
                           </span>
                         </div>
                       )}
 
-                      {/* Error message */}
+                      {/* Error message - compact */}
                       {source.errorMessage && (
-                        <p className="text-xs text-red-500 text-center mb-2 line-clamp-2">
+                        <p className="text-xs text-red-500 text-center mb-1.5 line-clamp-1">
                           {source.errorMessage}
                         </p>
                       )}
 
-                      {/* Spacer to push controls to bottom */}
-                      <div className="flex-1" />
-
-                      {/* Bottom controls */}
-                      <div className="flex items-center justify-between pt-3 border-t border-gray-200 dark:border-gray-700">
+                      {/* Bottom controls - more compact */}
+                      <div className="flex items-center justify-between pt-2 mt-auto border-t border-gray-200 dark:border-gray-700">
                         {/* Mute toggle */}
-                        <div className="flex items-center gap-2">
-                          <ToggleSwitch
-                            checked={!source.isMuted}
-                            onChange={() => handleToggleMute(source)}
-                            size="sm"
-                          />
-                          <span className="text-xs text-gray-600 dark:text-gray-400">
-                            Active
-                          </span>
-                        </div>
+                        <ToggleSwitch
+                          checked={!source.isMuted}
+                          onChange={() => handleToggleMute(source)}
+                          size="sm"
+                        />
 
                         {/* Status indicator */}
                         <div className="flex items-center">
@@ -555,10 +570,10 @@ export default function SourcesPage() {
                             <Spinner size="sm" variant="primary" />
                           )}
                           {source.lastFetchStatus === 'success' && (
-                            <CheckIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
+                            <CheckIcon className="w-3.5 h-3.5 text-green-600 dark:text-green-400" />
                           )}
                           {source.lastFetchStatus === 'error' && (
-                            <span className="text-xs text-red-500">Error</span>
+                            <div className="w-1.5 h-1.5 rounded-full bg-red-500" title="Error" />
                           )}
                         </div>
                       </div>

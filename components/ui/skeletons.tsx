@@ -52,22 +52,24 @@ export function SourceListSkeleton({ count = 5 }: { count?: number }) {
 
 export function SourceGridCardSkeleton() {
   return (
-    <div className="animate-pulse relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 aspect-square flex flex-col">
+    <div className="animate-pulse relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 flex flex-col">
       {/* Avatar */}
-      <div className="w-16 h-16 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-3" />
+      <div className="w-14 h-14 bg-gray-300 dark:bg-gray-600 rounded-full mx-auto mb-2" />
 
       {/* Display name */}
-      <div className="h-4 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mx-auto mb-2" />
+      <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-3/4 mx-auto mb-1" />
+      <div className="h-3 bg-gray-300 dark:bg-gray-600 rounded w-1/2 mx-auto mb-2" />
 
       {/* Stats */}
-      <div className="flex items-center justify-center gap-4 mt-auto mb-3">
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-16" />
-        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-20" />
+      <div className="flex items-center justify-center gap-3 mb-2">
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-12" />
+        <div className="h-3 bg-gray-200 dark:bg-gray-700 rounded w-14" />
       </div>
 
-      {/* Toggle and badge */}
-      <div className="flex items-center justify-center gap-2 pb-2">
-        <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-11" />
+      {/* Bottom controls */}
+      <div className="flex items-center justify-between pt-2 mt-auto border-t border-gray-200 dark:border-gray-700">
+        <div className="h-5 bg-gray-200 dark:bg-gray-700 rounded w-9" />
+        <div className="h-3.5 w-3.5 bg-gray-200 dark:bg-gray-700 rounded" />
       </div>
     </div>
   );
@@ -75,7 +77,7 @@ export function SourceGridCardSkeleton() {
 
 export function SourceGridSkeleton({ count = 6 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
       {Array.from({ length: count }).map((_, i) => (
         <SourceGridCardSkeleton key={i} />
       ))}
