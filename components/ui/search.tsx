@@ -38,7 +38,7 @@ export function Search({
       <div className="relative">
         <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
           <svg
-            className="w-5 h-5 text-gray-400"
+            className="w-5 h-5 text-gray-400 dark:text-gray-400"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
@@ -59,14 +59,14 @@ export function Search({
           placeholder={placeholder}
           className="
             w-full
-            bg-gray-800
-            border border-gray-700
+            bg-white dark:bg-gray-800
+            border border-gray-300 dark:border-gray-700
             rounded-lg
             pl-10
             pr-10
             py-2.5
-            text-white
-            placeholder-gray-500
+            text-gray-900 dark:text-white
+            placeholder-gray-400 dark:placeholder-gray-500
             focus:outline-none
             focus:ring-2
             focus:ring-blue-600
@@ -85,8 +85,8 @@ export function Search({
               flex
               items-center
               pr-3
-              text-gray-400
-              hover:text-gray-200
+              text-gray-400 dark:text-gray-400
+              hover:text-gray-600 dark:hover:text-gray-200
               transition-colors
             "
             aria-label="Clear search"
@@ -104,12 +104,12 @@ export function Search({
       </div>
 
       {resultCount !== undefined && totalCount !== undefined && (
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-gray-600 dark:text-gray-400">
           {resultCount === totalCount ? (
             `Showing all ${totalCount} items`
           ) : (
             <>
-              Showing <span className="text-white font-medium">{resultCount}</span> of{' '}
+              Showing <span className="text-gray-900 dark:text-white font-medium">{resultCount}</span> of{' '}
               {totalCount} items
             </>
           )}

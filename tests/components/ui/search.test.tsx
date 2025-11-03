@@ -104,7 +104,7 @@ describe('Search', () => {
         <Search value="test" onChange={() => {}} resultCount={5} totalCount={20} />
       );
       const highlightedCount = screen.getByText('5');
-      expect(highlightedCount).toHaveClass('text-white', 'font-medium');
+      expect(highlightedCount).toHaveClass('text-gray-900', 'dark:text-white', 'font-medium');
     });
 
     it('shows result count with 0 results', () => {
@@ -187,10 +187,10 @@ describe('Search', () => {
   });
 
   describe('Styling', () => {
-    it('has dark theme styling', () => {
+    it('has light and dark theme styling', () => {
       render(<Search value="" onChange={() => {}} />);
       const input = screen.getByRole('textbox');
-      expect(input).toHaveClass('bg-gray-800', 'border-gray-700', 'text-white');
+      expect(input).toHaveClass('bg-white', 'dark:bg-gray-800', 'border-gray-300', 'dark:border-gray-700', 'text-gray-900', 'dark:text-white');
     });
 
     it('has focus ring styling', () => {
@@ -230,7 +230,7 @@ describe('Search', () => {
       );
       const resultText = screen.getByText(/Showing/);
       expect(resultText.tagName).toBe('P');
-      expect(resultText).toHaveClass('text-sm', 'text-gray-400');
+      expect(resultText).toHaveClass('text-sm', 'text-gray-600', 'dark:text-gray-400');
     });
   });
 
@@ -257,7 +257,7 @@ describe('Search', () => {
     it('clear button has hover effect', () => {
       render(<Search value="test" onChange={() => {}} onClear={() => {}} />);
       const clearButton = screen.getByLabelText('Clear search');
-      expect(clearButton).toHaveClass('hover:text-gray-200', 'transition-colors');
+      expect(clearButton).toHaveClass('hover:text-gray-600', 'dark:hover:text-gray-200', 'transition-colors');
     });
   });
 
