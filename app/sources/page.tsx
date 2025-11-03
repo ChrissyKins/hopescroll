@@ -503,64 +503,64 @@ export default function SourcesPage() {
                   No sources match your search.
                 </p>
               ) : (
-                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2">
                   {sortedItems.map((source) => (
                     <div
                       key={source.id}
-                      className={`relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 flex flex-col group ${
+                      className={`relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-2 hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 flex flex-col group ${
                         source.isMuted ? 'opacity-50 grayscale' : ''
                       }`}
                     >
                       {/* Delete button - top right */}
                       <button
                         onClick={() => handleDeleteSource(source.id)}
-                        className="absolute top-1.5 right-1.5 p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100 z-10"
+                        className="absolute top-1 right-1 p-0.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100 z-10"
                         aria-label="Remove source"
                       >
-                        <TrashIcon className="w-3.5 h-3.5" />
+                        <TrashIcon className="w-3 h-3" />
                       </button>
 
                       {/* Avatar */}
-                      <div className="flex justify-center mb-2">
+                      <div className="flex justify-center mb-1.5">
                         {source.avatarUrl && (
                           <Image
                             src={source.avatarUrl}
                             alt={source.displayName}
-                            width={56}
-                            height={56}
+                            width={48}
+                            height={48}
                             className="rounded-full"
                           />
                         )}
                       </div>
 
                       {/* Display name */}
-                      <h3 className="font-medium text-gray-900 dark:text-white text-center mb-1 line-clamp-2 text-xs leading-tight">
+                      <h3 className="font-medium text-gray-900 dark:text-white text-center mb-1 line-clamp-2 text-xs leading-tight px-1">
                         {source.displayName}
                       </h3>
 
                       {/* Stats - compact */}
                       {source.videoStats && (
-                        <div className="flex items-center justify-center gap-3 text-xs mb-2">
+                        <div className="flex items-center justify-center gap-2 text-xs mb-1.5">
                           <span className="flex items-center gap-0.5 text-blue-600 dark:text-blue-400">
                             <VideoIcon className="w-3 h-3" />
-                            {source.videoStats.totalFetched}
+                            <span className="text-[10px]">{source.videoStats.totalFetched}</span>
                           </span>
                           <span className="flex items-center gap-0.5 text-green-600 dark:text-green-400">
                             <UnwatchedIcon className="w-3 h-3" />
-                            {source.videoStats.unwatched}
+                            <span className="text-[10px]">{source.videoStats.unwatched}</span>
                           </span>
                         </div>
                       )}
 
                       {/* Error message - compact */}
                       {source.errorMessage && (
-                        <p className="text-xs text-red-500 text-center mb-1.5 line-clamp-1">
+                        <p className="text-[10px] text-red-500 text-center mb-1 line-clamp-1 px-1">
                           {source.errorMessage}
                         </p>
                       )}
 
                       {/* Bottom controls - more compact */}
-                      <div className="flex items-center justify-between pt-2 mt-auto border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center justify-between pt-1.5 mt-auto border-t border-gray-200 dark:border-gray-700">
                         {/* Mute toggle */}
                         <ToggleSwitch
                           checked={!source.isMuted}
