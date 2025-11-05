@@ -47,3 +47,7 @@ prisma/dev.db-journal
 # IDE
 .vscode
 .idea
+
+# Production Live Performance Test Reports
+/playwright-report-production-live/
+/test-results-production-live/

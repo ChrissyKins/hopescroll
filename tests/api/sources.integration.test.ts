@@ -33,7 +33,7 @@ import { GET, POST } from '@/app/api/sources/route';
 import { DELETE as DELETE_SOURCE } from '@/app/api/sources/[id]/route';
 import { db } from '@/lib/db';
 import { NextRequest } from 'next/server';
-import { cleanupAllUserData, cleanupTestContent } from '../../helpers/test-cleanup';
+import { cleanupAllUserData, cleanupTestContent } from '@/tests/helpers/test-cleanup';
 
 describe('GET /api/sources', () => {
   const testUserId = 'sources-test-user';
@@ -50,6 +50,7 @@ describe('GET /api/sources', () => {
     await cleanupTestContent('test-source-');
     await cleanupAllUserData(testUserId);
     await cleanupAllUserData('other-sources-user');
+    await cleanupAllUserData('other-user-delete');
 
     // Create test user
     await db.user.create({
@@ -69,6 +70,7 @@ describe('GET /api/sources', () => {
     await cleanupTestContent('test-source-');
     await cleanupAllUserData(testUserId);
     await cleanupAllUserData('other-sources-user');
+    await cleanupAllUserData('other-user-delete');
   });
 
   describe('Success Cases', () => {
@@ -222,7 +224,7 @@ describe('GET /api/sources', () => {
       const response = await GET(request);
       const data = await response.json();
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(401);
       expect(data.success).toBe(false);
 
       // Restore mock
@@ -493,7 +495,7 @@ describe('POST /api/sources', () => {
       const response = await POST(request);
       const data = await response.json();
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(401);
       expect(data.success).toBe(false);
 
       // Restore mock
@@ -730,7 +732,7 @@ describe('DELETE /api/sources/[id]', () => {
       const response = await DELETE_SOURCE(request, { params: { id: 'some-id' } });
       const data = await response.json();
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(401);
       expect(data.success).toBe(false);
 
       // Restore mock

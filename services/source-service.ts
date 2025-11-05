@@ -104,7 +104,7 @@ export class SourceService {
   async updateSource(
     userId: string,
     sourceId: string,
-    updates: { isMuted?: boolean; alwaysSafe?: boolean }
+    updates: { isMuted?: boolean; alwaysSafe?: boolean; displayName?: string }
   ): Promise<void> {
     log.info({ userId, sourceId, updates }, 'Updating content source');
 

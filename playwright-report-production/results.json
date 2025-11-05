@@ -1,0 +1,238 @@
+{
+  "config": {
+    "configFile": "/home/chris/projects/hopescroll/playwright.config.production.ts",
+    "rootDir": "/home/chris/projects/hopescroll/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        {
+          "outputFolder": "playwright-report-production",
+          "open": "never"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "playwright-report-production/results.json"
+        }
+      ],
+      [
+        "list",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/home/chris/projects/hopescroll/test-results-production",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chromium-desktop",
+        "name": "chromium-desktop",
+        "testDir": "/home/chris/projects/hopescroll/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/performance.spec.ts",
+          "**/responsiveness.spec.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/home/chris/projects/hopescroll/test-results-production",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "firefox-desktop",
+        "name": "firefox-desktop",
+        "testDir": "/home/chris/projects/hopescroll/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/performance.spec.ts",
+          "**/responsiveness.spec.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/home/chris/projects/hopescroll/test-results-production",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "webkit-desktop",
+        "name": "webkit-desktop",
+        "testDir": "/home/chris/projects/hopescroll/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/performance.spec.ts",
+          "**/responsiveness.spec.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/home/chris/projects/hopescroll/test-results-production",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-chrome",
+        "name": "mobile-chrome",
+        "testDir": "/home/chris/projects/hopescroll/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/performance.spec.ts",
+          "**/responsiveness.spec.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/home/chris/projects/hopescroll/test-results-production",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-safari",
+        "name": "mobile-safari",
+        "testDir": "/home/chris/projects/hopescroll/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/performance.spec.ts",
+          "**/responsiveness.spec.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/home/chris/projects/hopescroll/test-results-production",
+        "repeatEach": 1,
+        "retries": 1,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet-ipad",
+        "name": "tablet-ipad",
+        "testDir": "/home/chris/projects/hopescroll/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/performance.spec.ts",
+          "**/responsiveness.spec.ts"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.56.1",
+    "workers": 2,
+    "webServer": {
+      "command": "npm run start:test",
+      "url": "http://localhost:3000",
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "performance.spec.ts",
+      "file": "performance.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Performance Tests - Authenticated Pages",
+          "file": "performance.spec.ts",
+          "line": 129,
+          "column": 6,
+          "specs": [
+            {
+              "title": "watch page should load quickly",
+              "ok": true,
+              "tags": [],
+              "tests": [
+                {
+                  "timeout": 30000,
+                  "annotations": [],
+                  "expectedStatus": "passed",
+                  "projectId": "chromium-desktop",
+                  "projectName": "chromium-desktop",
+                  "results": [
+                    {
+                      "workerIndex": 0,
+                      "parallelIndex": 0,
+                      "status": "passed",
+                      "duration": 544,
+                      "errors": [],
+                      "stdout": [
+                        {
+                          "text": "\n📊 Performance Metrics for Watch Page:\n"
+                        },
+                        {
+                          "text": "   TTFB: 7.90ms\n"
+                        },
+                        {
+                          "text": "   FCP: 0.00ms\n"
+                        },
+                        {
+                          "text": "   LCP: N/A\n"
+                        },
+                        {
+                          "text": "   DOM Content Loaded: 31.30ms\n"
+                        },
+                        {
+                          "text": "   Load Complete: 32.20ms\n\n"
+                        }
+                      ],
+                      "stderr": [],
+                      "retry": 0,
+                      "startTime": "2025-11-03T01:30:50.172Z",
+                      "annotations": [],
+                      "attachments": []
+                    }
+                  ],
+                  "status": "expected"
+                }
+              ],
+              "id": "b15d6361b2fc38288977-8ee215e66becc070e794",
+              "file": "performance.spec.ts",
+              "line": 150,
+              "column": 7
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-11-03T01:28:20.750Z",
+    "duration": 138343.23799999998,
+    "expected": 1,
+    "skipped": 0,
+    "unexpected": 0,
+    "flaky": 0
+  }
+}

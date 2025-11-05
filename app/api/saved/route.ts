@@ -11,8 +11,7 @@ export const dynamic = 'force-dynamic';
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await requireAuth();
-    const { searchParams } = new URL(request.url);
-    const collection = searchParams.get('collection');
+    const collection = request.nextUrl.searchParams.get('collection');
 
     const interactionService = new InteractionService(db, cache);
     const saved = await interactionService.getSavedContent(

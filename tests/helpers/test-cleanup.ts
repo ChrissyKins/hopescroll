@@ -39,6 +39,22 @@ export async function cleanupAllUserData(userId: string): Promise<void> {
   await db.filterKeyword.deleteMany({ where: { userId } });
   await db.userPreferences.deleteMany({ where: { userId } });
   await db.collection.deleteMany({ where: { userId } });
+
+  // Get all content sources for this user
+  const sources = await db.contentSource.findMany({
+    where: { userId },
+    select: { sourceId: true }
+  });
+
+  // Delete content items from those sources
+  if (sources.length > 0) {
+    await db.contentItem.deleteMany({
+      where: {
+        sourceId: { in: sources.map(s => s.sourceId) }
+      }
+    });
+  }
+
   await db.contentSource.deleteMany({ where: { userId } });
   await db.user.deleteMany({ where: { id: userId } });
 }
@@ -51,6 +67,18 @@ export async function cleanupTestContent(sourceIdPattern: string): Promise<void>
   await db.contentItem.deleteMany({
     where: {
       sourceId: { startsWith: sourceIdPattern },
+    },
+  });
+}
+
+/**
+ * Clean up content items by original ID pattern
+ * Useful for cleaning up test-specific content items
+ */
+export async function cleanupContentByOriginalId(originalIdPattern: string): Promise<void> {
+  await db.contentItem.deleteMany({
+    where: {
+      originalId: { startsWith: originalIdPattern },
     },
   });
 }

@@ -74,7 +74,7 @@ describe('ContentService', () => {
       mockFetchRecent.mockResolvedValue([createMockContentItem('vid1')]);
 
       const mockFetchBacklog = vi.mocked(mockAdapter.fetchBacklog);
-      mockFetchBacklog.mockResolvedValue([]);
+      mockFetchBacklog.mockResolvedValue({ items: [], hasMore: false });
 
       mockPrisma.contentSource.findUnique = vi
         .fn()
@@ -148,7 +148,7 @@ describe('ContentService', () => {
       vi.mocked(mockAdapter.fetchRecent).mockResolvedValue([
         createMockContentItem('vid1'),
       ]);
-      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue([]);
+      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue({ items: [], hasMore: false });
 
       const result = await service.fetchAllSources();
 
@@ -172,7 +172,7 @@ describe('ContentService', () => {
         createMockContentItem('vid2'),
         createMockContentItem('vid3'),
       ]);
-      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue([]);
+      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue({ items: [], hasMore: false });
 
       mockPrisma.contentItem.findMany = vi.fn().mockResolvedValue([]);
       mockPrisma.contentItem.createMany = vi.fn().mockResolvedValue({ count: 3 });
@@ -201,7 +201,7 @@ describe('ContentService', () => {
       ];
 
       vi.mocked(mockAdapter.fetchRecent).mockResolvedValue(mockItems);
-      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue([]);
+      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue({ items: [], hasMore: false });
 
       mockPrisma.contentItem.findMany = vi.fn().mockResolvedValue([]);
       mockPrisma.contentItem.createMany = vi.fn().mockResolvedValue({ count: 2 });
@@ -279,7 +279,7 @@ describe('ContentService', () => {
       ];
 
       vi.mocked(mockAdapter.fetchRecent).mockResolvedValue(recentItems);
-      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue(backlogItems);
+      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue({ items: backlogItems, hasMore: false });
 
       mockPrisma.contentItem.findMany = vi.fn().mockResolvedValue([]);
       mockPrisma.contentItem.createMany = vi.fn().mockResolvedValue({ count: 3 });
@@ -307,7 +307,7 @@ describe('ContentService', () => {
       vi.mocked(mockAdapter.fetchRecent).mockResolvedValue([
         createMockContentItem('vid1'),
       ]);
-      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue([]);
+      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue({ items: [], hasMore: false });
 
       mockPrisma.contentItem.findMany = vi.fn().mockResolvedValue([]);
       mockPrisma.contentItem.createMany = vi.fn().mockResolvedValue({ count: 1 });
@@ -334,9 +334,10 @@ describe('ContentService', () => {
       mockPrisma.contentSource.findUnique = vi.fn().mockResolvedValue(mockSource);
 
       vi.mocked(mockAdapter.fetchRecent).mockResolvedValue([]);
-      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue([
-        createMockContentItem('vid1'),
-      ]);
+      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue({
+        items: [createMockContentItem('vid1')],
+        hasMore: false
+      });
 
       mockPrisma.contentItem.findMany = vi.fn().mockResolvedValue([]);
       mockPrisma.contentItem.createMany = vi.fn().mockResolvedValue({ count: 1 });
@@ -362,9 +363,10 @@ describe('ContentService', () => {
       mockPrisma.contentSource.findUnique = vi.fn().mockResolvedValue(mockSource);
 
       vi.mocked(mockAdapter.fetchRecent).mockResolvedValue([]);
-      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue([
-        createMockContentItem('vid1'),
-      ]);
+      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue({
+        items: [createMockContentItem('vid1')],
+        hasMore: false
+      });
 
       mockPrisma.contentItem.findMany = vi.fn().mockResolvedValue([]);
       mockPrisma.contentItem.createMany = vi.fn().mockResolvedValue({ count: 1 });
@@ -421,7 +423,7 @@ describe('ContentService', () => {
       ];
 
       vi.mocked(mockAdapter.fetchRecent).mockResolvedValue(fetchedItems);
-      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue([]);
+      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue({ items: [], hasMore: false });
 
       // vid1 and vid2 already exist
       mockPrisma.contentItem.findMany = vi.fn().mockResolvedValue([
@@ -472,7 +474,7 @@ describe('ContentService', () => {
       vi.mocked(mockAdapter.fetchRecent).mockResolvedValue([
         createMockContentItem('vid1'),
       ]);
-      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue([]);
+      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue({ items: [], hasMore: false });
 
       mockPrisma.contentItem.findMany = vi.fn().mockResolvedValue([]);
       mockPrisma.contentItem.createMany = vi.fn().mockResolvedValue({ count: 1 });
@@ -524,9 +526,10 @@ describe('ContentService', () => {
       mockPrisma.contentSource.findUnique = vi.fn().mockResolvedValue(mockSource);
 
       vi.mocked(mockAdapter.fetchRecent).mockResolvedValue([]);
-      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue([
-        createMockContentItem('vid1'),
-      ]);
+      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue({
+        items: [createMockContentItem('vid1')],
+        hasMore: false
+      });
 
       mockPrisma.contentItem.findMany = vi.fn().mockResolvedValue([]);
       mockPrisma.contentItem.createMany = vi.fn().mockResolvedValue({ count: 1 });
@@ -569,7 +572,7 @@ describe('ContentService', () => {
       vi.mocked(mockAdapter.fetchRecent).mockResolvedValue([
         createMockContentItem('vid1'),
       ]);
-      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue([]);
+      vi.mocked(mockAdapter.fetchBacklog).mockResolvedValue({ items: [], hasMore: false });
 
       mockPrisma.contentItem.findMany = vi.fn().mockResolvedValue([]);
       mockPrisma.contentItem.createMany = vi.fn().mockResolvedValue({ count: 1 });

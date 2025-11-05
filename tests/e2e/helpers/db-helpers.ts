@@ -2,9 +2,18 @@ import { PrismaClient } from '@prisma/client';
 
 /**
  * Database helper utilities for E2E test setup/cleanup
+ *
+ * Note: Connects to test database using POSTGRES_URL from .env.test
  */
 
-const prisma = new PrismaClient();
+// Ensure we're using the test database
+const prisma = new PrismaClient({
+  datasources: {
+    db: {
+      url: process.env.POSTGRES_URL || 'postgresql://hopescroll_test:test_password_local_only@localhost:5433/hopescroll_test',
+    },
+  },
+});
 
 /**
  * Clean up test user data from the database

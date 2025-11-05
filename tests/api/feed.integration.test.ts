@@ -539,8 +539,8 @@ describe('GET /api/feed', () => {
       const response = await GET(request);
       const data = await response.json();
 
-      // The error handler returns 500 for all errors, including auth errors
-      expect(response.status).toBe(500);
+      // Authentication failures should return 401
+      expect(response.status).toBe(401);
       expect(data.success).toBe(false);
 
       // Restore the original mock
@@ -834,8 +834,8 @@ describe('POST /api/feed', () => {
       const response = await POST(request);
       const data = await response.json();
 
-      // The error handler returns 500 for all errors, including auth errors
-      expect(response.status).toBe(500);
+      // Authentication failures should return 401
+      expect(response.status).toBe(401);
       expect(data.success).toBe(false);
 
       // Restore the original mock

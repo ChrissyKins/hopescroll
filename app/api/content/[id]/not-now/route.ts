@@ -8,11 +8,11 @@ import { requireAuth } from '@/lib/get-user-session';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { userId } = await requireAuth();
-    const contentId = params.id;
+    const { id: contentId } = await params;
 
     const interactionService = new InteractionService(db, cache);
     await interactionService.notNowContent(userId, contentId);

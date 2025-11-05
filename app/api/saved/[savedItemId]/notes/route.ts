@@ -32,12 +32,12 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
     }
 
     // Update the notes
-    await db.savedContent.update({
+    const updated = await db.savedContent.update({
       where: { id: savedItemId },
       data: { notes },
     });
 
-    return successResponse({ message: 'Notes updated successfully' });
+    return successResponse(updated);
   } catch (error) {
     return errorResponse(error);
   }

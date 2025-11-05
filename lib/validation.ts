@@ -11,6 +11,7 @@ export const addSourceSchema = z.object({
 export const updateSourceSchema = z.object({
   isMuted: z.boolean().optional(),
   alwaysSafe: z.boolean().optional(),
+  displayName: z.string().optional(),
 });
 
 // Filter validation

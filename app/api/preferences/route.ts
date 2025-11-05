@@ -1,9 +1,30 @@
+// GET /api/preferences - Get user preferences
+// PUT /api/preferences - Update user preferences (alias for PATCH)
 // PATCH /api/preferences - Update user preferences
 import { NextRequest } from 'next/server';
 import { db } from '@/lib/db';
 import { cache } from '@/lib/cache';
 import { successResponse, errorResponse } from '@/lib/api-response';
 import { requireAuth } from '@/lib/get-user-session';
+
+export async function GET(request: NextRequest) {
+  try {
+    const { userId } = await requireAuth();
+
+    // Get or create default preferences
+    const preferences = await db.userPreferences.upsert({
+      where: { userId },
+      update: {},
+      create: {
+        userId,
+      },
+    });
+
+    return successResponse(preferences);
+  } catch (error) {
+    return errorResponse(error);
+  }
+}
 
 export async function PATCH(request: NextRequest) {
   try {
@@ -44,3 +65,6 @@ export async function PATCH(request: NextRequest) {
     return errorResponse(error);
   }
 }
+
+// PUT is an alias for PATCH
+export const PUT = PATCH;

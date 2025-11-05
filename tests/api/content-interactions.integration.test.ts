@@ -242,7 +242,7 @@ describe.sequential('POST /api/content/[id]/watch', () => {
       const response = await WATCH_POST(request, { params: { id: testContentId } });
       const data = await response.json();
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(401);
       expect(data.success).toBe(false);
 
       // mockResolvedValueOnce only affects one call, so it will auto-restore
@@ -437,7 +437,7 @@ describe.sequential('POST /api/content/[id]/save', () => {
       const response = await SAVE_POST(request, { params: { id: testContentId } });
       const data = await response.json();
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(401);
       expect(data.success).toBe(false);
 
       // mockResolvedValueOnce only affects one call, so it will auto-restore
@@ -599,7 +599,7 @@ describe.sequential('POST /api/content/[id]/dismiss', () => {
       const response = await DISMISS_POST(request, { params: { id: testContentId } });
       const data = await response.json();
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(401);
       expect(data.success).toBe(false);
 
       // mockResolvedValueOnce only affects one call, so it will auto-restore
@@ -742,7 +742,7 @@ describe.sequential('POST /api/content/[id]/not-now', () => {
       const response = await NOT_NOW_POST(request, { params: { id: testContentId } });
       const data = await response.json();
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(401);
       expect(data.success).toBe(false);
 
       // mockResolvedValueOnce only affects one call, so it will auto-restore

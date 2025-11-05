@@ -235,7 +235,7 @@ describe('GET /api/filters', () => {
       const response = await GET(request);
       const data = await response.json();
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(401);
       expect(data.success).toBe(false);
 
       // Restore mock
@@ -515,7 +515,7 @@ describe('POST /api/filters', () => {
       const response = await POST(request);
       const data = await response.json();
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(401);
       expect(data.success).toBe(false);
 
       // Restore mock
@@ -694,7 +694,7 @@ describe('DELETE /api/filters/[id]', () => {
       const response = await DELETE_FILTER(request, { params: { id: 'some-id' } });
       const data = await response.json();
 
-      expect(response.status).toBe(500);
+      expect(response.status).toBe(401);
       expect(data.success).toBe(false);
 
       // Restore mock

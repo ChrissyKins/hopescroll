@@ -1,4 +1,5 @@
 import { auth } from './auth';
+import { UnauthorizedError } from './errors';
 
 export async function getUserSession(): Promise<{ userId: string } | null> {
   const session = await auth();
@@ -11,7 +12,7 @@ export async function getUserSession(): Promise<{ userId: string } | null> {
 export async function requireAuth(): Promise<{ userId: string }> {
   const session = await getUserSession();
   if (!session) {
-    throw new Error('Unauthorized');
+    throw new UnauthorizedError();
   }
   return session;
 }

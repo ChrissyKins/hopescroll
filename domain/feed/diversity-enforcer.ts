@@ -13,6 +13,7 @@ export class DiversityEnforcer {
     while (remaining.length > 0) {
       const lastN = result.slice(-maxConsecutive);
       const lastSource = lastN[0]?.sourceId;
+      const nextItem = remaining[0];
 
       // Check if all last N items are from same source
       const allSameSource = lastN.every(
@@ -20,7 +21,14 @@ export class DiversityEnforcer {
           item.sourceId === lastSource && item.sourceType === lastN[0].sourceType
       );
 
-      if (allSameSource && lastN.length === maxConsecutive) {
+      // Check if adding next item would violate diversity
+      const wouldViolateDiversity =
+        allSameSource &&
+        lastN.length >= maxConsecutive &&
+        nextItem.sourceId === lastSource &&
+        nextItem.sourceType === lastN[0].sourceType;
+
+      if (wouldViolateDiversity) {
         // Find item from different source
         const differentSourceIndex = remaining.findIndex(
           (item) =>

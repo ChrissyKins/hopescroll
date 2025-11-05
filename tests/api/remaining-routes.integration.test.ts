@@ -5,20 +5,27 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { db } from '@/lib/db';
-import { cleanupAllUserData, cleanupTestContent } from '../helpers/test-cleanup';
+import { cleanupAllUserData, cleanupTestContent } from '@/tests/helpers/test-cleanup';
 import { NextRequest } from 'next/server';
 
-// Mock auth
-const mockAuth = vi.fn();
+// Mock auth - use vi.hoisted() for proper initialization
+const mockAuth = vi.hoisted(() => vi.fn());
 vi.mock('@/lib/auth', () => ({
   auth: mockAuth,
 }));
 
-// Mock adapters for source tests
-const mockGetChannel = vi.fn();
-const mockResolveChannelId = vi.fn();
-const mockSearchChannelVideos = vi.fn();
-const mockGetVideos = vi.fn();
+// Mock adapters for source tests - use vi.hoisted() for proper initialization
+const {
+  mockGetChannel,
+  mockResolveChannelId,
+  mockSearchChannelVideos,
+  mockGetVideos,
+} = vi.hoisted(() => ({
+  mockGetChannel: vi.fn(),
+  mockResolveChannelId: vi.fn(),
+  mockSearchChannelVideos: vi.fn(),
+  mockGetVideos: vi.fn(),
+}));
 
 vi.mock('@/adapters/content/youtube/youtube-client', () => ({
   YouTubeClient: vi.fn().mockImplementation(() => ({
@@ -40,8 +47,18 @@ describe('Remaining Routes Integration Tests', () => {
   const testEmail = 'remaining-routes@test.com';
 
   beforeEach(async () => {
+    // Clean up all test users
     await cleanupAllUserData(testUserId);
+    await cleanupAllUserData('other-source-user');
+    await cleanupAllUserData('other-debug-user');
     await cleanupTestContent('test-remaining-');
+
+    // Clean up debug test content
+    await db.contentItem.deleteMany({
+      where: {
+        originalId: 'debug-test-video'
+      }
+    });
 
     await db.user.create({
       data: {
@@ -74,8 +91,18 @@ describe('Remaining Routes Integration Tests', () => {
   });
 
   afterEach(async () => {
+    // Clean up all test users
     await cleanupAllUserData(testUserId);
+    await cleanupAllUserData('other-source-user');
+    await cleanupAllUserData('other-debug-user');
     await cleanupTestContent('test-remaining-');
+
+    // Clean up debug test content
+    await db.contentItem.deleteMany({
+      where: {
+        originalId: 'debug-test-video'
+      }
+    });
   });
 
   describe('GET /api/cron/fetch-content', () => {
@@ -154,7 +181,7 @@ describe('Remaining Routes Integration Tests', () => {
   describe('POST /api/debug/clear-interactions', () => {
     beforeEach(async () => {
       // Create test content and interaction
-      await db.contentItem.create({
+      const contentItem = await db.contentItem.create({
         data: {
           sourceType: 'YOUTUBE',
           sourceId: 'test-remaining-source',
@@ -170,8 +197,8 @@ describe('Remaining Routes Integration Tests', () => {
       await db.contentInteraction.create({
         data: {
           userId: testUserId,
-          contentItemId: 'test-remaining-video',
-          interactionType: 'WATCHED',
+          contentId: contentItem.id,
+          type: 'WATCHED',
         },
       });
     });
@@ -217,11 +244,25 @@ describe('Remaining Routes Integration Tests', () => {
         },
       });
 
+      // Create content item first
+      const content = await db.contentItem.create({
+        data: {
+          sourceType: 'YOUTUBE',
+          sourceId: 'UC-debug-test',
+          originalId: 'debug-test-video',
+          title: 'Debug Test Video',
+          url: 'https://youtube.com/watch?v=debug',
+          publishedAt: new Date(),
+          fetchedAt: new Date(),
+          lastSeenInFeed: new Date(),
+        },
+      });
+
       await db.contentInteraction.create({
         data: {
           userId: otherUserId,
-          contentItemId: 'test-remaining-video',
-          interactionType: 'WATCHED',
+          contentId: content.id,
+          type: 'WATCHED',
         },
       });
 
