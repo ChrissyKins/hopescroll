@@ -4,6 +4,9 @@ import bcrypt from 'bcryptjs';
 import { successResponse, errorResponse } from '@/lib/api-response';
 import { ValidationError } from '@/lib/errors';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
