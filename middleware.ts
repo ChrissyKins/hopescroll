@@ -20,7 +20,8 @@ export default auth((req) => {
 
   // Redirect to login if not authenticated
   if (!isAuthenticated && !pathname.startsWith('/login')) {
-    const loginUrl = new URL('/login', req.url);
+    const loginUrl = req.nextUrl.clone();
+    loginUrl.pathname = '/login';
     loginUrl.searchParams.set('callbackUrl', pathname);
     return NextResponse.redirect(loginUrl);
   }
