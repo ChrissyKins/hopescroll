@@ -7,6 +7,7 @@ import bcrypt from 'bcryptjs';
 const log = logger.child({ module: 'auth' });
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  trustHost: true, // Required for Vercel and reverse proxies
   providers: [
     Credentials({
       name: 'Credentials',
