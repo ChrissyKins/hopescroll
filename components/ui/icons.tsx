@@ -28,6 +28,7 @@ import {
   Squares2X2Icon,
   ListBulletIcon,
   ArrowsUpDownIcon,
+  ArrowPathIcon,
 } from '@heroicons/react/24/outline';
 
 // Export icons with semantic names for easy reference
@@ -66,3 +67,4 @@ export const SortIcon = ArrowsUpDownIcon;  // Sort dropdown
 export const GridIcon = Squares2X2Icon;    // Grid view
 export const ListIcon = ListBulletIcon;    // List view
 export const CompactIcon = Bars3Icon;      // Compact view
+export const RefreshIcon = ArrowPathIcon;  // Refresh/sync icon

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { validateEnv } from "@/lib/config";
 import { ToastProvider } from "@/components/ui";
+import { StartupTrigger } from "@/components/startup-trigger";
 import "./globals.css";
 
 // Validate environment variables on startup
@@ -30,6 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className="antialiased">
+        <StartupTrigger />
         <ToastProvider>
           {children}
         </ToastProvider>

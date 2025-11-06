@@ -3,7 +3,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import Image from 'next/image';
 import { Navigation } from '@/components/navigation';
-import { useToast, useConfirmDialog, Search, EmptyState, VideoIcon, UnwatchedIcon, SourceIcon, SourceGridSkeleton, Button, Badge, Spinner, ToggleSwitch, CheckIcon, TrashIcon } from '@/components/ui';
+import { useToast, useConfirmDialog, Search, EmptyState, VideoIcon, UnwatchedIcon, SourceIcon, SourceGridSkeleton, Button, Badge, Spinner, ToggleSwitch, CheckIcon, TrashIcon, RefreshIcon } from '@/components/ui';
 import { ChannelAutocomplete, ChannelResult } from '@/components/ui/channel-autocomplete';
 import { useSearch } from '@/hooks/use-search';
 import { useCachedFetch } from '@/hooks/use-cached-fetch';
@@ -35,6 +35,7 @@ export default function SourcesPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChannel, setSelectedChannel] = useState<ChannelResult | null>(null);
   const [optimisticUpdates, setOptimisticUpdates] = useState<Record<string, Partial<ContentSource>>>({});
+  const [refreshingSourceId, setRefreshingSourceId] = useState<string | null>(null);
 
   const toast = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
@@ -271,6 +272,32 @@ export default function SourcesPage() {
       });
     } finally {
       setIsFetching(false);
+    }
+  };
+
+  const handleRefreshSource = async (sourceId: string, sourceName: string) => {
+    try {
+      setRefreshingSourceId(sourceId);
+
+      const response = await fetch(`/api/sources/${sourceId}/fetch`, {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch content for source');
+      }
+
+      const result = await response.json();
+      const newItemsCount = result.data.newItemsCount;
+
+      toast.success(`Fetched ${newItemsCount} new items from ${sourceName}`);
+
+      // Refresh sources list to show updated stats
+      await refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to fetch content');
+    } finally {
+      setRefreshingSourceId(null);
     }
   };
 
@@ -511,14 +538,28 @@ export default function SourcesPage() {
                         source.isMuted ? 'opacity-50 grayscale' : ''
                       }`}
                     >
-                      {/* Delete button - top right */}
-                      <button
-                        onClick={() => handleDeleteSource(source.id)}
-                        className="absolute top-1 right-1 p-0.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors opacity-0 group-hover:opacity-100 z-10"
-                        aria-label="Remove source"
-                      >
-                        <TrashIcon className="w-3 h-3" />
-                      </button>
+                      {/* Action buttons - top right */}
+                      <div className="absolute top-1 right-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 z-10">
+                        <button
+                          onClick={() => handleRefreshSource(source.id, source.displayName)}
+                          disabled={refreshingSourceId === source.id}
+                          className="p-0.5 rounded-md text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          aria-label="Refresh content"
+                        >
+                          {refreshingSourceId === source.id ? (
+                            <Spinner size="sm" variant="primary" />
+                          ) : (
+                            <RefreshIcon className="w-3 h-3" />
+                          )}
+                        </button>
+                        <button
+                          onClick={() => handleDeleteSource(source.id)}
+                          className="p-0.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                          aria-label="Remove source"
+                        >
+                          <TrashIcon className="w-3 h-3" />
+                        </button>
+                      </div>
 
                       {/* Avatar */}
                       <div className="flex justify-center mb-1.5">
