@@ -1,5 +1,6 @@
 // yt-dlp YouTube Adapter - Implements ContentAdapter interface
 // Uses yt-dlp instead of YouTube API for fetching videos (no quota limits!)
+// Hybrid approach: Uses YouTube API only for channel search (minimal quota usage)
 
 import { ContentItem } from '@/domain/content/content-item';
 import {
@@ -8,6 +9,7 @@ import {
   SourceMetadata,
 } from '../base-adapter';
 import { YtDlpClient, YtDlpVideo } from './yt-dlp-client';
+import { YouTubeClient } from './youtube-client';
 import { createLogger } from '@/lib/logger';
 
 const log = createLogger('yt-dlp-adapter');
@@ -15,7 +17,10 @@ const log = createLogger('yt-dlp-adapter');
 export class YtDlpAdapter implements ContentAdapter {
   readonly sourceType = 'YOUTUBE' as const;
 
-  constructor(private client: YtDlpClient) {}
+  constructor(
+    private client: YtDlpClient,
+    private youtubeClient?: YouTubeClient
+  ) {}
 
   async fetchRecent(channelId: string, days: number): Promise<ContentItem[]> {
     log.info({ channelId, days }, 'Fetching recent YouTube videos with yt-dlp');
@@ -236,5 +241,73 @@ export class YtDlpAdapter implements ContentAdapter {
     // Generate a proper UUID using Node.js crypto
     // Note: In production, this will be replaced by database-generated IDs (cuid)
     return crypto.randomUUID();
+  }
+
+  /**
+   * Search for channels by name (HYBRID: uses YouTube API for minimal quota usage)
+   * This is the only method that uses YouTube API - all other methods use yt-dlp
+   * @param query - Search query
+   * @returns Array of channel search results
+   */
+  async searchChannels(query: string): Promise<{
+    channelId: string;
+    displayName: string;
+    description: string;
+    avatarUrl: string;
+    subscriberCount?: number;
+  }[]> {
+    // If no YouTube client is provided, we can't search
+    if (!this.youtubeClient) {
+      log.warn(
+        { query },
+        'YouTube API client not configured for channel search - returning empty results'
+      );
+      return [];
+    }
+
+    log.debug({ query }, 'Searching YouTube channels via API (hybrid approach)');
+
+    try {
+      const searchResponse = await this.youtubeClient.searchChannels({
+        query,
+        maxResults: 10,
+      });
+
+      if (!searchResponse || !searchResponse.items || searchResponse.items.length === 0) {
+        return [];
+      }
+
+      // Get full channel details for subscriber counts
+      const channelIds = searchResponse.items
+        .map((item) => item.id.channelId)
+        .filter((id): id is string => id !== undefined);
+
+      if (channelIds.length === 0) {
+        return [];
+      }
+
+      // Batch fetch all channels in one API request
+      log.debug({ channelIds, count: channelIds.length }, 'Batch fetching channel details');
+      const channelsResponse = await this.youtubeClient.getChannels(channelIds);
+
+      if (!channelsResponse || !channelsResponse.items || channelsResponse.items.length === 0) {
+        log.warn({ channelIds }, 'No channel details returned from batch request');
+        return [];
+      }
+
+      // Map the results
+      return channelsResponse.items.map((channel) => ({
+        channelId: channel.id,
+        displayName: channel.snippet.title,
+        description: channel.snippet.description,
+        avatarUrl: channel.snippet.thumbnails.high?.url || channel.snippet.thumbnails.default.url,
+        subscriberCount: channel.statistics
+          ? parseInt(channel.statistics.subscriberCount, 10)
+          : undefined,
+      }));
+    } catch (error) {
+      log.error({ error, query }, 'Failed to search channels');
+      throw error;
+    }
   }
 }

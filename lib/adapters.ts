@@ -24,7 +24,18 @@ export function getAdapters(): Map<SourceType, ContentAdapter> {
   if (ENV.useYtDlp) {
     log.info('Using yt-dlp adapter for YouTube (quota-free)');
     const ytDlpClient = new YtDlpClient();
-    const ytDlpAdapter = new YtDlpAdapter(ytDlpClient);
+
+    // Hybrid approach: Use YouTube API for channel search if API key is available
+    let youtubeClient: YouTubeClient | undefined;
+    if (ENV.youtubeApiKey) {
+      log.info('Enabling hybrid mode: YouTube API for search, yt-dlp for video fetching');
+      const youtubeCache = new YouTubeCache(db);
+      youtubeClient = new YouTubeClient(ENV.youtubeApiKey, youtubeCache);
+    } else {
+      log.warn('YouTube API key not set - channel search will be unavailable');
+    }
+
+    const ytDlpAdapter = new YtDlpAdapter(ytDlpClient, youtubeClient);
     adapters.set('YOUTUBE', ytDlpAdapter);
   } else if (ENV.youtubeApiKey) {
     log.info('Using YouTube API adapter (requires quota)');
