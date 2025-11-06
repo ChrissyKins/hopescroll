@@ -5,6 +5,9 @@ import { db } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/api-response';
 import { requireAuth } from '@/lib/get-user-session';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 interface RouteParams {
   params: Promise<{
     savedItemId: string;

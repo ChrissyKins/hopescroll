@@ -8,6 +8,9 @@ import { successResponse, errorResponse } from '@/lib/api-response';
 import { requireAuth } from '@/lib/get-user-session';
 import { addFilterSchema } from '@/lib/validation';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await requireAuth();

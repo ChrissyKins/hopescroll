@@ -10,6 +10,9 @@ import { requireAuth } from '@/lib/get-user-session';
 import { updateSourceSchema } from '@/lib/validation';
 import { getAdapters } from '@/lib/adapters';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 const adapters = getAdapters();
 
 export async function GET(

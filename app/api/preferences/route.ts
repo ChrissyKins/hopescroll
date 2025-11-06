@@ -67,4 +67,7 @@ export async function PATCH(request: NextRequest) {
 }
 
 // PUT is an alias for PATCH
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 export const PUT = PATCH;

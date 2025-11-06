@@ -3,6 +3,9 @@ import { auth } from '@/lib/auth';
 import { getAdapters } from '@/lib/adapters';
 import { YouTubeAdapter } from '@/adapters/content/youtube/youtube-adapter';
 
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
 export async function GET(request: NextRequest) {
   try {
     // Authentication
