@@ -56,6 +56,11 @@ export async function POST(request: NextRequest) {
     }
 
     console.error('Signup error:', error);
-    return errorResponse(error, 500);
+
+    // Ensure we always return a proper JSON error response
+    return errorResponse(
+      error instanceof Error ? error : new Error('An unexpected error occurred during signup'),
+      500
+    );
   }
 }

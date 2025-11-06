@@ -45,8 +45,15 @@ function LoginForm() {
         });
 
         if (!response.ok) {
-          const data = await response.json();
-          throw new Error(data.error?.message || data.error || 'Failed to create account');
+          let errorMessage = 'Failed to create account';
+          try {
+            const data = await response.json();
+            errorMessage = data.error?.message || data.error || errorMessage;
+          } catch {
+            // If response isn't JSON, use status text or default message
+            errorMessage = response.statusText || errorMessage;
+          }
+          throw new Error(errorMessage);
         }
       }
 
