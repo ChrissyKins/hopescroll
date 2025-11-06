@@ -1,6 +1,6 @@
 # HopeScroll - Project Status
 
-**Last Updated:** 2025-11-05 (Session 34 - E2E Test Suite Expansion: 160 Tests!)
+**Last Updated:** 2025-11-06 (Session 35 - yt-dlp Integration Complete!)
 **Current Phase:** Phase 1 (MVP Video Feed) → **Test Coverage A+ Complete** → Phase 2A (Article/RSS Support READY)
 
 ---
@@ -40,6 +40,20 @@
   - **Better visual hierarchy**: Centered content, clear spacing
   - **New ToggleSwitch component**: Reusable accessibility-compliant toggle
   - **SourceGridSkeleton**: Optimistic loading for responsive UI
+- **yt-dlp Integration with Hybrid Search** (NEW - Session 35)
+  - **Quota-free YouTube fetching**: Use yt-dlp CLI instead of YouTube API (eliminates quota limits!)
+  - **Feature flag**: `USE_YT_DLP=true` environment variable to enable
+  - **Full ContentAdapter implementation**: All methods supported (fetchRecent, fetchBacklog, validateSource, getSourceMetadata)
+  - **Handle resolution**: Supports @handles, channel IDs, and channel URLs
+  - **Batch processing**: Optimized video detail fetching with batching (10 videos per batch)
+  - **Hybrid search mode**: Uses YouTube API only for channel search (~100 quota/search)
+    - Automatic when USE_YT_DLP=true + YOUTUBE_API_KEY is set
+    - Falls back gracefully if no API key (search returns empty)
+    - Smart logging shows which mode is active
+  - **Production-ready**: Tested with real channels, passes build and lint
+  - **No breaking changes**: Drop-in replacement for YouTubeAdapter (includes searchChannels)
+  - **Zero quota for videos**: Unlimited channel and video fetching with yt-dlp
+  - See [YT-DLP Migration Plan](../planning/YT-DLP_MIGRATION.md)
 - **YouTube API Quota Management** (Session 30)
   - **Response caching**: Database-backed caching reduces API calls by 95%+
   - **Smart cache TTLs**: 24h (channels), 6h (videos), 1h (search)
