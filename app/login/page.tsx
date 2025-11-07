@@ -1,7 +1,7 @@
 'use client';
 
 import { signIn } from 'next-auth/react';
-import { useState, Suspense } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
@@ -12,10 +12,29 @@ function LoginForm() {
 
   const [isLoading, setIsLoading] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [signupsAllowed, setSignupsAllowed] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+
+  // Check if signups are allowed
+  useEffect(() => {
+    const checkSignupStatus = async () => {
+      try {
+        const response = await fetch('/api/auth/signup-status');
+        if (response.ok) {
+          const data = await response.json();
+          setSignupsAllowed(data.data?.allowed ?? true);
+        }
+      } catch (err) {
+        // If the check fails, default to allowing signups
+        console.error('Failed to check signup status:', err);
+      }
+    };
+
+    checkSignupStatus();
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -160,17 +179,25 @@ function LoginForm() {
           </button>
 
           <div className="text-center space-y-2">
-            <button
-              type="button"
-              onClick={() => {
-                setIsSignUp(!isSignUp);
-                setError('');
-                setConfirmPassword('');
-              }}
-              className="block w-full text-sm text-blue-400 hover:text-blue-300"
-            >
-              {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
-            </button>
+            {signupsAllowed ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setError('');
+                  setConfirmPassword('');
+                }}
+                className="block w-full text-sm text-blue-400 hover:text-blue-300"
+              >
+                {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+              </button>
+            ) : (
+              !isSignUp && (
+                <p className="text-sm text-gray-500">
+                  New user signups are currently disabled
+                </p>
+              )
+            )}
 
             {!isSignUp && (
               <Link

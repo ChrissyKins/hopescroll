@@ -73,6 +73,7 @@ export const ENV = {
   enableUsageTracking: process.env.ENABLE_USAGE_TRACKING === 'true',
   enablePaletteCleanser: process.env.ENABLE_PALETTE_CLEANSER === 'true',
   useYtDlp: process.env.USE_YT_DLP === 'true', // Use yt-dlp instead of YouTube API
+  allowSignups: process.env.ALLOW_SIGNUPS !== 'false', // Allow new user signups (default: true)
 
   // Node environment
   nodeEnv: process.env.NODE_ENV || 'development',

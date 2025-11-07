@@ -3,12 +3,21 @@ import { db } from '@/lib/db';
 import bcrypt from 'bcryptjs';
 import { successResponse, errorResponse } from '@/lib/api-response';
 import { ValidationError } from '@/lib/errors';
+import { ENV } from '@/lib/config';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if signups are allowed
+    if (!ENV.allowSignups) {
+      return errorResponse(
+        new ValidationError('New user signups are currently disabled'),
+        403
+      );
+    }
+
     const body = await request.json();
     const { email, password } = body;
 
