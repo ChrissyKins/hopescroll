@@ -1,12 +1,11 @@
-// yt-dlp CLI Client
-// Wraps yt-dlp command-line tool for YouTube video/channel fetching
+// yt-dlp HTTP Client
+// Wraps self-hosted yt-dlp HTTP API for YouTube video/channel fetching
 // Provides methods for fetching channel videos, video details, and channel metadata
+// Falls back to YouTube Data API when yt-dlp service is unavailable
 
-import { execFile } from 'child_process';
-import { promisify } from 'util';
 import { createLogger } from '@/lib/logger';
+import { ENV } from '@/lib/config';
 
-const execFileAsync = promisify(execFile);
 const log = createLogger('yt-dlp-client');
 
 // yt-dlp JSON output types
@@ -54,10 +53,36 @@ export interface GetChannelVideosOptions {
 }
 
 export class YtDlpClient {
-  private ytDlpPath: string;
+  private serviceUrl: string;
+  private useCache: boolean;
 
-  constructor(ytDlpPath = 'yt-dlp') {
-    this.ytDlpPath = ytDlpPath;
+  constructor(serviceUrl?: string, useCache = true) {
+    this.serviceUrl = serviceUrl || ENV.ytDlpServiceUrl || '';
+    this.useCache = useCache;
+
+    if (!this.serviceUrl) {
+      log.warn('No yt-dlp service URL configured. Set YOUTUBE_DLP_SERVICE_URL environment variable.');
+    }
+  }
+
+  /**
+   * Check if the yt-dlp service is available
+   */
+  async isServiceAvailable(): Promise<boolean> {
+    if (!this.serviceUrl) {
+      return false;
+    }
+
+    try {
+      const response = await fetch(this.serviceUrl, {
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      });
+      const data = await response.json();
+      return data.status === 'healthy';
+    } catch (error) {
+      log.warn({ error }, 'yt-dlp service health check failed');
+      return false;
+    }
   }
 
   /**
@@ -70,50 +95,66 @@ export class YtDlpClient {
     channelId: string,
     options: GetChannelVideosOptions = {}
   ): Promise<YtDlpVideo[]> {
-    const { dateAfter, limit, offset } = options;
+    const { dateAfter, limit = 50, offset = 0 } = options;
 
-    const args = [
-      '--dump-json',
-      '--flat-playlist',
-      '--skip-download',
-      `https://www.youtube.com/channel/${channelId}/videos`,
-    ];
-
-    // Add date filter if specified
-    if (dateAfter) {
-      const dateStr = this.formatDate(dateAfter);
-      args.push('--dateafter', dateStr);
+    if (!this.serviceUrl) {
+      throw new Error('yt-dlp service URL not configured');
     }
 
-    // Add pagination (offset-based using playlist indices)
-    if (offset !== undefined || limit !== undefined) {
-      const start = (offset || 0) + 1; // yt-dlp uses 1-based indexing
-      const end = limit ? start + limit - 1 : undefined;
+    const params = new URLSearchParams({
+      limit: Math.min(limit, 100).toString(), // Max 100 per API
+      use_cache: this.useCache.toString(),
+    });
 
-      args.push('--playlist-start', start.toString());
-      if (end) {
-        args.push('--playlist-end', end.toString());
-      }
-    }
-
-    log.info({ channelId, options }, 'Fetching channel videos with yt-dlp');
+    log.info({ channelId, options }, 'Fetching channel videos from yt-dlp service');
 
     try {
-      const { stdout } = await execFileAsync(this.ytDlpPath, args, {
-        maxBuffer: 10 * 1024 * 1024, // 10MB buffer for large responses
-      });
+      const response = await fetch(
+        `${this.serviceUrl}/api/channel/${channelId}/videos?${params}`,
+        {
+          signal: AbortSignal.timeout(30000), // 30 second timeout
+        }
+      );
 
-      // Parse newline-delimited JSON output
-      const videos = this.parseJsonLines<YtDlpVideo>(stdout);
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: response.statusText }));
+        throw new Error(error.detail || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      let videos = data.videos || [];
+
+      // Apply date filter if specified (API doesn't support date filtering directly)
+      if (dateAfter && videos.length > 0) {
+        videos = videos.filter((video: YtDlpVideo) => {
+          if (!video.upload_date && !video.timestamp) return true;
+
+          const videoDate = video.timestamp
+            ? new Date(video.timestamp * 1000)
+            : this.parseDateString(video.upload_date!);
+
+          return videoDate >= dateAfter;
+        });
+      }
+
+      // Apply offset (API doesn't support offset directly, so we slice)
+      if (offset > 0) {
+        videos = videos.slice(offset);
+      }
+
+      // Apply limit after filtering
+      if (limit && videos.length > limit) {
+        videos = videos.slice(0, limit);
+      }
 
       log.info(
         { channelId, count: videos.length, options },
-        'Successfully fetched channel videos'
+        'Successfully fetched channel videos from service'
       );
 
       return videos;
     } catch (error) {
-      log.error({ error, channelId, options }, 'Failed to fetch channel videos');
+      log.error({ error, channelId, options }, 'Failed to fetch channel videos from service');
       throw new Error(
         `Failed to fetch channel videos: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -121,7 +162,7 @@ export class YtDlpClient {
   }
 
   /**
-   * Get full video details (without --flat-playlist for complete metadata)
+   * Get full video details
    * @param videoIds - Array of video IDs
    * @returns Array of full video metadata
    */
@@ -130,40 +171,53 @@ export class YtDlpClient {
       return [];
     }
 
-    // Process in batches of 10 to avoid buffer overflow
+    if (!this.serviceUrl) {
+      throw new Error('yt-dlp service URL not configured');
+    }
+
+    // Process in batches of 10 to avoid overwhelming the service
     const batchSize = 10;
     const allVideos: YtDlpVideo[] = [];
 
     for (let i = 0; i < videoIds.length; i += batchSize) {
       const batch = videoIds.slice(i, i + batchSize);
-      const urls = batch.map((id) => `https://www.youtube.com/watch?v=${id}`);
 
-      const args = [
-        '--dump-json',
-        '--skip-download',
-        ...urls,
-      ];
+      log.info({ count: batch.length, total: videoIds.length }, 'Fetching video details batch from service');
 
-      log.info({ count: batch.length, total: videoIds.length }, 'Fetching video details batch');
-
-      try {
-        const { stdout } = await execFileAsync(this.ytDlpPath, args, {
-          maxBuffer: 50 * 1024 * 1024, // 50MB buffer
+      // Fetch videos in parallel
+      const videoPromises = batch.map(async (videoId) => {
+        const params = new URLSearchParams({
+          use_cache: this.useCache.toString(),
         });
 
-        const videos = this.parseJsonLines<YtDlpVideo>(stdout);
-        allVideos.push(...videos);
+        try {
+          const response = await fetch(
+            `${this.serviceUrl}/api/video/${videoId}?${params}`,
+            {
+              signal: AbortSignal.timeout(20000), // 20 second timeout per video
+            }
+          );
 
-        log.info({ count: videos.length }, 'Successfully fetched video details batch');
-      } catch (error) {
-        log.error({ error, count: batch.length }, 'Failed to fetch video details batch');
-        throw new Error(
-          `Failed to fetch video details: ${error instanceof Error ? error.message : 'Unknown error'}`
-        );
-      }
+          if (!response.ok) {
+            const error = await response.json().catch(() => ({ detail: response.statusText }));
+            throw new Error(error.detail || `HTTP ${response.status}`);
+          }
+
+          return await response.json();
+        } catch (error) {
+          log.warn({ error, videoId }, 'Failed to fetch video details, skipping');
+          return null;
+        }
+      });
+
+      const videos = await Promise.all(videoPromises);
+      const validVideos = videos.filter((v): v is YtDlpVideo => v !== null);
+      allVideos.push(...validVideos);
+
+      log.info({ count: validVideos.length }, 'Successfully fetched video details batch');
     }
 
-    log.info({ total: allVideos.length }, 'Successfully fetched all video details');
+    log.info({ total: allVideos.length }, 'Successfully fetched all video details from service');
 
     return allVideos;
   }
@@ -174,47 +228,56 @@ export class YtDlpClient {
    * @returns Channel metadata
    */
   async getChannelMetadata(channelId: string): Promise<YtDlpChannelInfo> {
-    // Fetch first video to get channel metadata from playlist info
-    const args = [
-      '--dump-json',
-      '--flat-playlist',
-      '--playlist-end', '1', // Just fetch first video for metadata
-      '--skip-download',
-      `https://www.youtube.com/channel/${channelId}/videos`,
-    ];
+    if (!this.serviceUrl) {
+      throw new Error('yt-dlp service URL not configured');
+    }
 
-    log.info({ channelId }, 'Fetching channel metadata with yt-dlp');
+    log.info({ channelId }, 'Fetching channel metadata from yt-dlp service');
 
     try {
-      const { stdout } = await execFileAsync(this.ytDlpPath, args, {
-        maxBuffer: 10 * 1024 * 1024,
+      // Fetch just 1 video to get channel metadata
+      const params = new URLSearchParams({
+        limit: '1',
+        use_cache: this.useCache.toString(),
       });
 
-      // Parse the first video JSON to extract channel metadata
-      const videos = this.parseJsonLines<YtDlpVideo>(stdout);
+      const response = await fetch(
+        `${this.serviceUrl}/api/channel/${channelId}/videos?${params}`,
+        {
+          signal: AbortSignal.timeout(20000), // 20 second timeout
+        }
+      );
 
-      if (!videos || videos.length === 0) {
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({ detail: response.statusText }));
+        throw new Error(error.detail || `HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+
+      if (!data.videos || data.videos.length === 0) {
         throw new Error('No videos found in channel');
       }
 
-      // Extract channel info from the video's playlist metadata
-      const video = videos[0] as any; // Contains playlist_* fields
+      // Extract channel info from response
+      const video = data.videos[0];
       const channelInfo: YtDlpChannelInfo = {
-        id: video.playlist_channel_id || channelId,
-        title: video.playlist_title || video.playlist_channel || '',
+        id: data.channel_id || video.channel_id || channelId,
+        title: data.channel_name || video.channel_name || video.uploader || '',
         description: '',
-        channel_id: video.playlist_channel_id || channelId,
-        channel_url: video.playlist_webpage_url || `https://www.youtube.com/channel/${channelId}`,
-        uploader: video.playlist_uploader || video.playlist_channel,
-        thumbnail: video.thumbnails?.[0]?.url,
+        channel_id: data.channel_id || video.channel_id || channelId,
+        channel_url: `https://www.youtube.com/channel/${channelId}`,
+        uploader: data.channel_name || video.channel_name || video.uploader,
+        thumbnail: video.thumbnail,
         thumbnails: video.thumbnails,
+        playlist_count: data.video_count,
       };
 
-      log.info({ channelId, title: channelInfo.title }, 'Successfully fetched channel metadata');
+      log.info({ channelId, title: channelInfo.title }, 'Successfully fetched channel metadata from service');
 
       return channelInfo;
     } catch (error) {
-      log.error({ error, channelId }, 'Failed to fetch channel metadata');
+      log.error({ error, channelId }, 'Failed to fetch channel metadata from service');
       throw new Error(
         `Failed to fetch channel metadata: ${error instanceof Error ? error.message : 'Unknown error'}`
       );
@@ -227,48 +290,34 @@ export class YtDlpClient {
    * @returns Channel ID or null if not found
    */
   async resolveChannelId(input: string): Promise<string | null> {
-    // Normalize input to a URL format that yt-dlp can handle
-    let url: string;
-
-    if (input.startsWith('http://') || input.startsWith('https://')) {
-      url = input;
-    } else if (input.startsWith('@')) {
-      url = `https://www.youtube.com/${input}/videos`;
-    } else if (input.startsWith('UC')) {
-      // Already a channel ID
-      url = `https://www.youtube.com/channel/${input}/videos`;
-    } else {
-      // Try as username
-      url = `https://www.youtube.com/user/${input}/videos`;
+    if (!this.serviceUrl) {
+      throw new Error('yt-dlp service URL not configured');
     }
 
-    const args = [
-      '--dump-json',
-      '--flat-playlist',
-      '--playlist-end', '1', // Just get first video to extract channel ID
-      '--skip-download',
-      url,
-    ];
+    // If already a channel ID, return it
+    if (input.startsWith('UC') && input.length === 24) {
+      return input;
+    }
 
-    log.info({ input, url }, 'Resolving channel ID with yt-dlp');
+    log.info({ input }, 'Resolving channel ID with yt-dlp service');
 
     try {
-      const { stdout } = await execFileAsync(this.ytDlpPath, args, {
-        maxBuffer: 10 * 1024 * 1024,
-      });
+      // For handles or usernames, try fetching directly and extract channel ID from response
+      // The API expects channel IDs, so we'll need to use a different approach
 
-      const videos = this.parseJsonLines<any>(stdout);
+      // Try searching for the channel if it's a handle or username
+      if (input.startsWith('@') || !input.startsWith('UC')) {
+        // Note: The service might not have a direct resolve endpoint
+        // As a workaround, we can try to fetch using the input as-is
+        // and extract the channel ID from the response
 
-      if (!videos || videos.length === 0) {
+        // For now, return null as the service doesn't support resolution
+        // This will fall back to YouTube API in the adapter
+        log.warn({ input }, 'Channel ID resolution requires YouTube API - service does not support handles/usernames directly');
         return null;
       }
 
-      // Extract channel ID from playlist metadata
-      const channelId = videos[0].playlist_channel_id || videos[0].channel_id;
-
-      log.info({ input, channelId }, 'Successfully resolved channel ID');
-
-      return channelId;
+      return null;
     } catch (error) {
       log.warn({ error, input }, 'Failed to resolve channel ID');
       return null;
@@ -276,31 +325,12 @@ export class YtDlpClient {
   }
 
   /**
-   * Parse newline-delimited JSON output from yt-dlp
-   * yt-dlp outputs one JSON object per line when using --dump-json with multiple items
+   * Parse date string in YYYYMMDD format to Date object
    */
-  private parseJsonLines<T>(output: string): T[] {
-    const lines = output.trim().split('\n').filter((line) => line.trim());
-    const results: T[] = [];
-
-    for (const line of lines) {
-      try {
-        results.push(JSON.parse(line) as T);
-      } catch (error) {
-        log.warn({ error, line: line.substring(0, 100) }, 'Failed to parse JSON line');
-      }
-    }
-
-    return results;
-  }
-
-  /**
-   * Format Date object to YYYYMMDD string for yt-dlp --dateafter
-   */
-  private formatDate(date: Date): string {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${year}${month}${day}`;
+  private parseDateString(dateStr: string): Date {
+    const year = parseInt(dateStr.substring(0, 4), 10);
+    const month = parseInt(dateStr.substring(4, 6), 10) - 1; // JS months are 0-indexed
+    const day = parseInt(dateStr.substring(6, 8), 10);
+    return new Date(year, month, day);
   }
 }

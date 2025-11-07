@@ -55,6 +55,7 @@ export const ENV = {
 
   // External Content APIs
   youtubeApiKey: process.env.YOUTUBE_API_KEY || '',
+  ytDlpServiceUrl: process.env.YOUTUBE_DLP_SERVICE_URL || '',
   twitchClientId: process.env.TWITCH_CLIENT_ID || '',
   twitchClientSecret: process.env.TWITCH_CLIENT_SECRET || '',
 

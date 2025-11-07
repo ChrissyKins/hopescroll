@@ -106,8 +106,31 @@ export class YtDlpAdapter implements ContentAdapter {
     try {
       log.debug({ input: channelIdOrHandle }, 'Validating YouTube channel with yt-dlp');
 
-      // Resolve the input to a channel ID
-      const channelId = await this.client.resolveChannelId(channelIdOrHandle);
+      // First, try to resolve the input to a channel ID
+      let channelId = await this.client.resolveChannelId(channelIdOrHandle);
+
+      // If yt-dlp couldn't resolve it (e.g., @handle), try YouTube API as fallback
+      if (!channelId && this.youtubeClient) {
+        log.info({ input: channelIdOrHandle }, 'yt-dlp resolution failed, trying YouTube API fallback');
+
+        try {
+          // Try to resolve using YouTube API search
+          const searchResponse = await this.youtubeClient.searchChannels({
+            query: channelIdOrHandle.replace('@', ''),
+            maxResults: 1,
+          });
+
+          if (searchResponse?.items && searchResponse.items.length > 0) {
+            const resolvedId = searchResponse.items[0].id.channelId;
+            if (resolvedId) {
+              channelId = resolvedId;
+              log.info({ input: channelIdOrHandle, channelId }, 'Resolved channel ID via YouTube API');
+            }
+          }
+        } catch (apiError) {
+          log.warn({ error: apiError, input: channelIdOrHandle }, 'YouTube API resolution also failed');
+        }
+      }
 
       if (!channelId) {
         return {
@@ -116,18 +139,40 @@ export class YtDlpAdapter implements ContentAdapter {
         };
       }
 
-      // Get channel metadata
-      const metadata = await this.client.getChannelMetadata(channelId);
+      // Get channel metadata from yt-dlp service
+      try {
+        const metadata = await this.client.getChannelMetadata(channelId);
 
-      // Extract thumbnail URL (prefer high quality)
-      const thumbnail = this.extractBestThumbnail(metadata.thumbnails) || metadata.thumbnail;
+        // Extract thumbnail URL (prefer high quality)
+        const thumbnail = this.extractBestThumbnail(metadata.thumbnails) || metadata.thumbnail;
 
-      return {
-        isValid: true,
-        displayName: metadata.title || metadata.uploader || 'Unknown Channel',
-        avatarUrl: thumbnail || '',
-        resolvedId: channelId,
-      };
+        return {
+          isValid: true,
+          displayName: metadata.title || metadata.uploader || 'Unknown Channel',
+          avatarUrl: thumbnail || '',
+          resolvedId: channelId,
+        };
+      } catch (metadataError) {
+        // If yt-dlp metadata fetch fails, try YouTube API as fallback
+        if (this.youtubeClient) {
+          log.info({ channelId }, 'yt-dlp metadata fetch failed, trying YouTube API fallback');
+
+          const channelResponse = await this.youtubeClient.getChannel(channelId);
+
+          if (channelResponse?.items && channelResponse.items.length > 0) {
+            const channel = channelResponse.items[0];
+            return {
+              isValid: true,
+              displayName: channel.snippet.title,
+              avatarUrl: channel.snippet.thumbnails.high?.url || channel.snippet.thumbnails.default.url,
+              resolvedId: channelId,
+            };
+          }
+        }
+
+        // Re-throw if both failed
+        throw metadataError;
+      }
     } catch (error) {
       log.error({ error, input: channelIdOrHandle }, 'Failed to validate YouTube channel');
       return {
