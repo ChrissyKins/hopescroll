@@ -276,8 +276,20 @@ export class ContentService {
 
       return newItemsCount;
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+      // Better error message extraction
+      let errorMessage = 'Unknown error';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error && typeof error === 'object') {
+        // Try to extract useful info from error object
+        try {
+          errorMessage = JSON.stringify(error);
+        } catch {
+          errorMessage = 'Error object could not be stringified';
+        }
+      }
 
       log.error(
         { sourceId, error: errorMessage },

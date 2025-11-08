@@ -157,9 +157,19 @@ export class YtDlpClient {
       return videos;
     } catch (error) {
       log.error({ error, channelId, options }, 'Failed to fetch channel videos from service');
-      throw new Error(
-        `Failed to fetch channel videos: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+
+      // Better error message handling
+      let errorMessage = 'Unknown error';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error && typeof error === 'object') {
+        // Try to extract useful info from error object
+        errorMessage = JSON.stringify(error);
+      }
+
+      throw new Error(`Failed to fetch channel videos: ${errorMessage}`);
     }
   }
 
@@ -280,9 +290,18 @@ export class YtDlpClient {
       return channelInfo;
     } catch (error) {
       log.error({ error, channelId }, 'Failed to fetch channel metadata from service');
-      throw new Error(
-        `Failed to fetch channel metadata: ${error instanceof Error ? error.message : 'Unknown error'}`
-      );
+
+      // Better error message handling
+      let errorMessage = 'Unknown error';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      } else if (error && typeof error === 'object') {
+        errorMessage = JSON.stringify(error);
+      }
+
+      throw new Error(`Failed to fetch channel metadata: ${errorMessage}`);
     }
   }
 
