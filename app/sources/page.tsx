@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { Navigation } from '@/components/navigation';
 import { useToast, useConfirmDialog, Search, EmptyState, VideoIcon, UnwatchedIcon, SourceIcon, SourceGridSkeleton, Button, Badge, Spinner, ToggleSwitch, CheckIcon, TrashIcon, RefreshIcon } from '@/components/ui';
@@ -23,19 +23,28 @@ interface ContentSource {
   };
 }
 
+interface ScrapeJobProgress {
+  jobId: string;
+  sourceId: string;
+  status: 'queued' | 'processing' | 'completed' | 'failed';
+  progress: number;
+  currentVideo: number;
+  totalVideos: number;
+  errorMessage?: string;
+}
+
 type SortOption = 'name-asc' | 'name-desc' | 'recent' | 'unwatched' | 'status';
 
 export default function SourcesPage() {
   const [newSourceId, setNewSourceId] = useState('');
   const [sourceType, setSourceType] = useState('YOUTUBE');
   const [isAdding, setIsAdding] = useState(false);
-  const [isFetching, setIsFetching] = useState(false);
-  const [fetchMessage, setFetchMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('name-asc');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChannel, setSelectedChannel] = useState<ChannelResult | null>(null);
   const [optimisticUpdates, setOptimisticUpdates] = useState<Record<string, Partial<ContentSource>>>({});
-  const [refreshingSourceId, setRefreshingSourceId] = useState<string | null>(null);
+  const [scrapeJobs, setScrapeJobs] = useState<Map<string, ScrapeJobProgress>>(new Map());
+  const pollIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const toast = useToast();
   const { confirm, ConfirmDialog } = useConfirmDialog();
@@ -63,7 +72,82 @@ export default function SourcesPage() {
     }));
   }, [sources, optimisticUpdates]);
 
-  // Auto-refresh while sources are being fetched (pending status)
+  // Poll active scrape jobs for progress updates
+  useEffect(() => {
+    const activeJobs = Array.from(scrapeJobs.values()).filter(
+      job => job.status === 'queued' || job.status === 'processing'
+    );
+
+    if (activeJobs.length === 0) {
+      // No active jobs, clear interval
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+      return;
+    }
+
+    // Poll every 1 second for active jobs
+    const pollJobs = async () => {
+      for (const job of activeJobs) {
+        try {
+          const response = await fetch(`/api/sources/jobs/${job.jobId}`);
+          if (!response.ok) continue;
+
+          const result = await response.json();
+          const jobData = result.data;
+
+          // Update job progress
+          setScrapeJobs(prev => {
+            const updated = new Map(prev);
+            updated.set(job.sourceId, {
+              jobId: job.jobId,
+              sourceId: job.sourceId,
+              status: jobData.status,
+              progress: jobData.progress || 0,
+              currentVideo: jobData.current_video || 0,
+              totalVideos: jobData.total_videos || 0,
+              errorMessage: jobData.error_message,
+            });
+            return updated;
+          });
+
+          // If job completed or failed, refetch sources and remove from map
+          if (jobData.status === 'completed' || jobData.status === 'failed') {
+            await refetch(true); // Silent refetch to update source stats
+
+            setScrapeJobs(prev => {
+              const updated = new Map(prev);
+              updated.delete(job.sourceId);
+              return updated;
+            });
+
+            if (jobData.status === 'completed' && jobData.processed) {
+              toast.success(`Found ${jobData.newItemsCount} new videos!`);
+            } else if (jobData.status === 'failed') {
+              toast.error(`Scraping failed: ${jobData.error_message || 'Unknown error'}`);
+            }
+          }
+        } catch (error) {
+          console.error('Failed to poll job:', error);
+        }
+      }
+    };
+
+    // Start polling if not already running
+    if (!pollIntervalRef.current) {
+      pollIntervalRef.current = setInterval(pollJobs, 1000); // Poll every second
+    }
+
+    return () => {
+      if (pollIntervalRef.current) {
+        clearInterval(pollIntervalRef.current);
+        pollIntervalRef.current = null;
+      }
+    };
+  }, [scrapeJobs, refetch, toast]);
+
+  // Auto-refresh while sources are being fetched (pending status from backend)
   useEffect(() => {
     if (!sources) return;
 
@@ -237,67 +321,62 @@ export default function SourcesPage() {
     }
   };
 
-  const handleRefreshContent = async () => {
-    if (!sources || sources.length === 0) {
-      setFetchMessage({ type: 'error', text: 'Add sources first before fetching content' });
+  const handleRefreshSource = async (source: ContentSource) => {
+    // Check if already scraping this source
+    if (scrapeJobs.has(source.id)) {
+      toast.info('Already scraping this source');
       return;
     }
 
     try {
-      setIsFetching(true);
-      setFetchMessage(null);
+      // For YouTube sources, use async scraping
+      if (source.type === 'YOUTUBE') {
+        const response = await fetch(`/api/sources/${source.id}/scrape`, {
+          method: 'POST',
+        });
 
-      const response = await fetch('/api/sources/fetch', {
-        method: 'POST',
-      });
+        if (!response.ok) {
+          throw new Error('Failed to start scraping');
+        }
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch content');
+        const result = await response.json();
+        const jobId = result.data.jobId;
+
+        // Add job to scrape jobs map
+        setScrapeJobs(prev => {
+          const updated = new Map(prev);
+          updated.set(source.id, {
+            jobId,
+            sourceId: source.id,
+            status: 'queued',
+            progress: 0,
+            currentVideo: 0,
+            totalVideos: 0,
+          });
+          return updated;
+        });
+
+        toast.info('Scraping started...');
+      } else {
+        // For non-YouTube sources, use the old sync endpoint
+        const response = await fetch(`/api/sources/${source.id}/fetch`, {
+          method: 'POST',
+        });
+
+        if (!response.ok) {
+          throw new Error('Failed to fetch content for source');
+        }
+
+        const result = await response.json();
+        const newItemsCount = result.data.newItemsCount;
+
+        toast.success(`Fetched ${newItemsCount} new items from ${source.displayName}`);
+
+        // Refresh sources list to show updated stats
+        await refetch();
       }
-
-      const result = await response.json();
-      const stats = result.data.stats;
-
-      setFetchMessage({
-        type: 'success',
-        text: `Fetched content from ${stats.successCount}/${stats.totalSources} sources. Found ${stats.newItemsCount} new items!`,
-      });
-
-      // Refresh sources list to show updated status
-      await refetch();
-    } catch (err) {
-      setFetchMessage({
-        type: 'error',
-        text: err instanceof Error ? err.message : 'Failed to fetch content',
-      });
-    } finally {
-      setIsFetching(false);
-    }
-  };
-
-  const handleRefreshSource = async (sourceId: string, sourceName: string) => {
-    try {
-      setRefreshingSourceId(sourceId);
-
-      const response = await fetch(`/api/sources/${sourceId}/fetch`, {
-        method: 'POST',
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch content for source');
-      }
-
-      const result = await response.json();
-      const newItemsCount = result.data.newItemsCount;
-
-      toast.success(`Fetched ${newItemsCount} new items from ${sourceName}`);
-
-      // Refresh sources list to show updated stats
-      await refetch();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to fetch content');
-    } finally {
-      setRefreshingSourceId(null);
     }
   };
 
@@ -447,34 +526,7 @@ export default function SourcesPage() {
                 <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
                   Your Sources ({sources?.length || 0})
                 </h2>
-                <Button
-                  onClick={handleRefreshContent}
-                  variant="success"
-                  disabled={isFetching || !sources || sources.length === 0}
-                  loading={isFetching}
-                >
-                  {isFetching ? (
-                    <>Fetching...</>
-                  ) : (
-                    <>
-                      <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                      <span>Refresh Content</span>
-                    </>
-                  )}
-                </Button>
               </div>
-
-              {fetchMessage && (
-                <div className={`mb-4 p-4 rounded-lg ${
-                  fetchMessage.type === 'success'
-                    ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300'
-                    : 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300'
-                }`}>
-                  {fetchMessage.text}
-                </div>
-              )}
 
               {/* Search and Sort */}
               {sources && sources.length > 0 && (
@@ -531,35 +583,39 @@ export default function SourcesPage() {
                 </p>
               ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-2">
-                  {sortedItems.map((source) => (
-                    <div
-                      key={source.id}
-                      className={`relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-1 py-2 hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 flex flex-col group ${
-                        source.isMuted ? 'opacity-50 grayscale' : ''
-                      }`}
-                    >
-                      {/* Action buttons - top right */}
-                      <div className="absolute top-1 right-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 z-10">
-                        <button
-                          onClick={() => handleRefreshSource(source.id, source.displayName)}
-                          disabled={refreshingSourceId === source.id}
-                          className="p-0.5 rounded-md text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          aria-label="Refresh content"
-                        >
-                          {refreshingSourceId === source.id ? (
-                            <Spinner size="sm" variant="primary" />
-                          ) : (
-                            <RefreshIcon className="w-3 h-3" />
-                          )}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteSource(source.id)}
-                          className="p-0.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                          aria-label="Remove source"
-                        >
-                          <TrashIcon className="w-3 h-3" />
-                        </button>
-                      </div>
+                  {sortedItems.map((source) => {
+                    const scrapeJob = scrapeJobs.get(source.id);
+                    const isScrapingActive = scrapeJob && (scrapeJob.status === 'queued' || scrapeJob.status === 'processing');
+
+                    return (
+                      <div
+                        key={source.id}
+                        className={`relative bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg px-1 py-2 hover:shadow-lg hover:border-gray-300 dark:hover:border-gray-600 transition-all duration-200 flex flex-col group ${
+                          source.isMuted ? 'opacity-50 grayscale' : ''
+                        }`}
+                      >
+                        {/* Action buttons - top right */}
+                        <div className="absolute top-1 right-1 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 z-10">
+                          <button
+                            onClick={() => handleRefreshSource(source)}
+                            disabled={isScrapingActive}
+                            className="p-0.5 rounded-md text-gray-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            aria-label="Refresh content"
+                          >
+                            {isScrapingActive ? (
+                              <Spinner size="sm" variant="primary" />
+                            ) : (
+                              <RefreshIcon className="w-3 h-3" />
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSource(source.id)}
+                            className="p-0.5 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            aria-label="Remove source"
+                          >
+                            <TrashIcon className="w-3 h-3" />
+                          </button>
+                        </div>
 
                       {/* Avatar */}
                       <div className="flex justify-center mb-1.5">
@@ -600,6 +656,29 @@ export default function SourcesPage() {
                         </p>
                       )}
 
+                      {/* Progress bar - shown when scraping */}
+                      {isScrapingActive && scrapeJob && (
+                        <div className="mb-1.5">
+                          <div className="flex items-center justify-between text-[10px] text-gray-600 dark:text-gray-400 mb-0.5">
+                            <span>
+                              {scrapeJob.status === 'queued' ? 'Queued...' : 'Scraping...'}
+                            </span>
+                            <span>{scrapeJob.progress}%</span>
+                          </div>
+                          <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-1.5 overflow-hidden">
+                            <div
+                              className="bg-blue-500 h-full transition-all duration-300 ease-out"
+                              style={{ width: `${scrapeJob.progress}%` }}
+                            />
+                          </div>
+                          {scrapeJob.totalVideos > 0 && (
+                            <p className="text-[9px] text-gray-500 dark:text-gray-500 text-center mt-0.5">
+                              {scrapeJob.currentVideo} / {scrapeJob.totalVideos} videos
+                            </p>
+                          )}
+                        </div>
+                      )}
+
                       {/* Bottom controls - more compact */}
                       <div className="flex items-center justify-between pt-1.5 mt-auto border-t border-gray-200 dark:border-gray-700">
                         {/* Mute toggle */}
@@ -623,7 +702,8 @@ export default function SourcesPage() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
