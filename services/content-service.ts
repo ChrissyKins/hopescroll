@@ -17,6 +17,7 @@ export class ContentService {
   /**
    * Fetch content from all active sources
    * Called by background cron job
+   * Uses sequential processing to avoid overwhelming APIs and reduce bot detection
    */
   async fetchAllSources(): Promise<FetchStats> {
     log.info('Starting content fetch for all sources');
@@ -41,17 +42,28 @@ export class ContentService {
       };
     }
 
-    log.info({ sourceCount: sources.length }, 'Fetching from sources');
+    log.info({ sourceCount: sources.length }, 'Fetching from sources sequentially');
 
-    const results = await Promise.allSettled(
-      sources.map((source) => this.fetchSource(source.id))
-    );
+    // Process sources sequentially with delays to avoid rate limits
+    let successCount = 0;
+    let errorCount = 0;
+    let newItemsCount = 0;
 
-    const successCount = results.filter((r) => r.status === 'fulfilled').length;
-    const errorCount = results.filter((r) => r.status === 'rejected').length;
-    const newItemsCount = results
-      .filter((r): r is PromiseFulfilledResult<number> => r.status === 'fulfilled')
-      .reduce((sum, r) => sum + r.value, 0);
+    for (const source of sources) {
+      try {
+        const count = await this.fetchSource(source.id);
+        newItemsCount += count;
+        successCount++;
+      } catch (error) {
+        errorCount++;
+        log.warn({ sourceId: source.id, error }, 'Failed to fetch source, continuing with others');
+      }
+
+      // Add small delay between sources to spread out requests
+      if (sources.indexOf(source) < sources.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, 2000)); // 2 second delay between sources
+      }
+    }
 
     const stats = {
       totalSources: sources.length,
@@ -299,6 +311,7 @@ export class ContentService {
   /**
    * Fetch content for a specific user's sources
    * Useful for manual refresh
+   * Uses sequential processing with delays to avoid rate limits and bot detection
    */
   async fetchUserSources(userId: string): Promise<FetchStats> {
     log.info({ userId }, 'Starting content fetch for user sources');
@@ -322,16 +335,30 @@ export class ContentService {
       };
     }
 
-    // Force backlog fetch for manual refresh
-    const results = await Promise.allSettled(
-      sources.map((source) => this.fetchSource(source.id, true))
-    );
+    log.info({ userId, sourceCount: sources.length }, 'Fetching user sources sequentially');
 
-    const successCount = results.filter((r) => r.status === 'fulfilled').length;
-    const errorCount = results.filter((r) => r.status === 'rejected').length;
-    const newItemsCount = results
-      .filter((r): r is PromiseFulfilledResult<number> => r.status === 'fulfilled')
-      .reduce((sum, r) => sum + r.value, 0);
+    // Process sources sequentially with delays to avoid rate limits
+    let successCount = 0;
+    let errorCount = 0;
+    let newItemsCount = 0;
+
+    for (const source of sources) {
+      try {
+        // Force backlog fetch for manual refresh
+        const count = await this.fetchSource(source.id, true);
+        newItemsCount += count;
+        successCount++;
+      } catch (error) {
+        errorCount++;
+        log.warn({ sourceId: source.id, error }, 'Failed to fetch source, continuing with others');
+      }
+
+      // Add delay between sources to spread out requests (1-2 seconds)
+      if (sources.indexOf(source) < sources.length - 1) {
+        const delayMs = 1000 + Math.random() * 1000; // Random 1-2 second delay
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
 
     const stats = {
       totalSources: sources.length,

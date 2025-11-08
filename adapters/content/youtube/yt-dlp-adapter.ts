@@ -29,10 +29,11 @@ export class YtDlpAdapter implements ContentAdapter {
     publishedAfter.setDate(publishedAfter.getDate() - days);
 
     try {
-      // Fetch recent videos using --flat-playlist for speed
+      // Fetch recent videos - no quota limits with yt-dlp, so fetch more at once
+      // This reduces the number of requests needed
       const videos = await this.client.getChannelVideos(channelId, {
         dateAfter: publishedAfter,
-        limit: 50, // Match YouTube API behavior
+        limit: 200, // Fetch more at once since yt-dlp has no quota limits
       });
 
       if (!videos || videos.length === 0) {
@@ -63,10 +64,14 @@ export class YtDlpAdapter implements ContentAdapter {
       // Parse pageToken as offset (we use offset-based pagination with yt-dlp)
       const offset = pageToken ? parseInt(pageToken, 10) : 0;
 
+      // Use larger batches since yt-dlp has no quota limits
+      // This is more efficient than multiple small requests
+      const batchLimit = Math.max(limit, 200); // Minimum 200 videos per batch
+
       // Fetch videos using --flat-playlist with pagination
       const videos = await this.client.getChannelVideos(channelId, {
         offset,
-        limit,
+        limit: batchLimit,
       });
 
       if (!videos || videos.length === 0) {

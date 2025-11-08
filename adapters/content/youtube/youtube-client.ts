@@ -13,10 +13,19 @@ import { YouTubeCache } from './youtube-cache';
 
 const log = createLogger('youtube-client');
 
+// Add delay between requests to avoid bot detection (1-2 seconds)
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+const randomDelay = () => delay(1000 + Math.random() * 1000); // 1-2 seconds
+
+// Exponential backoff retry configuration
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 1000; // 1 second
+
 export class YouTubeClient {
   private baseUrl = 'https://www.googleapis.com/youtube/v3';
   private apiKey: string;
   private cache?: YouTubeCache;
+  private lastRequestTime = 0;
 
   constructor(apiKey?: string, cache?: YouTubeCache) {
     this.apiKey = apiKey || ENV.youtubeApiKey;
@@ -326,20 +335,38 @@ export class YouTubeClient {
     return response;
   }
 
-  private async request<T>(path: string): Promise<T> {
+  private async request<T>(path: string, retryCount = 0): Promise<T> {
     const url = `${this.baseUrl}${path}`;
 
     // Extract API method from path for better logging
     const apiMethod = path.split('?')[0].replace(/^\//, '');
 
+    // Add delay between requests to avoid bot detection
+    const timeSinceLastRequest = Date.now() - this.lastRequestTime;
+    if (timeSinceLastRequest < 1000) {
+      // Ensure minimum 1 second between requests
+      await randomDelay();
+    }
+    this.lastRequestTime = Date.now();
+
     try {
-      log.info({ url, method: apiMethod }, '→ YouTube API request');
+      log.info({ url, method: apiMethod, retryCount }, '→ YouTube API request');
 
       const response = await fetch(url);
 
       if (!response.ok) {
         if (response.status === 429) {
-          log.error({ method: apiMethod, status: 429 }, '✗ YouTube API rate limit exceeded');
+          log.warn({ method: apiMethod, status: 429, retryCount }, '⚠ YouTube API rate limit hit');
+
+          // Exponential backoff retry for rate limits
+          if (retryCount < MAX_RETRIES) {
+            const retryDelay = INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
+            log.info({ retryDelay, retryCount }, 'Retrying with exponential backoff');
+            await delay(retryDelay);
+            return this.request<T>(path, retryCount + 1);
+          }
+
+          log.error({ method: apiMethod, status: 429 }, '✗ YouTube API rate limit exceeded after retries');
           throw new RateLimitError('YouTube API rate limit exceeded');
         }
 

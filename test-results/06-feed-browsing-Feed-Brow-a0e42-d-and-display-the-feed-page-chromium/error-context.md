@@ -1,0 +1,53 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - navigation [ref=e2]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - heading "feed.enda.cat" [level=1] [ref=e7]
+        - generic [ref=e8]:
+          - link "Watch" [ref=e9] [cursor=pointer]:
+            - /url: /watch
+          - link "Scroll" [ref=e10] [cursor=pointer]:
+            - /url: /scroll
+          - link "Sources" [ref=e12] [cursor=pointer]:
+            - /url: /sources
+          - link "Filters" [ref=e13] [cursor=pointer]:
+            - /url: /filters
+          - link "Saved" [ref=e14] [cursor=pointer]:
+            - /url: /saved
+          - link "History" [ref=e15] [cursor=pointer]:
+            - /url: /history
+      - button "Sign out" [ref=e17] [cursor=pointer]
+  - generic [ref=e19]:
+    - heading "Content Sources" [level=1] [ref=e20]
+    - generic [ref=e21]:
+      - heading "Add New Source" [level=2] [ref=e22]
+      - generic [ref=e23]:
+        - generic [ref=e24]:
+          - generic [ref=e25]: Source Type
+          - combobox [ref=e26]:
+            - option "YouTube" [selected]
+            - option "RSS Feed"
+            - option "Podcast"
+        - generic [ref=e27]:
+          - generic [ref=e28]: Search for Channel
+          - generic [ref=e30]:
+            - generic:
+              - img
+            - textbox "Type to search for a YouTube channel..." [active] [ref=e31]: UC_x5XG1OV2P6uZZ5FSM9Ttw
+        - button "Add Source" [disabled] [ref=e32]
+    - generic [ref=e34]:
+      - generic [ref=e35]:
+        - heading "Your Sources (0)" [level=2] [ref=e36]
+        - button "Refresh Content" [disabled] [ref=e37]:
+          - img [ref=e38]
+          - generic [ref=e40]: Refresh Content
+      - generic [ref=e41]:
+        - img [ref=e43]
+        - heading "No content sources yet" [level=2] [ref=e45]
+        - paragraph [ref=e46]: Add YouTube channels, RSS feeds, or podcasts to start building your curated feed. Sources you add will automatically fetch new content within the last 7 days.
+        - button "Add Your First Source" [ref=e48] [cursor=pointer]
+  - alert [ref=e49]
+```

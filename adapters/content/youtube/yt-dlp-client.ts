@@ -48,7 +48,7 @@ export interface YtDlpChannelInfo {
 
 export interface GetChannelVideosOptions {
   dateAfter?: Date;
-  limit?: number;
+  limit?: number; // No hard limit when using yt-dlp (unlike YouTube API)
   offset?: number;
 }
 
@@ -101,8 +101,10 @@ export class YtDlpClient {
       throw new Error('yt-dlp service URL not configured');
     }
 
+    // No artificial limits for yt-dlp - it can fetch as many as needed without quota concerns
+    // Only limit is what the yt-dlp service can handle (configured server-side)
     const params = new URLSearchParams({
-      limit: Math.min(limit, 100).toString(), // Max 100 per API
+      limit: limit.toString(),
       use_cache: this.useCache.toString(),
     });
 
