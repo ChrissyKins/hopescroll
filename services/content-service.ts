@@ -145,7 +145,7 @@ export class ContentService {
 
           const idsResult = await adapter.fetchVideoIds!(
             source.sourceId,
-            1000, // Large batch size per request
+            100, // Max batch size supported by yt-dlp service
             currentPageToken
           );
 
@@ -213,7 +213,7 @@ export class ContentService {
           // LEGACY PATH: Fetch everything, deduplicate later
           const backlogResult = await adapter.fetchBacklog(
             source.sourceId,
-            1000, // Large batch size per request
+            100, // Max batch size supported by yt-dlp service
             currentPageToken
           );
 
