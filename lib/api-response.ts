@@ -51,6 +51,15 @@ export function errorResponse(error: unknown, status?: number): NextResponse<Api
     details = (error as any).errors;
   } else if (error instanceof Error) {
     message = error.message;
+  } else if (typeof error === 'string') {
+    message = error;
+  } else if (error && typeof error === 'object') {
+    // Better handling for non-Error objects
+    try {
+      message = JSON.stringify(error);
+    } catch {
+      message = 'Error object could not be stringified';
+    }
   }
 
   log.error({ error, code, message, statusCode }, 'API error');
