@@ -29,11 +29,11 @@ export class YtDlpAdapter implements ContentAdapter {
     publishedAfter.setDate(publishedAfter.getDate() - days);
 
     try {
-      // yt-dlp service has a max limit of 100 per request
+      // yt-dlp service has a max limit of 500 per request
       // Fetch recent videos with max limit
       const videos = await this.client.getChannelVideos(channelId, {
         dateAfter: publishedAfter,
-        limit: 100, // Max limit supported by yt-dlp service
+        limit: 500, // Max limit supported by yt-dlp service
       });
 
       if (!videos || videos.length === 0) {
