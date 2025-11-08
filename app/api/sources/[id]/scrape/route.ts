@@ -6,7 +6,7 @@ import { db } from '@/lib/db';
 import { successResponse, errorResponse } from '@/lib/api-response';
 import { requireAuth } from '@/lib/get-user-session';
 import { createLogger } from '@/lib/logger';
-import { ENV } from '@/lib/config';
+import { ENV, CONFIG } from '@/lib/config';
 
 export const dynamic = 'force-dynamic';
 
@@ -48,8 +48,24 @@ export async function POST(
     // Use the channel ID (sourceId) which is the YouTube channel ID
     const channelId = source.sourceId;
 
-    const scrapeUrl = `${ytDlpServiceUrl}/api/channel/${channelId}/scrape?limit=200`;
-    log.info({ scrapeUrl }, 'Attempting to start scrape job');
+    // Determine scrape strategy based on source state
+    // - If never fetched or last fetch was >7 days ago: fetch initial backlog (200 videos)
+    // - If recently fetched: only fetch recent videos (7 days)
+    const daysSinceLastFetch = source.lastFetchAt
+      ? (Date.now() - source.lastFetchAt.getTime()) / (1000 * 60 * 60 * 24)
+      : Infinity;
+
+    const isInitialScrape = !source.lastFetchAt || daysSinceLastFetch > 7;
+    const limit = isInitialScrape ? CONFIG.content.backlogBatchSize : undefined;
+
+    // Build scrape URL with optional limit
+    const scrapeParams = new URLSearchParams();
+    if (limit) {
+      scrapeParams.set('limit', limit.toString());
+    }
+
+    const scrapeUrl = `${ytDlpServiceUrl}/api/channel/${channelId}/scrape${scrapeParams.toString() ? `?${scrapeParams}` : ''}`;
+    log.info({ scrapeUrl, isInitialScrape, limit }, 'Attempting to start scrape job');
 
     const scrapeResponse = await fetch(scrapeUrl, {
       method: 'POST',
