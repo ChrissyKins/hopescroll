@@ -16,6 +16,18 @@ export interface ContentAdapter {
     pageToken?: string
   ): Promise<{ items: ContentItem[]; nextPageToken?: string; hasMore: boolean }>;
 
+  // Fetch video IDs (lightweight, for deduplication before fetching full metadata)
+  // Optional - adapters can implement this for optimization
+  fetchVideoIds?(
+    sourceId: string,
+    limit: number,
+    pageToken?: string
+  ): Promise<{ videoIds: string[]; nextPageToken?: string; hasMore: boolean }>;
+
+  // Fetch full metadata for specific video IDs only
+  // Optional - adapters can implement this for optimization after deduplication
+  fetchVideosByIds?(videoIds: string[], sourceId: string): Promise<ContentItem[]>;
+
   // Validate source exists and is accessible
   validateSource(sourceId: string): Promise<SourceValidation>;
 

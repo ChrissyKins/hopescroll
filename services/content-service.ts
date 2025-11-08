@@ -133,40 +133,118 @@ export class ContentService {
       let totalBacklogFetched = 0;
       let currentBacklogVideoCount = source.backlogVideoCount || 0;
 
+      // Check if adapter supports optimized deduplication
+      const supportsOptimization = adapter.fetchVideoIds && adapter.fetchVideosByIds;
+
       while (true) {
-        const backlogResult = await adapter.fetchBacklog(
-          source.sourceId,
-          1000, // Large batch size per request
-          currentPageToken
-        );
+        let batchItems: ContentItem[] = [];
 
-        backlogItems.push(...backlogResult.items);
-        totalBacklogFetched += backlogResult.items.length;
-        currentBacklogVideoCount += backlogResult.items.length;
+        if (supportsOptimization) {
+          // OPTIMIZED PATH: Fetch IDs first, deduplicate, then fetch only new videos
+          log.info({ sourceId }, 'Using optimized fetch with early deduplication');
 
-        // Update source with backlog progress after each batch
-        await this.db.contentSource.update({
-          where: { id: sourceId },
-          data: {
-            backlogPageToken: backlogResult.nextPageToken,
-            backlogFetchedAt: new Date(),
-            backlogComplete: !backlogResult.hasMore,
-            backlogVideoCount: currentBacklogVideoCount,
-          },
-        });
+          const idsResult = await adapter.fetchVideoIds!(
+            source.sourceId,
+            1000, // Large batch size per request
+            currentPageToken
+          );
 
-        log.info(
-          { sourceId, batchCount: backlogResult.items.length, totalFetched: totalBacklogFetched, hasMore: backlogResult.hasMore },
-          'Fetched backlog batch'
-        );
+          if (!idsResult.videoIds || idsResult.videoIds.length === 0) {
+            log.info({ sourceId }, 'No more videos in backlog');
+            break;
+          }
 
-        // Stop when we've fetched everything
-        if (!backlogResult.hasMore) {
-          log.info({ sourceId, totalBacklogFetched }, 'Completed full backlog fetch');
-          break;
+          // Check which video IDs already exist in database
+          const newVideoIds = await this.filterNewVideoIds(
+            idsResult.videoIds,
+            adapter.sourceType
+          );
+
+          log.info(
+            {
+              sourceId,
+              totalIds: idsResult.videoIds.length,
+              newIds: newVideoIds.length,
+              cachedIds: idsResult.videoIds.length - newVideoIds.length,
+            },
+            'Deduplication complete - fetching metadata only for new videos'
+          );
+
+          // Only fetch full metadata for NEW videos
+          if (newVideoIds.length > 0) {
+            batchItems = await adapter.fetchVideosByIds!(newVideoIds, source.sourceId);
+          }
+
+          totalBacklogFetched += idsResult.videoIds.length;
+          currentBacklogVideoCount += idsResult.videoIds.length;
+
+          // Update source with backlog progress
+          await this.db.contentSource.update({
+            where: { id: sourceId },
+            data: {
+              backlogPageToken: idsResult.nextPageToken,
+              backlogFetchedAt: new Date(),
+              backlogComplete: !idsResult.hasMore,
+              backlogVideoCount: currentBacklogVideoCount,
+            },
+          });
+
+          log.info(
+            {
+              sourceId,
+              batchCount: batchItems.length,
+              totalScanned: totalBacklogFetched,
+              hasMore: idsResult.hasMore,
+            },
+            'Fetched backlog batch (optimized)'
+          );
+
+          // Add batch to results
+          backlogItems.push(...batchItems);
+
+          // Stop when we've fetched everything
+          if (!idsResult.hasMore) {
+            log.info({ sourceId, totalBacklogFetched }, 'Completed full backlog fetch (optimized)');
+            break;
+          }
+
+          currentPageToken = idsResult.nextPageToken;
+        } else {
+          // LEGACY PATH: Fetch everything, deduplicate later
+          const backlogResult = await adapter.fetchBacklog(
+            source.sourceId,
+            1000, // Large batch size per request
+            currentPageToken
+          );
+
+          backlogItems.push(...backlogResult.items);
+          totalBacklogFetched += backlogResult.items.length;
+          currentBacklogVideoCount += backlogResult.items.length;
+
+          // Update source with backlog progress after each batch
+          await this.db.contentSource.update({
+            where: { id: sourceId },
+            data: {
+              backlogPageToken: backlogResult.nextPageToken,
+              backlogFetchedAt: new Date(),
+              backlogComplete: !backlogResult.hasMore,
+              backlogVideoCount: currentBacklogVideoCount,
+            },
+          });
+
+          log.info(
+            { sourceId, batchCount: backlogResult.items.length, totalFetched: totalBacklogFetched, hasMore: backlogResult.hasMore },
+            'Fetched backlog batch'
+          );
+
+          // Stop when we've fetched everything
+          if (!backlogResult.hasMore) {
+            log.info({ sourceId, totalBacklogFetched }, 'Completed full backlog fetch');
+            break;
+          }
+
+          currentPageToken = backlogResult.nextPageToken;
         }
-
-        currentPageToken = backlogResult.nextPageToken;
       }
 
       const allItems = [...recentItems, ...backlogItems];
@@ -217,6 +295,45 @@ export class ContentService {
 
       throw error;
     }
+  }
+
+  /**
+   * Filter out video IDs that already exist in the database
+   * Used for early deduplication before fetching full metadata
+   */
+  private async filterNewVideoIds(
+    videoIds: string[],
+    sourceType: SourceType
+  ): Promise<string[]> {
+    if (videoIds.length === 0) return [];
+
+    // Batch query to find existing video IDs
+    const existingItems = await this.db.contentItem.findMany({
+      where: {
+        sourceType,
+        originalId: { in: videoIds },
+      },
+      select: {
+        originalId: true,
+      },
+    });
+
+    // Create a Set of existing IDs for fast lookup
+    const existingIds = new Set(existingItems.map((item) => item.originalId));
+
+    // Filter to only new IDs
+    const newIds = videoIds.filter((id) => !existingIds.has(id));
+
+    log.debug(
+      {
+        totalIds: videoIds.length,
+        existingIds: existingIds.size,
+        newIds: newIds.length,
+      },
+      'Filtered video IDs for deduplication'
+    );
+
+    return newIds;
   }
 
   /**

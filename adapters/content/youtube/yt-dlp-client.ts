@@ -13,11 +13,11 @@ export interface YtDlpVideo {
   id: string;
   title: string;
   description?: string;
-  thumbnail?: string;
-  thumbnails?: Array<{ url: string; height?: number; width?: number }>;
-  duration?: number; // seconds
-  upload_date?: string; // YYYYMMDD format
-  timestamp?: number; // Unix timestamp
+  thumbnail?: string; // Available in both flat and full extract
+  thumbnails?: Array<{ url: string; height?: number; width?: number }>; // Available in both flat and full extract
+  duration?: number; // seconds - Available in flat extract
+  upload_date?: string; // YYYYMMDD format - Only in full extract
+  timestamp?: number; // Unix timestamp - Only in full extract
   url?: string;
   webpage_url?: string;
   channel?: string;
@@ -26,7 +26,7 @@ export interface YtDlpVideo {
   uploader?: string;
   uploader_id?: string;
   uploader_url?: string;
-  view_count?: number;
+  view_count?: number; // Available in flat extract
   like_count?: number;
   comment_count?: number;
 }

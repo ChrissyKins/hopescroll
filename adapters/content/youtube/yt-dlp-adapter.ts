@@ -52,6 +52,82 @@ export class YtDlpAdapter implements ContentAdapter {
     }
   }
 
+  /**
+   * Fetch video IDs from a channel (lightweight - no full metadata)
+   * Useful for checking which videos already exist in the database before fetching full details
+   */
+  async fetchVideoIds(
+    channelId: string,
+    limit: number,
+    pageToken?: string
+  ): Promise<{ videoIds: string[]; nextPageToken?: string; hasMore: boolean }> {
+    log.info({ channelId, limit, pageToken }, 'Fetching video IDs (lightweight)');
+
+    try {
+      const offset = pageToken ? parseInt(pageToken, 10) : 0;
+
+      // Fetch videos using --flat-playlist (lightweight)
+      const videos = await this.client.getChannelVideos(channelId, {
+        offset,
+        limit,
+      });
+
+      if (!videos || videos.length === 0) {
+        log.info({ channelId, offset }, 'No more videos found');
+        return { videoIds: [], hasMore: false };
+      }
+
+      const videoIds = videos.map((v) => v.id).filter((id): id is string => !!id);
+      const nextOffset = offset + videos.length;
+      const hasMore = videos.length === limit;
+
+      log.info(
+        { channelId, videoCount: videoIds.length, nextOffset, hasMore },
+        'Fetched video IDs'
+      );
+
+      return {
+        videoIds,
+        nextPageToken: hasMore ? nextOffset.toString() : undefined,
+        hasMore,
+      };
+    } catch (error) {
+      log.error({ error, channelId, limit }, 'Failed to fetch video IDs');
+      throw error;
+    }
+  }
+
+  /**
+   * Fetch full content items for specific video IDs only
+   * Used after deduplication to only fetch metadata for new videos
+   */
+  async fetchVideosByIds(
+    videoIds: string[],
+    channelId: string
+  ): Promise<ContentItem[]> {
+    if (videoIds.length === 0) {
+      return [];
+    }
+
+    log.info({ channelId, videoCount: videoIds.length }, 'Fetching full metadata for specific videos');
+
+    try {
+      // Get full video details for the specified IDs
+      const detailedVideos = await this.client.getVideoDetails(videoIds);
+
+      const items = detailedVideos.map((video) =>
+        this.mapToContentItem(video, channelId)
+      );
+
+      log.info({ channelId, fetchedCount: items.length }, 'Fetched full video metadata');
+
+      return items;
+    } catch (error) {
+      log.error({ error, channelId, videoCount: videoIds.length }, 'Failed to fetch video metadata');
+      throw error;
+    }
+  }
+
   async fetchBacklog(
     channelId: string,
     limit: number,

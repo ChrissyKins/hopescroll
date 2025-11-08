@@ -191,7 +191,7 @@ async function processBacklogFetches(sources: any[], adapters: Map<string, any>)
 
       const result = await adapter.fetchBacklog(
         source.sourceId,
-        CONFIG.content.dailyBacklogLimit,
+        1000, // Large batch size - no limits
         source.backlogPageToken || undefined
       );
 
