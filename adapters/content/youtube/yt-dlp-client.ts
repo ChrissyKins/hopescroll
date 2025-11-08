@@ -120,7 +120,16 @@ export class YtDlpClient {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ detail: response.statusText }));
-        throw new Error(error.detail || `HTTP ${response.status}: ${response.statusText}`);
+        // Ensure error.detail is a string, not an object
+        let errorDetail = `HTTP ${response.status}: ${response.statusText}`;
+        if (error.detail) {
+          if (typeof error.detail === 'string') {
+            errorDetail = error.detail;
+          } else if (typeof error.detail === 'object') {
+            errorDetail = JSON.stringify(error.detail);
+          }
+        }
+        throw new Error(errorDetail);
       }
 
       const data = await response.json();
@@ -212,7 +221,16 @@ export class YtDlpClient {
 
           if (!response.ok) {
             const error = await response.json().catch(() => ({ detail: response.statusText }));
-            throw new Error(error.detail || `HTTP ${response.status}`);
+            // Ensure error.detail is a string, not an object
+            let errorDetail = `HTTP ${response.status}`;
+            if (error.detail) {
+              if (typeof error.detail === 'string') {
+                errorDetail = error.detail;
+              } else if (typeof error.detail === 'object') {
+                errorDetail = JSON.stringify(error.detail);
+              }
+            }
+            throw new Error(errorDetail);
           }
 
           return await response.json();
@@ -262,7 +280,16 @@ export class YtDlpClient {
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({ detail: response.statusText }));
-        throw new Error(error.detail || `HTTP ${response.status}: ${response.statusText}`);
+        // Ensure error.detail is a string, not an object
+        let errorDetail = `HTTP ${response.status}: ${response.statusText}`;
+        if (error.detail) {
+          if (typeof error.detail === 'string') {
+            errorDetail = error.detail;
+          } else if (typeof error.detail === 'object') {
+            errorDetail = JSON.stringify(error.detail);
+          }
+        }
+        throw new Error(errorDetail);
       }
 
       const data = await response.json();
