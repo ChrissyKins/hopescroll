@@ -124,34 +124,49 @@ export class ContentService {
         'Fetched recent items from adapter'
       );
 
-      // Also fetch some backlog content if this is a new source or hasn't been fetched in a while
+      // Always fetch the full backlog - keep fetching until complete
       let backlogItems: ContentItem[] = [];
-      const shouldFetchBacklog = forceBacklog || this.shouldFetchBacklog(source);
 
-      if (shouldFetchBacklog) {
-        log.info({ sourceId }, 'Fetching initial backlog content');
+      // Keep fetching backlog batches until we've fetched everything
+      log.info({ sourceId }, 'Fetching full backlog (no limits)');
+      let currentPageToken = source.backlogPageToken || undefined;
+      let totalBacklogFetched = 0;
+      let currentBacklogVideoCount = source.backlogVideoCount || 0;
+
+      while (true) {
         const backlogResult = await adapter.fetchBacklog(
           source.sourceId,
-          CONFIG.content.backlogBatchSize,
-          source.backlogPageToken || undefined
+          1000, // Large batch size per request
+          currentPageToken
         );
-        backlogItems = backlogResult.items;
 
-        // Update source with backlog progress
+        backlogItems.push(...backlogResult.items);
+        totalBacklogFetched += backlogResult.items.length;
+        currentBacklogVideoCount += backlogResult.items.length;
+
+        // Update source with backlog progress after each batch
         await this.db.contentSource.update({
           where: { id: sourceId },
           data: {
             backlogPageToken: backlogResult.nextPageToken,
             backlogFetchedAt: new Date(),
             backlogComplete: !backlogResult.hasMore,
-            backlogVideoCount: (source.backlogVideoCount || 0) + backlogResult.items.length,
+            backlogVideoCount: currentBacklogVideoCount,
           },
         });
 
         log.info(
-          { sourceId, backlogCount: backlogItems.length, hasMore: backlogResult.hasMore },
-          'Fetched backlog items from adapter'
+          { sourceId, batchCount: backlogResult.items.length, totalFetched: totalBacklogFetched, hasMore: backlogResult.hasMore },
+          'Fetched backlog batch'
         );
+
+        // Stop when we've fetched everything
+        if (!backlogResult.hasMore) {
+          log.info({ sourceId, totalBacklogFetched }, 'Completed full backlog fetch');
+          break;
+        }
+
+        currentPageToken = backlogResult.nextPageToken;
       }
 
       const allItems = [...recentItems, ...backlogItems];
@@ -202,23 +217,6 @@ export class ContentService {
 
       throw error;
     }
-  }
-
-  /**
-   * Determine if we should fetch backlog for a source
-   * Fetch backlog for new sources or sources that haven't been fetched recently
-   */
-  private shouldFetchBacklog(source: any): boolean {
-    // Always fetch backlog for new sources (never fetched before)
-    if (!source.lastFetchAt) {
-      return true;
-    }
-
-    // Fetch backlog if it's been more than 7 days since last fetch
-    const daysSinceLastFetch =
-      (Date.now() - source.lastFetchAt.getTime()) / (1000 * 60 * 60 * 24);
-
-    return daysSinceLastFetch > 7;
   }
 
   /**

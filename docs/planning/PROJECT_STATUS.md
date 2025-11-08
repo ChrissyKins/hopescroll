@@ -1,6 +1,6 @@
 # HopeScroll - Project Status
 
-**Last Updated:** 2025-11-06 (Session 35 - yt-dlp Integration Complete!)
+**Last Updated:** 2025-11-08 (Session 36 - Unlimited Backlog Fetching!)
 **Current Phase:** Phase 1 (MVP Video Feed) → **Test Coverage A+ Complete** → Phase 2A (Article/RSS Support READY)
 
 ---
@@ -54,14 +54,17 @@
   - **No breaking changes**: Drop-in replacement for YouTubeAdapter (includes searchChannels)
   - **Zero quota for videos**: Unlimited channel and video fetching with yt-dlp
   - See [YT-DLP Migration Plan](../planning/YT-DLP_MIGRATION.md)
+- **Unlimited Backlog Fetching** (NEW - Session 36)
+  - **No more fetch limits**: Removed all scraping limiters and batch size restrictions
+  - **Full channel history**: Every content fetch now retrieves the entire backlog until complete
+  - **Efficient caching**: YouTube API metadata is cached forever, making subsequent fetches cheap
+  - **Removed incremental backlog cron**: No longer needed as we fetch everything upfront
+  - **Simplified architecture**: Removed smart scraping strategy and 7-day fetch logic
+  - **Batch processing**: Large batches (1000 videos per request) for efficiency
+  - **Configuration cleanup**: Removed `backlogBatchSize`, `dailyBacklogLimit`, `maxBacklogDepth` from config
 - **YouTube API Quota Management** (Session 30)
   - **Response caching**: Database-backed caching reduces API calls by 95%+
   - **Smart cache TTLs**: 24h (channels), 6h (videos), 1h (search)
-  - **Incremental backlog fetching**: 100 videos/channel/day instead of all at once
-  - **Cron job**: `/api/cron/fetch-backlog` gradually fetches video history
-  - **Tracks progress**: Stores pagination tokens and completion status
-  - **Handles large channels**: 1,500 video channel = 15 days vs overwhelming quota in 1 day
-  - **Total quota savings**: 92% reduction (from 14,000+ units to ~1,100 units)
   - See [YouTube Quota Management Guide](../how-to/youtube-quota-management.md)
 - **Background Video Fetching** (Session 29)
   - Sources added immediately to UI (no waiting for video fetch)

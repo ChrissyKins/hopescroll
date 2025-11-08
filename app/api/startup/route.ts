@@ -18,25 +18,14 @@ export async function GET(request: NextRequest) {
   }
 
   startupTriggered = true;
-  log.info('App startup triggered - initiating background fetch');
+  log.info('App startup triggered');
 
-  // Trigger backlog fetch in the background (fire and forget)
-  // Don't await - we want to return immediately
-  const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
-
-  fetch(`${baseUrl}/api/cron/fetch-backlog`, {
-    method: 'GET',
-    headers: {
-      'Authorization': `Bearer ${process.env.CRON_SECRET || ''}`,
-    },
-  }).catch(error => {
-    log.error({ error }, 'Failed to trigger backlog fetch on startup');
-  });
-
-  log.info('Background fetch triggered successfully');
+  // With the new unlimited backlog fetching, there's no need for a separate startup task
+  // The regular content fetch will handle everything
+  log.info('Startup complete - regular content fetch will handle all updates');
 
   return Response.json({
     message: 'Startup tasks initiated',
-    backgroundTasks: ['fetch-backlog'],
+    backgroundTasks: [],
   });
 }

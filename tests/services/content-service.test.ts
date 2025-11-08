@@ -290,7 +290,7 @@ describe('ContentService', () => {
       expect(mockAdapter.fetchBacklog).toHaveBeenCalled();
     });
 
-    it('should not fetch backlog for recently fetched sources', async () => {
+    it('should always fetch full backlog for all sources', async () => {
       const recentDate = new Date();
       recentDate.setDate(recentDate.getDate() - 3); // 3 days ago
 
@@ -315,11 +315,11 @@ describe('ContentService', () => {
 
       await service.fetchSource('source1');
 
-      // Should not fetch backlog since source was fetched recently
-      expect(mockAdapter.fetchBacklog).not.toHaveBeenCalled();
+      // Should always fetch backlog (no limits)
+      expect(mockAdapter.fetchBacklog).toHaveBeenCalled();
     });
 
-    it('should fetch backlog for sources not fetched in 7+ days', async () => {
+    it('should fetch full backlog until complete', async () => {
       const oldDate = new Date();
       oldDate.setDate(oldDate.getDate() - 10); // 10 days ago
 
@@ -329,6 +329,7 @@ describe('ContentService', () => {
         sourceId: 'ch1',
         displayName: 'Test Channel',
         lastFetchAt: oldDate,
+        backlogVideoCount: 0,
       };
 
       mockPrisma.contentSource.findUnique = vi.fn().mockResolvedValue(mockSource);

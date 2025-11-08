@@ -42,16 +42,6 @@ describe('CONFIG', () => {
       expect(CONFIG.content.fetchRecentDays).toBeGreaterThan(0);
     });
 
-    it('should have backlog batch size', () => {
-      expect(CONFIG.content.backlogBatchSize).toBe(200);
-      expect(CONFIG.content.backlogBatchSize).toBeGreaterThan(0);
-    });
-
-    it('should have max backlog depth', () => {
-      expect(CONFIG.content.maxBacklogDepth).toBe(500);
-      expect(CONFIG.content.maxBacklogDepth).toBeGreaterThan(0);
-    });
-
     it('should have deduplication window', () => {
       expect(CONFIG.content.deduplicationWindowDays).toBe(90);
       expect(CONFIG.content.deduplicationWindowDays).toBeGreaterThan(0);

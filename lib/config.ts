@@ -13,9 +13,6 @@ export const CONFIG = {
   content: {
     fetchIntervalMinutes: 30,
     fetchRecentDays: 7,
-    backlogBatchSize: 200, // Fetch 200 videos initially (4 pages of 50)
-    dailyBacklogLimit: 100, // Incremental backlog: 100 videos/channel/day
-    maxBacklogDepth: 500,
     deduplicationWindowDays: 90,
   },
 

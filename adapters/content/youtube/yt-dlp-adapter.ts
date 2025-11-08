@@ -29,11 +29,10 @@ export class YtDlpAdapter implements ContentAdapter {
     publishedAfter.setDate(publishedAfter.getDate() - days);
 
     try {
-      // Fetch recent videos - no quota limits with yt-dlp, so fetch more at once
-      // This reduces the number of requests needed
+      // Fetch all recent videos - no limit
       const videos = await this.client.getChannelVideos(channelId, {
         dateAfter: publishedAfter,
-        limit: 200, // Fetch more at once since yt-dlp has no quota limits
+        limit: 10000, // Large limit to effectively fetch everything
       });
 
       if (!videos || videos.length === 0) {
@@ -58,20 +57,17 @@ export class YtDlpAdapter implements ContentAdapter {
     limit: number,
     pageToken?: string
   ): Promise<{ items: ContentItem[]; nextPageToken?: string; hasMore: boolean }> {
-    log.info({ channelId, limit, pageToken }, 'Fetching YouTube backlog with yt-dlp');
+    log.info({ channelId, limit, pageToken }, 'Fetching YouTube backlog with yt-dlp (no limits)');
 
     try {
       // Parse pageToken as offset (we use offset-based pagination with yt-dlp)
       const offset = pageToken ? parseInt(pageToken, 10) : 0;
 
-      // Use larger batches since yt-dlp has no quota limits
-      // This is more efficient than multiple small requests
-      const batchLimit = Math.max(limit, 200); // Minimum 200 videos per batch
-
       // Fetch videos using --flat-playlist with pagination
+      // Use the provided limit as the batch size
       const videos = await this.client.getChannelVideos(channelId, {
         offset,
-        limit: batchLimit,
+        limit,
       });
 
       if (!videos || videos.length === 0) {
