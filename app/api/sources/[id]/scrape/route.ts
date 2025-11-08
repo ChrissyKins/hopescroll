@@ -45,16 +45,35 @@ export async function POST(
       return errorResponse(new Error('yt-dlp service not configured'));
     }
 
-    const scrapeResponse = await fetch(
-      `${ytDlpServiceUrl}/api/channel/${source.sourceId}/scrape?limit=200`,
-      {
-        method: 'POST',
-        signal: AbortSignal.timeout(10000), // 10 second timeout for starting the job
-      }
-    );
+    // Use the channel ID (sourceId) which is the YouTube channel ID
+    const channelId = source.sourceId;
+
+    const scrapeUrl = `${ytDlpServiceUrl}/api/channel/${channelId}/scrape?limit=200`;
+    log.info({ scrapeUrl }, 'Attempting to start scrape job');
+
+    const scrapeResponse = await fetch(scrapeUrl, {
+      method: 'POST',
+      signal: AbortSignal.timeout(10000), // 10 second timeout for starting the job
+    });
 
     if (!scrapeResponse.ok) {
       const error = await scrapeResponse.json().catch(() => ({ detail: scrapeResponse.statusText }));
+      log.error({
+        status: scrapeResponse.status,
+        error,
+        channelId,
+        scrapeUrl
+      }, 'Failed to start scrape job');
+
+      // If scrape endpoint not available (404), fall back to synchronous fetch
+      if (scrapeResponse.status === 404) {
+        log.info({ sourceId: id }, 'Scrape endpoint not available, falling back to sync fetch');
+        return errorResponse(
+          new Error('Background scraping not available. Please use the sync fetch endpoint instead.'),
+          503 // Service Unavailable
+        );
+      }
+
       throw new Error(error.detail || `Failed to start scrape job: ${scrapeResponse.statusText}`);
     }
 

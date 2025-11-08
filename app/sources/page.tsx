@@ -329,11 +329,30 @@ export default function SourcesPage() {
     }
 
     try {
-      // For YouTube sources, use async scraping
+      // For YouTube sources, try async scraping first
       if (source.type === 'YOUTUBE') {
         const response = await fetch(`/api/sources/${source.id}/scrape`, {
           method: 'POST',
         });
+
+        // If async scraping not available (503), fall back to sync
+        if (response.status === 503) {
+          toast.info('Using synchronous fetch...');
+          const syncResponse = await fetch(`/api/sources/${source.id}/fetch`, {
+            method: 'POST',
+          });
+
+          if (!syncResponse.ok) {
+            throw new Error('Failed to fetch content for source');
+          }
+
+          const result = await syncResponse.json();
+          const newItemsCount = result.data.newItemsCount;
+
+          toast.success(`Fetched ${newItemsCount} new items from ${source.displayName}`);
+          await refetch();
+          return;
+        }
 
         if (!response.ok) {
           throw new Error('Failed to start scraping');
@@ -358,7 +377,7 @@ export default function SourcesPage() {
 
         toast.info('Scraping started...');
       } else {
-        // For non-YouTube sources, use the old sync endpoint
+        // For non-YouTube sources, use the sync endpoint
         const response = await fetch(`/api/sources/${source.id}/fetch`, {
           method: 'POST',
         });
