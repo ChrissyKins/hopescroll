@@ -105,6 +105,7 @@ export class YtDlpClient {
     // Only limit is what the yt-dlp service can handle (configured server-side)
     const params = new URLSearchParams({
       limit: limit.toString(),
+      offset: offset.toString(),
       use_cache: this.useCache.toString(),
     });
 
@@ -148,15 +149,7 @@ export class YtDlpClient {
         });
       }
 
-      // Apply offset (API doesn't support offset directly, so we slice)
-      if (offset > 0) {
-        videos = videos.slice(offset);
-      }
-
-      // Apply limit after filtering
-      if (limit && videos.length > limit) {
-        videos = videos.slice(0, limit);
-      }
+      // No need to apply offset/limit client-side - the service handles pagination
 
       log.info(
         { channelId, count: videos.length, options },
